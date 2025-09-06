@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Форма авторизации</title>
+    <link th:href="@{/css/styleauto.css}" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <div class="autocontainer">
+            <h1>Университет Прогресса</h1>
+            <nav class="navigation">
+                <ul>
+                    <li><a href="http://localhost:8080/studentslab/formindex">Главная</a></li>
+                    <li><a href="http://localhost:8080/studentslab/formsvedeniy">Сведения об ОО</a></li>
+                    <li><a href="http://localhost:8080/studentslab/formspecial">Специальности</a></li>
+                    <li><a href="http://localhost:8080/studentslab/formcontact">Контакты</a></li>
+                    <li><a href="http://localhost:8080/studentslab/formotziv">Отзывы</a></li>
+                    <li><a href="http://localhost:8080/studentslab/formauto">Войти</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="form-container">
+            <h2>Авторизация</h2>
+            <form action="login.php" method="POST">
+                <div class="form-group">
+                    <label for="email"><b>Логин:</b></label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="password"><b>Пароль:</b></label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                <button type="submit"><b>Войти</b></button>
+            </form>
+            <br>
+            <input type="button" value="Зарегистрироваться" onclick="location.href='http://localhost:8080/studentslab/formreg'">
+            <br>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="autocontainer">
+            <p>&copy; 2025 Университет Прогресса. Все права защищены.</p>
+        </div>
+    </footer>
+</body>
+</html>
+
+
