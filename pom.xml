@@ -7,8 +7,8 @@
         <version>3.2.2</version>
         <relativePath/>
     </parent>
-    <groupId>lisovskiy.studentslab</groupId>
-    <artifactId>StudentsLab</artifactId>
+    <groupId>group.api</groupId>
+    <artifactId>API</artifactId>
     <version>1.0</version>
     <packaging>jar</packaging>
     <dependencies>
@@ -92,7 +92,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
-        <exec.mainClass>lisovskiy.studentslab.StudentsLab</exec.mainClass>
+        <exec.mainClass>group.api.API</exec.mainClass>
     </properties>
     <build>
         <plugins>
@@ -102,4 +102,5 @@
             </plugin>
         </plugins>
     </build>
+    <name>API</name>
 </project>
