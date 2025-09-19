@@ -79,6 +79,7 @@ public class MainController {
         return userRepository.findAll();
     }
 
+
     @PostMapping("/getAutarization")
     public @ResponseBody
     String getAutorization(@RequestParam(name = "Login") String login, @RequestParam(name = "Password") String password) {
