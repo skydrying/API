@@ -7,9 +7,7 @@ import okhttp3.OkHttpClient;
 
 public class Admin extends javax.swing.JFrame {
 
-    /**
-     * Creates new form Admin
-     */
+
     public Admin() {
         initComponents();
         this.setLocationRelativeTo(null);
@@ -17,7 +15,7 @@ public class Admin extends javax.swing.JFrame {
         this.setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/lisovskiy/forms/images/icon.png")));
         creatTable();
     }
-    
+
     public void creatTable() {
         Vector<String> tableHeaders = new Vector<>();
         tableHeaders.add("Номер");
@@ -32,11 +30,11 @@ public class Admin extends javax.swing.JFrame {
         tableHeaders.add("Логин");
         tableHeaders.add("Пароль");
         Vector tableData = new Vector();
-        
+
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
     }
 
-    
+
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -111,7 +109,7 @@ public class Admin extends javax.swing.JFrame {
         /* Set the Nimbus look and feel */
         //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
         /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
-         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
+         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html
          */
         try {
             for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {

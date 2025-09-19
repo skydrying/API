@@ -1,7 +1,3 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
- */
 package group.api.forms;
 
 import java.awt.Toolkit;
@@ -19,7 +15,6 @@ public class Auto extends javax.swing.JFrame {
         initComponents();
         this.setLocationRelativeTo(null);
         this.setTitle("Авторизация");
-        this.setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/lisovskiy/forms/images/icon.png")));
     }
 
     @SuppressWarnings("unchecked")
@@ -126,17 +121,17 @@ public class Auto extends javax.swing.JFrame {
         OkHttpClient okHttpClient = new OkHttpClient();
 
         FormBody formBody = new FormBody.Builder()
-                .add("Login", jTextField1.getText())        
+                .add("Login", jTextField1.getText())
                 .add( "Password",jPasswordField1.getText())
                 .build();
-                
+
         Request request = new Request.Builder()
-                .url("http://localhost:8080/studentslab/getAutarization")       
+                .url("http://localhost:8080/studentslab/getAutarization")
                 .post(formBody)
                 .build();
-        
+
         try (Response response = okHttpClient.newCall(request).execute()) {
-         if (jTextField1.getText().equals("admin") && jPasswordField1.getText().equals("admin")) { 
+         if (jTextField1.getText().equals("admin") && jPasswordField1.getText().equals("admin")) {
              this.dispose();
              new Admin().setVisible(true);
          } else {
@@ -148,13 +143,13 @@ public class Auto extends javax.swing.JFrame {
                         this.dispose();
                         new Director().setVisible(true);
                         break;
-                    case "CLASSTEACHER":
+                    case "SELLER":
                         this.dispose();
-                        new ClassTeacher().setVisible(true);
+                        new Seller().setVisible(true);
                         break;
-                    case "HEADOFDEPARTMENT":
+                    case "PRODUCTIONMASTER":
                         this.dispose();
-                        new HeadOfDepartment().setVisible(true);
+                        new ProductionMaster().setVisible(true);
                         break;
                     default:
                         JOptionPane.showMessageDialog(this, "Неверный логин или пароль.");
@@ -168,8 +163,8 @@ public class Auto extends javax.swing.JFrame {
             e.printStackTrace();
             JOptionPane.showMessageDialog(this, "Ошибка сети. Проверьте подключение к интернету.");
         }
-        
-         
+
+
     }//GEN-LAST:event_jButton1ActionPerformed
 
     private void jPasswordField1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jPasswordField1ActionPerformed
@@ -183,7 +178,7 @@ public class Auto extends javax.swing.JFrame {
         /* Set the Nimbus look and feel */
         //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
         /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
-         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
+         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html
          */
         try {
             for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
