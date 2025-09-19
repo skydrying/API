@@ -1,9 +1,14 @@
 package group.api.forms;
 
+import java.awt.*;
+
 public class Seller extends javax.swing.JFrame {
 
     public Seller() {
         initComponents();
+        this.setLocationRelativeTo(null);
+        this.setTitle("Панель Продавца");
+        this.setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/group/forms/images/icon.png")));
     }
 
     /**

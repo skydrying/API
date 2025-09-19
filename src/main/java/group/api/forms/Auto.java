@@ -15,6 +15,7 @@ public class Auto extends javax.swing.JFrame {
         initComponents();
         this.setLocationRelativeTo(null);
         this.setTitle("Авторизация");
+        this.setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/group/forms/images/icon.png")));
     }
 
     @SuppressWarnings("unchecked")
@@ -126,7 +127,7 @@ public class Auto extends javax.swing.JFrame {
                 .build();
 
         Request request = new Request.Builder()
-                .url("http://localhost:8080/studentslab/getAutarization")
+                .url("http://localhost:9090/api/getAutarization")
                 .post(formBody)
                 .build();
 

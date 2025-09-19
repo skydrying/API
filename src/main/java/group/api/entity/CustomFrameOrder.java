@@ -64,7 +64,7 @@ public class CustomFrameOrder implements Serializable {
     @JsonIgnore
     @JoinColumn(name = "OrderID", referencedColumnName = "ID")
     @ManyToOne(optional = false)
-    private Order orderID;
+    private Orders orderID;
     @JsonIgnore
     @JoinColumn(name = "ProductionMasterID", referencedColumnName = "ID")
     @ManyToOne
@@ -165,11 +165,11 @@ public class CustomFrameOrder implements Serializable {
         this.frameMaterialID = frameMaterialID;
     }
 
-    public Order getOrderID() {
+    public Orders getOrderID() {
         return orderID;
     }
 
-    public void setOrderID(Order orderID) {
+    public void setOrderID(Orders orderID) {
         this.orderID = orderID;
     }
 

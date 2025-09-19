@@ -45,7 +45,7 @@ public class OrderItem implements Serializable {
     @JsonIgnore
     @JoinColumn(name = "OrderID", referencedColumnName = "ID")
     @ManyToOne(optional = false)
-    private Order orderID;
+    private Orders orderID;
 
     public OrderItem() {
     }
@@ -102,11 +102,11 @@ public class OrderItem implements Serializable {
         this.subtotal = subtotal;
     }
 
-    public Order getOrderID() {
+    public Orders getOrderID() {
         return orderID;
     }
 
-    public void setOrderID(Order orderID) {
+    public void setOrderID(Orders orderID) {
         this.orderID = orderID;
     }
 

@@ -6,9 +6,9 @@ public class Director extends javax.swing.JFrame {
 
     public Director() {
         initComponents();
-                this.setLocationRelativeTo(null);
+        this.setLocationRelativeTo(null);
         this.setTitle("Панель Директора");
-        this.setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/lisovskiy/forms/images/icon.png")));
+        this.setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/group/forms/images/icon.png")));
     }
 
     @SuppressWarnings("unchecked")

@@ -1,10 +1,15 @@
 package group.api.forms;
 
+import java.awt.*;
+
 public class ProductionMaster extends javax.swing.JFrame {
 
 
     public ProductionMaster() {
         initComponents();
+        this.setLocationRelativeTo(null);
+        this.setTitle("Панель Мастера");
+        this.setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/group/forms/images/icon.png")));
     }
 
     /**

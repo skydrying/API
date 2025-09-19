@@ -28,6 +28,9 @@ import java.util.Collection;
     @NamedQuery(name = "Customer.findByTotalPurchases", query = "SELECT c FROM Customer c WHERE c.totalPurchases = :totalPurchases")})
 public class Customer implements Serializable {
 
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "customerID")
+    private Collection<Orders> ordersCollection;
+
     private static final long serialVersionUID = 1L;
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -51,7 +54,7 @@ public class Customer implements Serializable {
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "customerID")
     private Collection<Sale> saleCollection;
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "customerID")
-    private Collection<Order> order1Collection;
+    private Collection<Orders> order1Collection;
 
     public Customer() {
     }
@@ -132,11 +135,11 @@ public class Customer implements Serializable {
         this.saleCollection = saleCollection;
     }
 
-    public Collection<Order> getOrder1Collection() {
+    public Collection<Orders> getOrder1Collection() {
         return order1Collection;
     }
 
-    public void setOrder1Collection(Collection<Order> order1Collection) {
+    public void setOrder1Collection(Collection<Orders> order1Collection) {
         this.order1Collection = order1Collection;
     }
 
@@ -163,6 +166,14 @@ public class Customer implements Serializable {
     @Override
     public String toString() {
         return "group.api.entity.Customer[ id=" + id + " ]";
+    }
+
+    public Collection<Orders> getOrdersCollection() {
+        return ordersCollection;
+    }
+
+    public void setOrdersCollection(Collection<Orders> ordersCollection) {
+        this.ordersCollection = ordersCollection;
     }
     
 }

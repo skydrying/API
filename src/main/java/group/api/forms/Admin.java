@@ -12,7 +12,7 @@ public class Admin extends javax.swing.JFrame {
         initComponents();
         this.setLocationRelativeTo(null);
         this.setTitle("Панель Администратора");
-        this.setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/lisovskiy/forms/images/icon.png")));
+        this.setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/group/forms/images/icon.png")));
         creatTable();
     }
 

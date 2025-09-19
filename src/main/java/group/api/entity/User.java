@@ -35,6 +35,9 @@ import java.util.Date;
     @NamedQuery(name = "User.findByPassword", query = "SELECT u FROM User u WHERE u.password = :password")})
 public class User implements Serializable {
 
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "sellerID")
+    private Collection<Orders> ordersCollection;
+
     private static final long serialVersionUID = 1L;
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -76,7 +79,7 @@ public class User implements Serializable {
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "sellerID")
     private Collection<Sale> saleCollection;
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "sellerID")
-    private Collection<Order> order1Collection;
+    private Collection<Orders> order1Collection;
 
     public User() {
     }
@@ -221,11 +224,11 @@ public class User implements Serializable {
         this.saleCollection = saleCollection;
     }
 
-    public Collection<Order> getOrder1Collection() {
+    public Collection<Orders> getOrder1Collection() {
         return order1Collection;
     }
 
-    public void setOrder1Collection(Collection<Order> order1Collection) {
+    public void setOrder1Collection(Collection<Orders> order1Collection) {
         this.order1Collection = order1Collection;
     }
 
@@ -252,6 +255,14 @@ public class User implements Serializable {
     @Override
     public String toString() {
         return "group.api.entity.User[ id=" + id + " ]";
+    }
+
+    public Collection<Orders> getOrdersCollection() {
+        return ordersCollection;
+    }
+
+    public void setOrdersCollection(Collection<Orders> ordersCollection) {
+        this.ordersCollection = ordersCollection;
     }
     
 }

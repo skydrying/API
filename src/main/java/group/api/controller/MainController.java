@@ -12,7 +12,6 @@ import group.api.repository.ProductionmasterRepository;
 import group.api.repository.OrderItemRepository;
 import group.api.repository.FrameMaterialRepository;
 import group.api.repository.FrameComponentRepository;
-import group.api.repository.OrderRepository;
 import group.api.repository.CustomFrameOrderRepository;
 import java.io.File;
 import java.io.IOException;
@@ -39,6 +38,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
+import group.api.repository.OrdersRepository;
 
 @RestController
 @RequestMapping("/api")
@@ -57,7 +57,7 @@ public class MainController {
     @Autowired
     private SaleItemRepository saleItemRepository;
     @Autowired
-    private OrderRepository orderRepository;
+    private OrdersRepository orderRepository;
     @Autowired
     private OrderItemRepository orderItemRepository;
     @Autowired

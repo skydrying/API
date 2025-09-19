@@ -2,7 +2,6 @@ package group.api.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Basic;
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -13,25 +12,23 @@ import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
 import java.io.Serializable;
-import java.util.Collection;
 import java.util.Date;
 
 @Entity
-@Table(name = "order")
+@Table(name = "orders")
 @NamedQueries({
-    @NamedQuery(name = "Order.findAll", query = "SELECT o FROM Order o"),
-    @NamedQuery(name = "Order.findById", query = "SELECT o FROM Order o WHERE o.id = :id"),
-    @NamedQuery(name = "Order.findByOrderDate", query = "SELECT o FROM Order o WHERE o.orderDate = :orderDate"),
-    @NamedQuery(name = "Order.findByTotalAmount", query = "SELECT o FROM Order o WHERE o.totalAmount = :totalAmount"),
-    @NamedQuery(name = "Order.findByStatus", query = "SELECT o FROM Order o WHERE o.status = :status"),
-    @NamedQuery(name = "Order.findByDueDate", query = "SELECT o FROM Order o WHERE o.dueDate = :dueDate"),
-    @NamedQuery(name = "Order.findByCompletionDate", query = "SELECT o FROM Order o WHERE o.completionDate = :completionDate")})
-public class Order implements Serializable {
+    @NamedQuery(name = "Orders.findAll", query = "SELECT o FROM Orders o"),
+    @NamedQuery(name = "Orders.findById", query = "SELECT o FROM Orders o WHERE o.id = :id"),
+    @NamedQuery(name = "Orders.findByOrderDate", query = "SELECT o FROM Orders o WHERE o.orderDate = :orderDate"),
+    @NamedQuery(name = "Orders.findByTotalAmount", query = "SELECT o FROM Orders o WHERE o.totalAmount = :totalAmount"),
+    @NamedQuery(name = "Orders.findByStatus", query = "SELECT o FROM Orders o WHERE o.status = :status"),
+    @NamedQuery(name = "Orders.findByDueDate", query = "SELECT o FROM Orders o WHERE o.dueDate = :dueDate"),
+    @NamedQuery(name = "Orders.findByCompletionDate", query = "SELECT o FROM Orders o WHERE o.completionDate = :completionDate")})
+public class Orders implements Serializable {
 
     private static final long serialVersionUID = 1L;
     @Id
@@ -55,10 +52,6 @@ public class Order implements Serializable {
     @Lob
     @Column(name = "Notes")
     private String notes;
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "orderID")
-    private Collection<CustomFrameOrder> customFrameOrderCollection;
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "orderID")
-    private Collection<OrderItem> orderItemCollection;
     @JsonIgnore
     @JoinColumn(name = "CustomerID", referencedColumnName = "ID")
     @ManyToOne(optional = false)
@@ -68,10 +61,10 @@ public class Order implements Serializable {
     @ManyToOne(optional = false)
     private User sellerID;
 
-    public Order() {
+    public Orders() {
     }
 
-    public Order(Integer id) {
+    public Orders(Integer id) {
         this.id = id;
     }
 
@@ -131,22 +124,6 @@ public class Order implements Serializable {
         this.notes = notes;
     }
 
-    public Collection<CustomFrameOrder> getCustomFrameOrderCollection() {
-        return customFrameOrderCollection;
-    }
-
-    public void setCustomFrameOrderCollection(Collection<CustomFrameOrder> customFrameOrderCollection) {
-        this.customFrameOrderCollection = customFrameOrderCollection;
-    }
-
-    public Collection<OrderItem> getOrderItemCollection() {
-        return orderItemCollection;
-    }
-
-    public void setOrderItemCollection(Collection<OrderItem> orderItemCollection) {
-        this.orderItemCollection = orderItemCollection;
-    }
-
     public Customer getCustomerID() {
         return customerID;
     }
@@ -173,10 +150,10 @@ public class Order implements Serializable {
     @Override
     public boolean equals(Object object) {
         // TODO: Warning - this method won't work in the case the id fields are not set
-        if (!(object instanceof Order)) {
+        if (!(object instanceof Orders)) {
             return false;
         }
-        Order other = (Order) object;
+        Orders other = (Orders) object;
         if ((this.id == null && other.id != null) || (this.id != null && !this.id.equals(other.id))) {
             return false;
         }
@@ -185,7 +162,7 @@ public class Order implements Serializable {
 
     @Override
     public String toString() {
-        return "group.api.entity.Order[ id=" + id + " ]";
+        return "group.api.entity.Orders[ id=" + id + " ]";
     }
     
 }
