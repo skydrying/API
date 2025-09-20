@@ -1,7 +1,6 @@
 package group.api.entity;
 
 import jakarta.persistence.Basic;
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -9,10 +8,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import java.io.Serializable;
-import java.util.Collection;
 
 @Entity
 @Table(name = "customer")
@@ -27,9 +24,6 @@ import java.util.Collection;
     @NamedQuery(name = "Customer.findByDiscount", query = "SELECT c FROM Customer c WHERE c.discount = :discount"),
     @NamedQuery(name = "Customer.findByTotalPurchases", query = "SELECT c FROM Customer c WHERE c.totalPurchases = :totalPurchases")})
 public class Customer implements Serializable {
-
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "customerID")
-    private Collection<Orders> ordersCollection;
 
     private static final long serialVersionUID = 1L;
     @Id
@@ -48,13 +42,9 @@ public class Customer implements Serializable {
     @Column(name = "Email")
     private String email;
     @Column(name = "Discount")
-    private Integer discount;
+    private String discount;
     @Column(name = "TotalPurchases")
-    private Integer totalPurchases;
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "customerID")
-    private Collection<Sale> saleCollection;
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "customerID")
-    private Collection<Orders> order1Collection;
+    private String totalPurchases;
 
     public Customer() {
     }
@@ -111,36 +101,20 @@ public class Customer implements Serializable {
         this.email = email;
     }
 
-    public Integer getDiscount() {
+    public String getDiscount() {
         return discount;
     }
 
-    public void setDiscount(Integer discount) {
+    public void setDiscount(String discount) {
         this.discount = discount;
     }
 
-    public Integer getTotalPurchases() {
+    public String getTotalPurchases() {
         return totalPurchases;
     }
 
-    public void setTotalPurchases(Integer totalPurchases) {
+    public void setTotalPurchases(String totalPurchases) {
         this.totalPurchases = totalPurchases;
-    }
-
-    public Collection<Sale> getSaleCollection() {
-        return saleCollection;
-    }
-
-    public void setSaleCollection(Collection<Sale> saleCollection) {
-        this.saleCollection = saleCollection;
-    }
-
-    public Collection<Orders> getOrder1Collection() {
-        return order1Collection;
-    }
-
-    public void setOrder1Collection(Collection<Orders> order1Collection) {
-        this.order1Collection = order1Collection;
     }
 
     @Override
@@ -166,14 +140,6 @@ public class Customer implements Serializable {
     @Override
     public String toString() {
         return "group.api.entity.Customer[ id=" + id + " ]";
-    }
-
-    public Collection<Orders> getOrdersCollection() {
-        return ordersCollection;
-    }
-
-    public void setOrdersCollection(Collection<Orders> ordersCollection) {
-        this.ordersCollection = ordersCollection;
     }
     
 }

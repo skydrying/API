@@ -1,7 +1,10 @@
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
 package group.api.entity;
 
 import jakarta.persistence.Basic;
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -17,6 +20,10 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.Date;
 
+/**
+ *
+ * @author oneju
+ */
 @Entity
 @Table(name = "user")
 @NamedQueries({
@@ -34,9 +41,6 @@ import java.util.Date;
     @NamedQuery(name = "User.findByLogin", query = "SELECT u FROM User u WHERE u.login = :login"),
     @NamedQuery(name = "User.findByPassword", query = "SELECT u FROM User u WHERE u.password = :password")})
 public class User implements Serializable {
-
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "sellerID")
-    private Collection<Orders> ordersCollection;
 
     private static final long serialVersionUID = 1L;
     @Id
@@ -72,14 +76,8 @@ public class User implements Serializable {
     private Collection<Seller> sellerCollection;
     @OneToMany(mappedBy = "idUser")
     private Collection<Director> directorCollection;
-    @OneToMany(mappedBy = "productionMasterID")
-    private Collection<CustomFrameOrder> customFrameOrderCollection;
     @OneToMany(mappedBy = "idUser")
     private Collection<Productionmaster> productionmasterCollection;
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "sellerID")
-    private Collection<Sale> saleCollection;
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "sellerID")
-    private Collection<Orders> order1Collection;
 
     public User() {
     }
@@ -200,36 +198,12 @@ public class User implements Serializable {
         this.directorCollection = directorCollection;
     }
 
-    public Collection<CustomFrameOrder> getCustomFrameOrderCollection() {
-        return customFrameOrderCollection;
-    }
-
-    public void setCustomFrameOrderCollection(Collection<CustomFrameOrder> customFrameOrderCollection) {
-        this.customFrameOrderCollection = customFrameOrderCollection;
-    }
-
     public Collection<Productionmaster> getProductionmasterCollection() {
         return productionmasterCollection;
     }
 
     public void setProductionmasterCollection(Collection<Productionmaster> productionmasterCollection) {
         this.productionmasterCollection = productionmasterCollection;
-    }
-
-    public Collection<Sale> getSaleCollection() {
-        return saleCollection;
-    }
-
-    public void setSaleCollection(Collection<Sale> saleCollection) {
-        this.saleCollection = saleCollection;
-    }
-
-    public Collection<Orders> getOrder1Collection() {
-        return order1Collection;
-    }
-
-    public void setOrder1Collection(Collection<Orders> order1Collection) {
-        this.order1Collection = order1Collection;
     }
 
     @Override
@@ -255,14 +229,6 @@ public class User implements Serializable {
     @Override
     public String toString() {
         return "group.api.entity.User[ id=" + id + " ]";
-    }
-
-    public Collection<Orders> getOrdersCollection() {
-        return ordersCollection;
-    }
-
-    public void setOrdersCollection(Collection<Orders> ordersCollection) {
-        this.ordersCollection = ordersCollection;
     }
     
 }

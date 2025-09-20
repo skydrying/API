@@ -1,5 +1,6 @@
 package group.api.controller;
 
+import group.api.entity.*;
 import group.api.repository.EmbroideryKitRepository;
 import group.api.repository.SellerRepository;
 import group.api.repository.UserRepository;
@@ -23,10 +24,6 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import group.api.entity.Director;
-import group.api.entity.Productionmaster;
-import group.api.entity.Seller;
-import group.api.entity.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -75,8 +72,14 @@ public class MainController {
 
     @GetMapping("/getUsers")
     public @ResponseBody
-    Iterable<User> allUser() {
+    Iterable<User> allUsers() {
         return userRepository.findAll();
+    }
+
+    @GetMapping("/getCustomers")
+    public @ResponseBody
+    Iterable<Customer> allCustomers() {
+        return customerRepository.findAll();
     }
 
 
@@ -160,7 +163,7 @@ public class MainController {
         user.setSnils(snils);
 
         if (!photoLink.isEmpty()) {
-            String filePath = "C:\\Users\\oneju\\OneDrive\\Рабочий стол\\ПРОЕКТ\\photoLink" + photoLink.getOriginalFilename();
+            String filePath = "C:\\Users\\oneju\\OneDrive\\Рабочий стол\\ПРОЕКТ\\photoLink\\" + photoLink.getOriginalFilename();
             photoLink.transferTo(new File(filePath));
             user.setPhotoLink(filePath);
         } else {
@@ -178,7 +181,7 @@ public class MainController {
     @PostMapping("/updateUser")
     public @ResponseBody
     ResponseEntity<Integer> updateUser(
-            @RequestParam(name = "ID") String id,
+            @RequestParam(name = "id") String id,
             @RequestParam(name = "LastName") String lastname,
             @RequestParam(name = "FirstName") String firstname,
             @RequestParam(name = "MiddleName") String middleName,
@@ -224,7 +227,7 @@ public class MainController {
         user.setSnils(snils);
 
         if (!photoLink.isEmpty()) {
-            String filePath = "C:\\Users\\oneju\\OneDrive\\Рабочий стол\\ПРОЕКТ\\photoLink" + photoLink.getOriginalFilename();
+            String filePath = "C:\\Users\\oneju\\OneDrive\\Рабочий стол\\ПРОЕКТ\\photoLink\\" + photoLink.getOriginalFilename();
             photoLink.transferTo(new File(filePath));
             user.setPhotoLink(filePath);
         }
@@ -245,6 +248,68 @@ public class MainController {
         return true;
     }
 
+    @PostMapping("/addCustomer")
+    public @ResponseBody
+    ResponseEntity<Integer> addCustomer(
+            @RequestParam(name = "LastName") String lastname,
+            @RequestParam(name = "FirstName") String firstname,
+            @RequestParam(name = "MiddleName") String middleName,
+            @RequestParam(name = "Phone") String phone,
+            @RequestParam(name = "Email") String email,
+            @RequestParam(name = "Discount") String discount,
+            @RequestParam(name = "TotalPurchases") String totalPurchases) throws IOException {
+
+        Customer customer = new Customer();
+        customer.setLastName(lastname);
+        customer.setFirstName(firstname);
+        customer.setMiddleName(middleName);
+        customer.setPhone(phone);
+        customer.setEmail(email);
+        customer.setDiscount(discount);
+        customer.setTotalPurchases(totalPurchases);
+
+        Customer savedCustomer = customerRepository.save(customer);
+        Integer customerId = savedCustomer.getId();
+        return ResponseEntity.ok(customerId);
+    }
+
+    @PostMapping("/updateCustomer")
+    public @ResponseBody
+    ResponseEntity<Integer> updateCustomer(
+            @RequestParam(name = "id") String id,
+            @RequestParam(name = "LastName") String lastname,
+            @RequestParam(name = "FirstName") String firstname,
+            @RequestParam(name = "MiddleName") String middleName,
+            @RequestParam(name = "Phone") String phone,
+            @RequestParam(name = "Email") String email,
+            @RequestParam(name = "Discount") String discount,
+            @RequestParam(name = "TotalPurchases") String totalPurchases) throws IOException {
+
+        Customer customer = customerRepository.findById(Integer.parseInt(id)).orElse(null);
+        if (customer == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        customer.setLastName(lastname);
+        customer.setFirstName(firstname);
+        customer.setMiddleName(middleName);
+        customer.setPhone(phone);
+        customer.setEmail(email);
+        customer.setDiscount(discount);
+        customer.setTotalPurchases(totalPurchases);
+
+        Customer updatedCustomer = customerRepository.save(customer);
+        Integer customerId = updatedCustomer.getId();
+        return ResponseEntity.ok(customerId);
+    }
+
+    @PostMapping("/deleteCustomer")
+    public @ResponseBody
+    boolean deleteCustomer(@RequestParam(name = "id") String id) {
+        customerRepository.deleteById(Integer.parseInt(id));
+        return true;
+    }
+
     @GetMapping("/getDirector")
     public @ResponseBody
     List allD() {
@@ -257,9 +322,9 @@ public class MainController {
     
     @PostMapping("/addDirector")
     public @ResponseBody
-    boolean addDirector(@RequestParam(name = "IdUser") String IdUser) {
+    boolean addDirector(@RequestParam(name = "idUser") String idUser) {
         Director director = new Director();
-        User user = new User(Integer.parseInt(IdUser));
+        User user = new User(Integer.parseInt(idUser));
         director.setIdUser(user);
         directorRepository.save(director);
         return true;
@@ -268,9 +333,9 @@ public class MainController {
     @PostMapping("/updateDirector")
     public @ResponseBody
     boolean updateDirector(@RequestParam(name = "DirectorId") String directorId,
-            @RequestParam(name = "IdUser") String IdUser) {
+            @RequestParam(name = "idUser") String idUser) {
         Director director = directorRepository.findById(Integer.parseInt(directorId)).get();
-        User user = new User(Integer.parseInt(IdUser));
+        User user = new User(Integer.parseInt(idUser));
         director.setIdUser(user);
         directorRepository.save(director);
         return true;
@@ -278,9 +343,9 @@ public class MainController {
     
     @PostMapping("/deleteDirector")
     public @ResponseBody
-    boolean deleteDirector(@RequestParam(name = "IdUser") String IdUser) {
+    boolean deleteDirector(@RequestParam(name = "idUser") String idUser) {
         try {
-            int userIdInt = Integer.parseInt(IdUser);
+            int userIdInt = Integer.parseInt(idUser);
             System.out.println("Поиск директора с User ID: " + userIdInt);
 
             Iterable<Director> directors = directorRepository.findAll();
@@ -312,9 +377,9 @@ public class MainController {
 
     @PostMapping("/addSeller")
     public @ResponseBody
-    boolean addSeller(@RequestParam(name = "IdUser") String IdUser) {
+    boolean addSeller(@RequestParam(name = "idUser") String idUser) {
         Seller seller = new Seller();
-        User user = new User(Integer.parseInt(IdUser));
+        User user = new User(Integer.parseInt(idUser));
         seller.setIdUser(user);
         sellerRepository.save(seller);
         return true;
@@ -323,9 +388,9 @@ public class MainController {
     @PostMapping("/updateSeller")
     public @ResponseBody
     boolean updateSeller(@RequestParam(name = "SellerId") String sellerId,
-            @RequestParam(name = "IdUser") String IdUser) {
+            @RequestParam(name = "idUser") String idUser) {
         Seller seller = sellerRepository.findById(Integer.parseInt(sellerId)).get();
-        User user = new User(Integer.parseInt(IdUser));
+        User user = new User(Integer.parseInt(idUser));
         seller.setIdUser(user);
         sellerRepository.save(seller);
         return true;
@@ -333,9 +398,9 @@ public class MainController {
     
     @PostMapping("/deleteSeller")
     public @ResponseBody
-    boolean deleteSeller(@RequestParam(name = "IdUser") String IdUser) {
+    boolean deleteSeller(@RequestParam(name = "idUser") String idUser) {
         try {
-            int userIdInt = Integer.parseInt(IdUser);
+            int userIdInt = Integer.parseInt(idUser);
             System.out.println("Поиск продавца с таким User ID: " + userIdInt);
             Iterable<Seller> sellers = sellerRepository.findAll();
             for (Seller seller : sellers) {
@@ -365,9 +430,9 @@ public class MainController {
      
     @PostMapping("/addProductionmaster")
     public @ResponseBody
-    boolean addProductionmaster(@RequestParam(name = "IdUser") String IdUser) {
+    boolean addProductionmaster(@RequestParam(name = "idUser") String idUser) {
         Productionmaster pm = new Productionmaster();
-        User user = new User(Integer.parseInt(IdUser));
+        User user = new User(Integer.parseInt(idUser));
         pm.setIdUser(user);
         productionmasterRepository.save(pm);
         return true;
@@ -376,9 +441,9 @@ public class MainController {
     @PostMapping("/updateProductionmaster")
     public @ResponseBody
     boolean updateProductionmaster(@RequestParam(name = "ProductionmasterId") String productionmasterId,
-            @RequestParam(name = "IdUser") String IdUser) {
+            @RequestParam(name = "idUser") String idUser) {
         Productionmaster pm = productionmasterRepository.findById(Integer.parseInt(productionmasterId)).get();
-        User user = new User(Integer.parseInt(IdUser));
+        User user = new User(Integer.parseInt(idUser));
         pm.setIdUser(user);
         productionmasterRepository.save(pm);
         return true;
@@ -387,9 +452,9 @@ public class MainController {
     
     @PostMapping("/deleteProductionmaster")
     public @ResponseBody
-    boolean deleteProductionmaster(@RequestParam(name = "IdUser") String IdUser) {
+    boolean deleteProductionmaster(@RequestParam(name = "idUser") String idUser) {
         try {
-            int userIdInt = Integer.parseInt(IdUser);
+            int userIdInt = Integer.parseInt(idUser);
             System.out.println("Поиск мастера с таким User ID: " + userIdInt);
 
             Iterable<Productionmaster> pms = productionmasterRepository.findAll();

@@ -15,7 +15,6 @@ group\api\forms\Admin$7.class
 group\api\forms\Auto.class
 group\api\entity\CustomFrameOrder.class
 group\api\forms\Admin$10.class
-group\api\forms\Admin$11$1.class
 group\api\forms\Admin$14.class
 group\api\controller\ServletInitializer.class
 group\api\forms\Seller$1.class

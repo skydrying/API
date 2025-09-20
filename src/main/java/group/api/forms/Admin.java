@@ -657,19 +657,18 @@ public class Admin extends javax.swing.JFrame {
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
          OkHttpClient client = new OkHttpClient();
 
-        // Получаем ID выбранного пользователя из таблицы
         int selectedRow = jTable1.getSelectedRow();
         if (selectedRow == -1) {
-            System.out.println("Please select a user to update.");
-            return; // Выходим, если ничего не выбрано
+            System.out.println("Выберите пользователя для обновления данных");
+            return;
         }
 
-        // Получаем ID пользователя из таблицы
-        Integer userId = (Integer) jTable1.getValueAt(selectedRow, 0); // Предполагаем, что ID в первом столбце
+        Integer userId = (Integer) jTable1.getValueAt(selectedRow, 0);
 
         String lastname = jTextField2.getText();
         String firstname = jTextField1.getText();
         String middlename = jTextField3.getText();
+        String phone = jTextField4.getText();
 
         Date dateOfBirthDate = (Date) datePickerBirth.getModel().getValue();
         String dateofbirth = "";
@@ -679,30 +678,31 @@ public class Admin extends javax.swing.JFrame {
         }
 
         Date dateOfEmploymentDate = (Date) datePickerEmployment.getModel().getValue();
-        String employmentdate = "";
+        String dateOfEmployment = "";
         if (dateOfEmploymentDate != null) {
             SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd");
-            employmentdate = dateFormatter.format(dateOfEmploymentDate);
+            dateOfEmployment = dateFormatter.format(dateOfEmploymentDate);
         }
 
         String passportdata = jTextField6.getText();
         String snils = jTextField7.getText();
-        String username = jTextField8.getText();
-        String passwords = jTextField9.getText();
+        String login = jTextField8.getText();
+        String password = jTextField9.getText();
         String newPosition = (String) jComboBox1.getSelectedItem();
 
         MultipartBody.Builder builder = new MultipartBody.Builder()
                 .setType(MultipartBody.FORM)
-                .addFormDataPart("idUser", String.valueOf(userId)) // Добавляем ID пользователя
+                .addFormDataPart("id", String.valueOf(userId))
                 .addFormDataPart("LastName", lastname)
                 .addFormDataPart("FirstName", firstname)
                 .addFormDataPart("MiddleName", middlename)
+                .addFormDataPart("Phone", phone)
                 .addFormDataPart("DateOfBirth", dateofbirth)
-                .addFormDataPart("EmploymentDate", employmentdate)
+                .addFormDataPart("DateOfEmployment", dateOfEmployment)
                 .addFormDataPart("PassportData", passportdata)
-                .addFormDataPart("Snils", snils)
-                .addFormDataPart("Username", username)
-                .addFormDataPart("Password", passwords);
+                .addFormDataPart("SNILS", snils)
+                .addFormDataPart("Login", login)
+                .addFormDataPart("Password", password);
 
         if (selectedFile != null) {
             builder.addFormDataPart("PhotoLink", selectedFile.getName(),
@@ -711,7 +711,7 @@ public class Admin extends javax.swing.JFrame {
 
         RequestBody requestBody = builder.build();
         Request request = new Request.Builder()
-                .url("http://localhost:8080/aircompany/updateUser")
+                .url("http://localhost:9090/api/updateUser")
                 .post(requestBody)
                 .build();
 
@@ -727,43 +727,42 @@ public class Admin extends javax.swing.JFrame {
                     
                     checkUserPosition(userId);
 
-                    System.out.println("User  successfully updated!");
+                    System.out.println("Пользователь успешно обновлен");
                     
                     if (newPosition != null) {
                         addPositionToDatabase(userId, newPosition);
                     }
                 } else {
-                    System.out.println("Error updating user: " + response.message());
+                    System.out.println("Ошибка обновления: " + response.message());
                 }
             }
         });
     }
 
-// Метод для добавления должности в базу данных
     private void addPositionToDatabase(int userId, String position) {
         String method = "";
         switch (position) {
-            case "Член экипажа":
-                method = "addCrewmember";
+            case "Директор":
+                method = "addDirector";
                 break;
-            case "Служба поддержки клиентов":
-                method = "addCustomersupport";
+            case "Продавец":
+                method = "addSeller";
                 break;
-            case "Проверяющий персонал":
-                method = "addCheckinstaff";
+            case "Мастер":
+                method = "addProductionMaster";
                 break;
             default:
-                System.out.println("Unknown position for addition: " + position);
-                return; // Выход, если должность неизвестна
+                System.out.println("Неизвестная должность: " + position);
+                return;
         }
 
         OkHttpClient client = new OkHttpClient();
         RequestBody body = new FormBody.Builder()
-                .add("idUser", String.valueOf(userId)) // Используем "User  Id"
+                .add("idUser", String.valueOf(userId))
                 .build();
 
         Request request = new Request.Builder()
-                .url("http://localhost:8080/aircompany/" + method)
+                .url("http://localhost:9090/api/" + method)
                 .post(body)
                 .build();
 
@@ -776,24 +775,23 @@ public class Admin extends javax.swing.JFrame {
             @Override
             public void onResponse(Call call, Response response) throws IOException {
                 if (response.isSuccessful()) {
-                    System.out.println("Position successfully added!");
+                    System.out.println("Должность успешна добавлена!");
                 } else {
-                    System.out.println("Error adding position: " + response.message());
+                    System.out.println("Ошибка добавления: " + response.message());
                 }
             }
         });
     }
 
-// Проверка должности пользователя
     private void checkUserPosition(int userId) {
-        checkUserPositionCheckinstaff(userId);
+        checkUserPositionDerictor(userId);
     }
 
-    private void checkUserPositionCheckinstaff(int userId) {
+    private void checkUserPositionDerictor(int userId) {
         OkHttpClient client = new OkHttpClient();
 
         Request requestDirector = new Request.Builder()
-                .url("http://localhost:8080/aircompany/getCheckinstaff")
+                .url("http://localhost:9090/api/getDirector")
                 .get()
                 .build();
 
@@ -814,27 +812,27 @@ public class Admin extends javax.swing.JFrame {
                         if (director.has("id")) {
                             int directorUserId = director.get("id").getAsInt();
                             if (directorUserId == userId) {
-                                System.out.println("User with ID " + userId + " is a Checkinstaff.");
-                                deletePosition("Checkinstaff", String.valueOf(directorUserId)); // Удаляем должность директора
-                                return; // Выходим после удаления
+                                System.out.println("Пользователь с ID " + userId + " Директор.");
+                                deletePosition("Director", String.valueOf(directorUserId));
+                                return;
                             }
                         }
                     }
                 }
-                checkUserPositionCrewmember(userId); // Переход к следующей проверке
+                checkUserPositionSeller(userId);
             }
         });
     }
 
-    private void checkUserPositionCrewmember(int userId) {
+    private void checkUserPositionSeller(int userId) {
         OkHttpClient client = new OkHttpClient();
 
-        Request requestClassTeacher = new Request.Builder()
-                .url("http://localhost:8080/aircompany/getCrewmember")
+        Request requestSeller = new Request.Builder()
+                .url("http://localhost:9090/api/getSeller")
                 .get()
                 .build();
 
-        client.newCall(requestClassTeacher).enqueue(new Callback() {
+        client.newCall(requestSeller).enqueue(new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
                 e.printStackTrace();
@@ -847,31 +845,31 @@ public class Admin extends javax.swing.JFrame {
                     JsonArray classTeacherArray = JsonParser.parseString(jsonResponse).getAsJsonArray();
 
                     for (JsonElement element : classTeacherArray) {
-                        JsonObject classTeacher = element.getAsJsonObject();
-                        if (classTeacher.has("id")) {
-                            int classTeacherUserId = classTeacher.get("id").getAsInt();
-                            if (classTeacherUserId == userId) {
-                                System.out.println("Userwith ID " + userId + " is a Crewmember.");
-                                deletePosition("Crewmember", String.valueOf(classTeacherUserId)); // Удаляем должность классного руководителя
-                                return; // Выходим после удаления
+                        JsonObject seller = element.getAsJsonObject();
+                        if (seller.has("id")) {
+                            int sellerUserId = seller.get("id").getAsInt();
+                            if (sellerUserId == userId) {
+                                System.out.println("Пользователь с ID " + userId + " Продавец");
+                                deletePosition("Seller", String.valueOf(sellerUserId));
+                                return;
                             }
                         }
                     }
                 }
-                checkUserPositionCustomersupport(userId); // Переход к следующей проверке
+                checkUserPositionProductionmaster(userId);
             }
         });
     }
 
-    private void checkUserPositionCustomersupport(int userId) {
+    private void checkUserPositionProductionmaster(int userId) {
         OkHttpClient client = new OkHttpClient();
 
-        Request requestHeadOfDepartment = new Request.Builder()
-                .url("http://localhost:8080/aircompany/getCustomersupport")
+        Request requestProductionMaster = new Request.Builder()
+                .url("http://localhost:9090/api/getProductionMaster")
                 .get()
                 .build();
 
-        client.newCall(requestHeadOfDepartment).enqueue(new Callback() {
+        client.newCall(requestProductionMaster).enqueue(new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
                 e.printStackTrace();
@@ -881,16 +879,16 @@ public class Admin extends javax.swing.JFrame {
             public void onResponse(Call call, Response response) throws IOException {
                 if (response.isSuccessful()) {
                     String jsonResponse = response.body().string();
-                    JsonArray headOfDepartmentArray = JsonParser.parseString(jsonResponse).getAsJsonArray();
+                    JsonArray productionMasterArray = JsonParser.parseString(jsonResponse).getAsJsonArray();
 
-                    for (JsonElement element : headOfDepartmentArray) {
+                    for (JsonElement element : productionMasterArray) {
                         JsonObject head = element.getAsJsonObject();
                         if (head.has("id")) {
-                            int headUserId = head.get("id").getAsInt();
-                            if (headUserId == userId) {
-                                System.out.println("User with ID " + userId + " is a Customersupport.");
-                                deletePosition("Customersupport", String.valueOf(headUserId)); // Удаляем должность заведующего учебной частью
-                                return; // Выходим после удаления
+                            int productionMasterUserId = head.get("id").getAsInt();
+                            if (productionMasterUserId == userId) {
+                                System.out.println("Пользователь с ID " + userId + " Мастер");
+                                deletePosition("Productionmaster", String.valueOf(productionMasterUserId));
+                                return;
                             }
                         }
                     }
@@ -899,29 +897,27 @@ public class Admin extends javax.swing.JFrame {
         });
     }
 
-// Метод для удаления должности
     private void deletePosition(String position, String userId) {
         OkHttpClient client = new OkHttpClient();
         String method = "";
 
-        // Определяем метод на основе должности
-        if (position.equalsIgnoreCase("Checkinstaff")) {
-            method = "deleteCheckinstaff";
-        } else if (position.equalsIgnoreCase("Crewmember")) {
-            method = "deleteCrewmember";
-        } else if (position.equalsIgnoreCase("Customersupport")) {
-            method = "deleteCustomersupport";
+        if (position.equalsIgnoreCase("Director")) {
+            method = "deleteDirector";
+        } else if (position.equalsIgnoreCase("Seller")) {
+            method = "deleteSeller";
+        } else if (position.equalsIgnoreCase("Productionmaster")) {
+            method = "deleteProductionmaster";
         } else {
-            System.out.println("Unknown position for deletion: " + position);
-            return; // Выход, если должность неизвестна
+            System.out.println("Неизвестная должность для удаления: " + position);
+            return;
         }
 
         RequestBody body = new FormBody.Builder()
-                .add("UserId", userId) // Используем общий параметр "Id"
+                .add("idUser", userId)
                 .build();
 
         Request request = new Request.Builder()
-                .url("http://localhost:8080/aircompany/" + method) // Формируем URL на основе метода
+                .url("http://localhost:9090/api/" + method)
                 .post(body)
                 .build();
 
@@ -934,9 +930,9 @@ public class Admin extends javax.swing.JFrame {
             @Override
             public void onResponse(Call call, Response response) throws IOException {
                 if (response.isSuccessful()) {
-                    System.out.println("Position " + position + " successfully deleted for User ID " + userId);
+                    System.out.println("Должность " + position + " успешно для удаления User ID " + userId);
                 } else {
-                    System.out.println("Error deleting position " + position + ": " + response.code() + " - " + response.body().string());
+                    System.out.println("Ошибка удаления позиции " + position + ": " + response.code() + " - " + response.body().string());
                 }
             }
         });
@@ -991,13 +987,14 @@ public class Admin extends javax.swing.JFrame {
             jTextField1.setText((String) jTable1.getValueAt(selectedRow, 1));
             jTextField2.setText((String) jTable1.getValueAt(selectedRow, 2));
             jTextField3.setText((String) jTable1.getValueAt(selectedRow, 3));
-            jTextField6.setText((String) jTable1.getValueAt(selectedRow, 6));
-            jTextField7.setText((String) jTable1.getValueAt(selectedRow, 7));
-            jTextField8.setText((String) jTable1.getValueAt(selectedRow, 9));
-            jTextField9.setText((String) jTable1.getValueAt(selectedRow, 10));
+            jTextField4.setText((String) jTable1.getValueAt(selectedRow, 4));
+            jTextField6.setText((String) jTable1.getValueAt(selectedRow, 7));
+            jTextField7.setText((String) jTable1.getValueAt(selectedRow, 8));
+            jTextField8.setText((String) jTable1.getValueAt(selectedRow, 10));
+            jTextField9.setText((String) jTable1.getValueAt(selectedRow, 11));
 
-            String dateOfBirthString = (String) jTable1.getValueAt(selectedRow, 4);
-            String dateOfEmploymentString = (String) jTable1.getValueAt(selectedRow, 5);
+            String dateOfBirthString = (String) jTable1.getValueAt(selectedRow, 5);
+            String dateOfEmploymentString = (String) jTable1.getValueAt(selectedRow, 6);
 
             SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 
@@ -1025,7 +1022,7 @@ public class Admin extends javax.swing.JFrame {
                 }
             }
 
-            String imagePath = (String) jTable1.getValueAt(selectedRow, 8);
+            String imagePath = (String) jTable1.getValueAt(selectedRow, 9);
             if (imagePath != null && !imagePath.isEmpty()) {
                 ImageIcon icon = new ImageIcon(imagePath);
                 jLabel12.setIcon(icon);
@@ -1033,7 +1030,7 @@ public class Admin extends javax.swing.JFrame {
                 jLabel12.setIcon(null);
             }
 
-            String position = (String) jTable1.getValueAt(selectedRow, 11); 
+            String position = (String) jTable1.getValueAt(selectedRow, 12);
             if (position != null && !position.isEmpty()) {
                 jComboBox1.setSelectedItem(position); 
             } else {
