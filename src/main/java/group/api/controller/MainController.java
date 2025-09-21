@@ -88,6 +88,11 @@ public class MainController {
         return embroideryKitRepository.findAll();
     }
 
+    @GetMapping("/getConsumables")
+    public @ResponseBody
+    Iterable<Consumable> allConsumable() {
+        return consumableRepository.findAll();
+    }
 
     @PostMapping("/getAutarization")
     public @ResponseBody
@@ -544,6 +549,62 @@ public class MainController {
     public @ResponseBody
     boolean deleteEmbroideryKit(@RequestParam(name = "id") String id) {
         embroideryKitRepository.deleteById(Integer.parseInt(id));
+        return true;
+    }
+
+    @PostMapping("/addConsumable")
+    public @ResponseBody
+    ResponseEntity<Integer> addСonsumable(
+            @RequestParam(name = "Name") String name,
+            @RequestParam(name = "Description") String description,
+            @RequestParam(name = "Price") String price,
+            @RequestParam(name = "StockQuantity") String stockQuantity,
+            @RequestParam(name = "Unit") String unit) throws IOException {
+
+        Consumable consumable = new Consumable();
+
+        consumable.setName(name);
+        consumable.setDescription(description);
+        consumable.setPrice(price);
+        consumable.setStockQuantity(stockQuantity);
+        consumable.setUnit(unit);
+
+
+        Consumable savedConsumable = consumableRepository.save(consumable);
+        Integer consumableId = savedConsumable.getId();
+        return ResponseEntity.ok(consumableId);
+    }
+
+    @PostMapping("/updateConsumable")
+    public @ResponseBody
+    ResponseEntity<Integer> updateСonsumable(
+            @RequestParam(name = "id") String id,
+            @RequestParam(name = "Name") String name,
+            @RequestParam(name = "Description") String description,
+            @RequestParam(name = "Price") String price,
+            @RequestParam(name = "StockQuantity") String stockQuantity,
+            @RequestParam(name = "Unit") String unit) throws IOException {
+
+        Consumable consumable = consumableRepository.findById(Integer.parseInt(id)).orElse(null);
+        if (consumable == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        consumable.setName(name);
+        consumable.setDescription(description);
+        consumable.setPrice(price);
+        consumable.setStockQuantity(stockQuantity);
+        consumable.setUnit(unit);
+
+        Consumable updatedConsumable = consumableRepository.save(consumable);
+        Integer consumableId = updatedConsumable.getId();
+        return ResponseEntity.ok(consumableId);
+    }
+
+    @PostMapping("/deleteConsumable")
+    public @ResponseBody
+    boolean deleteСonsumable(@RequestParam(name = "id") String id) {
+        consumableRepository.deleteById(Integer.parseInt(id));
         return true;
     }
 

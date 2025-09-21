@@ -2,7 +2,6 @@
 <persistence version="2.1" xmlns="http://xmlns.jcp.org/xml/ns/persistence" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/persistence http://xmlns.jcp.org/xml/ns/persistence/persistence_2_1.xsd">
   <persistence-unit name="group.api_API_jar_1.0PU" transaction-type="RESOURCE_LOCAL">
     <provider>org.eclipse.persistence.jpa.PersistenceProvider</provider>
-    <class>group.api.entity.Consumable</class>
     <class>group.api.entity.CustomFrameOrder</class>
     <class>group.api.entity.FrameComponent</class>
     <class>group.api.entity.FrameMaterial</class>
@@ -16,6 +15,7 @@
     <class>group.api.entity.Productionmaster</class>
     <class>group.api.entity.Seller</class>
     <class>group.api.entity.EmbroideryKit</class>
+    <class>group.api.entity.Consumable</class>
     <properties>
       <property name="jakarta.persistence.jdbc.url" value="jdbc:mysql://localhost:3306/proekt"/>
       <property name="jakarta.persistence.jdbc.user" value="root"/>

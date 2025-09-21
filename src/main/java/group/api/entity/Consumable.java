@@ -6,7 +6,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.Lob;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
@@ -18,6 +17,7 @@ import java.io.Serializable;
     @NamedQuery(name = "Consumable.findAll", query = "SELECT c FROM Consumable c"),
     @NamedQuery(name = "Consumable.findById", query = "SELECT c FROM Consumable c WHERE c.id = :id"),
     @NamedQuery(name = "Consumable.findByName", query = "SELECT c FROM Consumable c WHERE c.name = :name"),
+    @NamedQuery(name = "Consumable.findByDescription", query = "SELECT c FROM Consumable c WHERE c.description = :description"),
     @NamedQuery(name = "Consumable.findByPrice", query = "SELECT c FROM Consumable c WHERE c.price = :price"),
     @NamedQuery(name = "Consumable.findByStockQuantity", query = "SELECT c FROM Consumable c WHERE c.stockQuantity = :stockQuantity"),
     @NamedQuery(name = "Consumable.findByUnit", query = "SELECT c FROM Consumable c WHERE c.unit = :unit")})
@@ -31,13 +31,12 @@ public class Consumable implements Serializable {
     private Integer id;
     @Column(name = "Name")
     private String name;
-    @Lob
     @Column(name = "Description")
     private String description;
     @Column(name = "Price")
-    private Integer price;
+    private String price;
     @Column(name = "StockQuantity")
-    private Integer stockQuantity;
+    private String stockQuantity;
     @Column(name = "Unit")
     private String unit;
 
@@ -72,19 +71,19 @@ public class Consumable implements Serializable {
         this.description = description;
     }
 
-    public Integer getPrice() {
+    public String getPrice() {
         return price;
     }
 
-    public void setPrice(Integer price) {
+    public void setPrice(String price) {
         this.price = price;
     }
 
-    public Integer getStockQuantity() {
+    public String getStockQuantity() {
         return stockQuantity;
     }
 
-    public void setStockQuantity(Integer stockQuantity) {
+    public void setStockQuantity(String stockQuantity) {
         this.stockQuantity = stockQuantity;
     }
 

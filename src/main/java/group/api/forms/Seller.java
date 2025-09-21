@@ -25,6 +25,7 @@ public class Seller extends javax.swing.JFrame {
         this.setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/group/forms/images/icon.png")));
         allCustomers();
         allEmbroiderykit();
+        allСonsumable();
     }
 
     private File selectedFile;
@@ -119,6 +120,49 @@ public class Seller extends javax.swing.JFrame {
         jTable1.setModel(new DefaultTableModel(tableData, tableHeaders));
     }
 
+    public void allСonsumable() {
+        DateFormat format = new java.text.SimpleDateFormat("yyyy-MM-dd");
+        Vector<String> tableHeaders = new Vector<>();
+        tableHeaders.add("Номер");
+        tableHeaders.add("Название");
+        tableHeaders.add("Примечание");
+        tableHeaders.add("Стоимость");
+        tableHeaders.add("Количество");
+        tableHeaders.add("Единица измерения");
+
+        Vector<Vector<Object>> tableData = new Vector<>();
+        OkHttpClient okHttpClient = new OkHttpClient();
+
+        Request request = new Request.Builder()
+                .url("http://localhost:9090/api/getConsumables")
+                .build();
+        try (Response response = okHttpClient.newCall(request).execute()) {
+            JSONArray ja = new JSONArray(response.body().string());
+            for (int i = 0; i < ja.length(); i++) {
+                Vector<Object> oneRow = new Vector<>();
+                JSONObject jo = ja.getJSONObject(i);
+
+                oneRow.add(jo.getInt("id"));
+                oneRow.add(jo.getString("name"));
+                oneRow.add(jo.getString("description"));
+                oneRow.add(jo.getString("price"));
+                oneRow.add(jo.getString("stockQuantity"));
+                oneRow.add(jo.getString("unit"));
+
+                tableData.add(oneRow);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        Vector<Object> oneRow = new Vector<>();
+        oneRow.add("");
+        oneRow.add("");
+        tableData.add(oneRow);
+
+        jTable2.setModel(new DefaultTableModel(tableData, tableHeaders));
+    }
+
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -152,25 +196,21 @@ public class Seller extends javax.swing.JFrame {
         jPanel2 = new javax.swing.JPanel();
         jScrollPane3 = new javax.swing.JScrollPane();
         jTable2 = new javax.swing.JTable();
-        jTextField15 = new javax.swing.JTextField();
-        jLabel13 = new javax.swing.JLabel();
-        jTextField16 = new javax.swing.JTextField();
-        jLabel16 = new javax.swing.JLabel();
-        jLabel17 = new javax.swing.JLabel();
-        jTextField17 = new javax.swing.JTextField();
-        jLabel18 = new javax.swing.JLabel();
-        jLabel19 = new javax.swing.JLabel();
-        jTextField18 = new javax.swing.JTextField();
-        jTextField19 = new javax.swing.JTextField();
-        jTextField20 = new javax.swing.JTextField();
-        jLabel20 = new javax.swing.JLabel();
-        jTextField21 = new javax.swing.JTextField();
-        jLabel21 = new javax.swing.JLabel();
         jButton11 = new javax.swing.JButton();
         jButton12 = new javax.swing.JButton();
         jButton13 = new javax.swing.JButton();
         jButton14 = new javax.swing.JButton();
         jButton15 = new javax.swing.JButton();
+        jTextField12 = new javax.swing.JTextField();
+        jLabel13 = new javax.swing.JLabel();
+        jLabel16 = new javax.swing.JLabel();
+        jTextField13 = new javax.swing.JTextField();
+        jLabel17 = new javax.swing.JLabel();
+        jTextField16 = new javax.swing.JTextField();
+        jLabel18 = new javax.swing.JLabel();
+        jTextField14 = new javax.swing.JTextField();
+        jLabel19 = new javax.swing.JLabel();
+        jTextField15 = new javax.swing.JTextField();
         jPanel3 = new javax.swing.JPanel();
         jScrollPane1 = new javax.swing.JScrollPane();
         jTable3 = new javax.swing.JTable();
@@ -220,6 +260,12 @@ public class Seller extends javax.swing.JFrame {
         jLabel5.setText("Примечание");
 
         jLabel9.setText("Стоимость");
+
+        jTextField10.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jTextField10ActionPerformed(evt);
+            }
+        });
 
         jLabel15.setText("Количество");
 
@@ -276,38 +322,38 @@ public class Seller extends javax.swing.JFrame {
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                             .addGroup(jPanel1Layout.createSequentialGroup()
-                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(jLabel9)
-                                    .addComponent(jLabel5, javax.swing.GroupLayout.Alignment.TRAILING))
+                                .addComponent(jLabel5)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED))
                             .addGroup(javax.swing.GroupLayout.Alignment.LEADING, jPanel1Layout.createSequentialGroup()
                                 .addComponent(jLabel4)
                                 .addGap(26, 26, 26)))
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
                             .addComponent(jTextField8, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jTextField9, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jTextField10, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addComponent(jTextField9, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE))
                         .addGap(34, 34, 34)
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(jPanel1Layout.createSequentialGroup()
                                 .addComponent(jLabel15)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(jTextField11, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addGap(12, 12, 12))
+                                .addComponent(jTextField11, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE))
                             .addGroup(jPanel1Layout.createSequentialGroup()
                                 .addComponent(jLabel10)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(jButton16)))))
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                .addComponent(jButton16))))
                     .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addGap(110, 110, 110)
+                        .addComponent(jLabel9)
+                        .addGap(18, 18, 18)
+                        .addComponent(jTextField10, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 126, Short.MAX_VALUE)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
                         .addComponent(jButton5, javax.swing.GroupLayout.PREFERRED_SIZE, 105, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(18, 18, 18)
                         .addComponent(jButton7, javax.swing.GroupLayout.PREFERRED_SIZE, 105, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(18, 18, 18)
                         .addComponent(jButton8, javax.swing.GroupLayout.PREFERRED_SIZE, 105, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
                         .addComponent(jButton9)
                         .addGap(106, 106, 106)))
                 .addGap(107, 107, 107)
@@ -343,11 +389,7 @@ public class Seller extends javax.swing.JFrame {
                                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                                             .addComponent(jTextField9, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                            .addComponent(jLabel5))
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                            .addComponent(jTextField10, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                            .addComponent(jLabel9)))
+                                            .addComponent(jLabel5)))
                                     .addGroup(jPanel1Layout.createSequentialGroup()
                                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                                             .addComponent(jTextField11, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -356,13 +398,17 @@ public class Seller extends javax.swing.JFrame {
                                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                                             .addComponent(jLabel10)
                                             .addComponent(jButton16))))
-                                .addGap(78, 78, 78)
+                                .addGap(18, 18, 18)
+                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                    .addComponent(jTextField10, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(jLabel9))
+                                .addGap(66, 66, 66)
                                 .addComponent(jButton10))
                             .addGroup(jPanel1Layout.createSequentialGroup()
                                 .addComponent(jLabel11, javax.swing.GroupLayout.PREFERRED_SIZE, 24, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                                 .addComponent(jLabel12, javax.swing.GroupLayout.PREFERRED_SIZE, 119, javax.swing.GroupLayout.PREFERRED_SIZE)))))
-                .addGap(0, 24, Short.MAX_VALUE))
+                .addGap(0, 17, Short.MAX_VALUE))
         );
 
         jTabbedPane1.addTab("Вышивка", jPanel1);
@@ -384,38 +430,6 @@ public class Seller extends javax.swing.JFrame {
             }
         });
         jScrollPane3.setViewportView(jTable2);
-
-        jLabel13.setText("Фамилия");
-
-        jLabel16.setText("Имя");
-
-        jLabel17.setText("Отчество");
-
-        jLabel18.setText("Телефон");
-
-        jLabel19.setText("Почта");
-
-        jTextField18.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jTextField18ActionPerformed(evt);
-            }
-        });
-
-        jTextField20.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jTextField20ActionPerformed(evt);
-            }
-        });
-
-        jLabel20.setText("Скидка");
-
-        jTextField21.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jTextField21ActionPerformed(evt);
-            }
-        });
-
-        jLabel21.setText("Сумма покупок");
 
         jButton11.setText("Добавить");
         jButton11.addActionListener(new java.awt.event.ActionListener() {
@@ -452,112 +466,109 @@ public class Seller extends javax.swing.JFrame {
             }
         });
 
+        jLabel13.setText("Название");
+
+        jLabel16.setText("Примечание");
+
+        jLabel17.setText("Единица измерения");
+
+        jTextField16.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jTextField16ActionPerformed(evt);
+            }
+        });
+
+        jLabel18.setText("Стоимость");
+
+        jLabel19.setText("Количество");
+
         javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
         jPanel2.setLayout(jPanel2Layout);
         jPanel2Layout.setHorizontalGroup(
             jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addComponent(jScrollPane3)
             .addGroup(jPanel2Layout.createSequentialGroup()
+                .addContainerGap()
                 .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel2Layout.createSequentialGroup()
-                        .addContainerGap()
-                        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
-                                .addGroup(javax.swing.GroupLayout.Alignment.LEADING, jPanel2Layout.createSequentialGroup()
-                                    .addComponent(jLabel13)
-                                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                    .addComponent(jTextField15, javax.swing.GroupLayout.DEFAULT_SIZE, 100, Short.MAX_VALUE))
-                                .addGroup(javax.swing.GroupLayout.Alignment.LEADING, jPanel2Layout.createSequentialGroup()
-                                    .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                        .addComponent(jLabel17)
-                                        .addComponent(jLabel16, javax.swing.GroupLayout.Alignment.TRAILING))
-                                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                    .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                                        .addComponent(jTextField16, javax.swing.GroupLayout.DEFAULT_SIZE, 100, Short.MAX_VALUE)
-                                        .addComponent(jTextField17))))
-                            .addGroup(jPanel2Layout.createSequentialGroup()
-                                .addComponent(jButton15)
-                                .addGap(106, 106, 106)))
-                        .addGap(38, 38, 38)
                         .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jLabel18)
+                            .addComponent(jButton15)
                             .addGroup(jPanel2Layout.createSequentialGroup()
-                                .addGap(3, 3, 3)
+                                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                                    .addGroup(jPanel2Layout.createSequentialGroup()
+                                        .addComponent(jLabel16)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED))
+                                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, jPanel2Layout.createSequentialGroup()
+                                        .addComponent(jLabel13)
+                                        .addGap(26, 26, 26)))
                                 .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(jLabel20)
-                                    .addComponent(jLabel19))))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                            .addComponent(jTextField18, javax.swing.GroupLayout.DEFAULT_SIZE, 100, Short.MAX_VALUE)
-                            .addComponent(jTextField19))
-                        .addGap(106, 106, 106)
+                                    .addGroup(jPanel2Layout.createSequentialGroup()
+                                        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                                            .addComponent(jTextField12, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                            .addComponent(jTextField13, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                        .addGap(34, 34, 34)
+                                        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                                            .addGroup(jPanel2Layout.createSequentialGroup()
+                                                .addComponent(jLabel18)
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                .addComponent(jTextField14, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                            .addGroup(jPanel2Layout.createSequentialGroup()
+                                                .addComponent(jLabel19)
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                .addComponent(jTextField15, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE))))
+                                    .addGroup(jPanel2Layout.createSequentialGroup()
+                                        .addComponent(jLabel17)
+                                        .addGap(18, 18, 18)
+                                        .addComponent(jTextField16, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)))))
+                        .addGap(93, 93, 93)
                         .addComponent(jButton11, javax.swing.GroupLayout.PREFERRED_SIZE, 105, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(18, 18, 18)
                         .addComponent(jButton12, javax.swing.GroupLayout.PREFERRED_SIZE, 105, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(18, 18, 18)
                         .addComponent(jButton13, javax.swing.GroupLayout.PREFERRED_SIZE, 105, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addGroup(jPanel2Layout.createSequentialGroup()
-                        .addGap(183, 183, 183)
-                        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addComponent(jTextField20, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addGroup(jPanel2Layout.createSequentialGroup()
-                                .addComponent(jLabel21)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(jTextField21, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                        .addGap(220, 220, 220)
+                        .addGap(635, 635, 635)
                         .addComponent(jButton14)))
                 .addContainerGap(564, Short.MAX_VALUE))
         );
         jPanel2Layout.setVerticalGroup(
             jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel2Layout.createSequentialGroup()
-                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 473, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(28, 28, 28)
+                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel2Layout.createSequentialGroup()
-                        .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 473, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                .addComponent(jButton11, javax.swing.GroupLayout.PREFERRED_SIZE, 37, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addComponent(jButton13, javax.swing.GroupLayout.PREFERRED_SIZE, 37, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addGroup(jPanel2Layout.createSequentialGroup()
+                                .addComponent(jButton12, javax.swing.GroupLayout.PREFERRED_SIZE, 37, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(28, 28, 28)
+                                .addComponent(jButton14)))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED, 82, Short.MAX_VALUE)
+                        .addComponent(jButton15))
+                    .addGroup(jPanel2Layout.createSequentialGroup()
                         .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(jPanel2Layout.createSequentialGroup()
                                 .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                    .addComponent(jTextField15, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(jTextField12, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                                     .addComponent(jLabel13))
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                                 .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                    .addComponent(jTextField16, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(jLabel16)))
-                            .addGroup(jPanel2Layout.createSequentialGroup()
-                                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                    .addComponent(jTextField19, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(jLabel18))
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                    .addComponent(jTextField18, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(jLabel19)))))
-                    .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jButton11, javax.swing.GroupLayout.PREFERRED_SIZE, 37, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jButton13, javax.swing.GroupLayout.PREFERRED_SIZE, 37, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addComponent(jButton12, javax.swing.GroupLayout.PREFERRED_SIZE, 37, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(jPanel2Layout.createSequentialGroup()
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(jTextField13, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(jLabel16)
+                                    .addComponent(jTextField15, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(jLabel19)))
                             .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                .addComponent(jTextField17, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addComponent(jLabel17))
-                            .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                .addComponent(jTextField20, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addComponent(jLabel20)))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addComponent(jTextField14, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addComponent(jLabel18)))
+                        .addGap(18, 18, 18)
                         .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jTextField21, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jLabel21))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 62, Short.MAX_VALUE)
-                        .addComponent(jButton15)
-                        .addContainerGap())
-                    .addGroup(jPanel2Layout.createSequentialGroup()
-                        .addGap(25, 25, 25)
-                        .addComponent(jButton14)
-                        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
+                            .addComponent(jTextField16, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jLabel17))
+                        .addGap(0, 0, Short.MAX_VALUE)))
+                .addContainerGap())
         );
 
         jTabbedPane1.addTab("Фурнитура", jPanel2);
@@ -739,12 +750,13 @@ public class Seller extends javax.swing.JFrame {
                 .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel3Layout.createSequentialGroup()
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jTextField3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jLabel3)
+                        .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                                 .addComponent(jTextField6, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addComponent(jLabel6)))
+                                .addComponent(jLabel6))
+                            .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                .addComponent(jTextField3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addComponent(jLabel3)))
                         .addGap(18, 18, 18)
                         .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(jTextField7, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -786,161 +798,14 @@ public class Seller extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    private void jTable3MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jTable3MouseClicked
-        int selectedRow = jTable3.getSelectedRow();
-        if (selectedRow != -1) {
+    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
+        dispose();
+        new Auto().setVisible(true);
+    }//GEN-LAST:event_jButton1ActionPerformed
 
-            jTextField1.setText((String) jTable3.getValueAt(selectedRow, 1));
-            jTextField2.setText((String) jTable3.getValueAt(selectedRow, 2));
-            jTextField3.setText((String) jTable3.getValueAt(selectedRow, 3));
-            jTextField4.setText((String) jTable3.getValueAt(selectedRow, 4));
-            jTextField5.setText((String) jTable3.getValueAt(selectedRow, 5));
-            jTextField6.setText((String) jTable3.getValueAt(selectedRow, 6));
-            jTextField7.setText((String) jTable3.getValueAt(selectedRow, 7));
-
-        }
-    }//GEN-LAST:event_jTable3MouseClicked
-
-    private void jTextField5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField5ActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jTextField5ActionPerformed
-
-    private void jTextField7ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField7ActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jTextField7ActionPerformed
-
-    private void jTextField6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField6ActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jTextField6ActionPerformed
-
-    private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
-        OkHttpClient client = new OkHttpClient();
-
-        String lastname = jTextField1.getText();
-        String firstname = jTextField2.getText();
-        String middlename = jTextField3.getText();
-        String phone = jTextField4.getText();
-        String email = jTextField5.getText();
-        String discount = jTextField6.getText();
-        String totalPurchases = jTextField7.getText();
-
-        MultipartBody.Builder builder = new MultipartBody.Builder()
-                .setType(MultipartBody.FORM)
-                .addFormDataPart("LastName", lastname)
-                .addFormDataPart("FirstName", firstname)
-                .addFormDataPart("MiddleName", middlename)
-                .addFormDataPart("Phone", phone)
-                .addFormDataPart("Email", email)
-                .addFormDataPart("Discount", discount)
-                .addFormDataPart("TotalPurchases", totalPurchases);
-
-
-        RequestBody requestBody = builder.build();
-
-        Request request = new Request.Builder()
-                .url("http://localhost:9090/api/addCustomer")
-                .post(requestBody)
-                .build();
-
-        client.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(Call call, IOException e) {
-                e.printStackTrace();
-            }
-
-            @Override
-            public void onResponse(Call call, Response response) throws IOException {
-                if (response.isSuccessful()) {
-                    try {
-                        String responseData = response.body().string();
-                        JSONObject jsonResponse = new JSONObject();
-                        jsonResponse.put("id", responseData);
-
-                        int userId = jsonResponse.getInt("id");
-
-                        System.out.println("Пользователь успешно добавлен! ID: " + userId);
-                        allCustomers();
-                    } catch (JSONException e) {
-                        System.err.println("Ошибка при парсинге JSON: " + e.getMessage());
-                        e.printStackTrace();
-                    } catch (IOException e) {
-                        System.err.println("Ошибка ввода/вывода: " + e.getMessage());
-                        e.printStackTrace();
-                    }
-                } else {
-                    System.err.println("Ошибка при добавлении пользователя: " + response.message());
-                }
-            }
-
-        });
-    }//GEN-LAST:event_jButton2ActionPerformed
-
-    private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
-        OkHttpClient client = new OkHttpClient();
-
-        int selectedRow = jTable3.getSelectedRow();
-        if (selectedRow == -1) {
-            System.out.println("Выберите пользователя для обновления данных");
-            return;
-        }
-
-        Integer customerId = (Integer) jTable3.getValueAt(selectedRow, 0);
-
-        String lastname = jTextField1.getText();
-        String firstname = jTextField2.getText();
-        String middlename = jTextField3.getText();
-        String phone = jTextField4.getText();
-        String email = jTextField5.getText();
-        String discount = jTextField6.getText();
-        String totalPurchases = jTextField7.getText();
-
-        MultipartBody.Builder builder = new MultipartBody.Builder()
-                .setType(MultipartBody.FORM)
-                .addFormDataPart("id", String.valueOf(customerId))
-                .addFormDataPart("LastName", lastname)
-                .addFormDataPart("FirstName", firstname)
-                .addFormDataPart("MiddleName", middlename)
-                .addFormDataPart("Phone", phone)
-                .addFormDataPart("Email", email)
-                .addFormDataPart("Discount", discount)
-                .addFormDataPart("TotalPurchases", totalPurchases);
-
-        RequestBody requestBody = builder.build();
-
-        Request request = new Request.Builder()
-                .url("http://localhost:9090/api/updateCustomer")
-                .post(requestBody)
-                .build();
-
-        client.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(Call call, IOException e) {
-                e.printStackTrace();
-            }
-
-            @Override
-            public void onResponse(Call call, Response response) throws IOException {
-                if (response.isSuccessful()) {
-                    try {
-                        String responseData = response.body().string();
-                        int customerId = Integer.parseInt(responseData);
-
-                        System.out.println("Пользователь успешно обновлен! ID: " + customerId);
-                        allCustomers();
-                    } catch (NumberFormatException e) {
-                        System.err.println("Ошибка при парсинге ID: " + e.getMessage());
-                        e.printStackTrace();
-                    } catch (IOException e) {
-                        System.err.println("Ошибка ввода/вывода: " + e.getMessage());
-                        e.printStackTrace();
-                    }
-                } else {
-                    System.err.println("Ошибка при обновлении пользователя: " + response.message());
-                }
-            }
-
-        });
-    }//GEN-LAST:event_jButton3ActionPerformed
+    private void jButton6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton6ActionPerformed
+        allCustomers();
+    }//GEN-LAST:event_jButton6ActionPerformed
 
     private void jButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton4ActionPerformed
         int selectedRow = jTable3.getSelectedRow();
@@ -975,52 +840,42 @@ public class Seller extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_jButton4ActionPerformed
 
-    private void jTable1MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jTable1MouseClicked
-        int selectedRow = jTable1.getSelectedRow();
-        if (selectedRow != -1) {
-
-            jTextField8.setText((String) jTable1.getValueAt(selectedRow, 1));
-            jTextField9.setText((String) jTable1.getValueAt(selectedRow, 2));
-            jTextField10.setText((String) jTable1.getValueAt(selectedRow, 3));
-            jTextField11.setText((String) jTable1.getValueAt(selectedRow, 4));
-
-            String imagePath = (String) jTable1.getValueAt(selectedRow, 5);
-            if (imagePath != null && !imagePath.isEmpty()) {
-                ImageIcon icon = new ImageIcon(imagePath);
-                jLabel12.setIcon(icon);
-            } else {
-                jLabel12.setIcon(null);
-            }
-
-        }
-    }//GEN-LAST:event_jTable1MouseClicked
-
-    private void jButton5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton5ActionPerformed
+    private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
         OkHttpClient client = new OkHttpClient();
 
-        String name = jTextField8.getText();
-        String description = jTextField9.getText();
-        String price = jTextField10.getText();
-        String stockQuantity = jTextField11.getText();
+        int selectedRow = jTable3.getSelectedRow();
+        if (selectedRow == -1) {
+            System.out.println("Выберите пользователя для обновления данных");
+            return;
+        }
+
+        Integer customerId = (Integer) jTable3.getValueAt(selectedRow, 0);
+
+        String lastname = jTextField1.getText();
+        String firstname = jTextField2.getText();
+        String middlename = jTextField3.getText();
+        String phone = jTextField4.getText();
+        String email = jTextField5.getText();
+        String discount = jTextField6.getText();
+        String totalPurchases = jTextField7.getText();
 
         MultipartBody.Builder builder = new MultipartBody.Builder()
-                .setType(MultipartBody.FORM)
-                .addFormDataPart("Name", name)
-                .addFormDataPart("Description", description)
-                .addFormDataPart("Price", price)
-                .addFormDataPart("StockQuantity", stockQuantity);
-
-        if (selectedFile != null) {
-            builder.addFormDataPart("Image", selectedFile.getName(),
-                    RequestBody.create(selectedFile, MediaType.parse("image/png")));
-        }
+        .setType(MultipartBody.FORM)
+        .addFormDataPart("id", String.valueOf(customerId))
+        .addFormDataPart("LastName", lastname)
+        .addFormDataPart("FirstName", firstname)
+        .addFormDataPart("MiddleName", middlename)
+        .addFormDataPart("Phone", phone)
+        .addFormDataPart("Email", email)
+        .addFormDataPart("Discount", discount)
+        .addFormDataPart("TotalPurchases", totalPurchases);
 
         RequestBody requestBody = builder.build();
 
         Request request = new Request.Builder()
-                .url("http://localhost:9090/api/addEmbroideryKit")
-                .post(requestBody)
-                .build();
+        .url("http://localhost:9090/api/updateCustomer")
+        .post(requestBody)
+        .build();
 
         client.newCall(request).enqueue(new Callback() {
             @Override
@@ -1031,49 +886,187 @@ public class Seller extends javax.swing.JFrame {
             @Override
             public void onResponse(Call call, Response response) throws IOException {
                 if (response.isSuccessful()) {
-                    String responseData = response.body().string();
-                    System.out.println("Набор вышивки успешно добавлен! Ответ сервера: " + responseData);
-                    allEmbroiderykit();
+                    try {
+                        String responseData = response.body().string();
+                        int customerId = Integer.parseInt(responseData);
+
+                        System.out.println("Пользователь успешно обновлен! ID: " + customerId);
+                        allCustomers();
+                    } catch (NumberFormatException e) {
+                        System.err.println("Ошибка при парсинге ID: " + e.getMessage());
+                        e.printStackTrace();
+                    } catch (IOException e) {
+                        System.err.println("Ошибка ввода/вывода: " + e.getMessage());
+                        e.printStackTrace();
+                    }
                 } else {
-                    System.out.println("Ошибка при добавлении набора вышивки: " + response.message());
+                    System.err.println("Ошибка при обновлении пользователя: " + response.message());
                 }
             }
-        });
-    }//GEN-LAST:event_jButton5ActionPerformed
 
-    private void jButton7ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton7ActionPerformed
+        });
+    }//GEN-LAST:event_jButton3ActionPerformed
+
+    private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
         OkHttpClient client = new OkHttpClient();
 
-        int selectedRow = jTable1.getSelectedRow();
+        String lastname = jTextField1.getText();
+        String firstname = jTextField2.getText();
+        String middlename = jTextField3.getText();
+        String phone = jTextField4.getText();
+        String email = jTextField5.getText();
+        String discount = jTextField6.getText();
+        String totalPurchases = jTextField7.getText();
+
+        MultipartBody.Builder builder = new MultipartBody.Builder()
+        .setType(MultipartBody.FORM)
+        .addFormDataPart("LastName", lastname)
+        .addFormDataPart("FirstName", firstname)
+        .addFormDataPart("MiddleName", middlename)
+        .addFormDataPart("Phone", phone)
+        .addFormDataPart("Email", email)
+        .addFormDataPart("Discount", discount)
+        .addFormDataPart("TotalPurchases", totalPurchases);
+
+        RequestBody requestBody = builder.build();
+
+        Request request = new Request.Builder()
+        .url("http://localhost:9090/api/addCustomer")
+        .post(requestBody)
+        .build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                e.printStackTrace();
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    try {
+                        String responseData = response.body().string();
+                        JSONObject jsonResponse = new JSONObject();
+                        jsonResponse.put("id", responseData);
+
+                        int userId = jsonResponse.getInt("id");
+
+                        System.out.println("Пользователь успешно добавлен! ID: " + userId);
+                        allCustomers();
+                    } catch (JSONException e) {
+                        System.err.println("Ошибка при парсинге JSON: " + e.getMessage());
+                        e.printStackTrace();
+                    } catch (IOException e) {
+                        System.err.println("Ошибка ввода/вывода: " + e.getMessage());
+                        e.printStackTrace();
+                    }
+                } else {
+                    System.err.println("Ошибка при добавлении пользователя: " + response.message());
+                }
+            }
+
+        });
+    }//GEN-LAST:event_jButton2ActionPerformed
+
+    private void jTextField7ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField7ActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jTextField7ActionPerformed
+
+    private void jTextField6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField6ActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jTextField6ActionPerformed
+
+    private void jTextField5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField5ActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jTextField5ActionPerformed
+
+    private void jTable3MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jTable3MouseClicked
+        int selectedRow = jTable3.getSelectedRow();
+        if (selectedRow != -1) {
+
+            jTextField1.setText((String) jTable3.getValueAt(selectedRow, 1));
+            jTextField2.setText((String) jTable3.getValueAt(selectedRow, 2));
+            jTextField3.setText((String) jTable3.getValueAt(selectedRow, 3));
+            jTextField4.setText((String) jTable3.getValueAt(selectedRow, 4));
+            jTextField5.setText((String) jTable3.getValueAt(selectedRow, 5));
+            jTextField6.setText((String) jTable3.getValueAt(selectedRow, 6));
+            jTextField7.setText((String) jTable3.getValueAt(selectedRow, 7));
+
+        }
+    }//GEN-LAST:event_jTable3MouseClicked
+
+    private void jButton15ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton15ActionPerformed
+        dispose();
+        new Auto().setVisible(true);
+    }//GEN-LAST:event_jButton15ActionPerformed
+
+    private void jButton14ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton14ActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jButton14ActionPerformed
+
+    private void jButton13ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton13ActionPerformed
+        int selectedRow = jTable2.getSelectedRow();
+        if (selectedRow != -1) {
+            int consumableId = (int) jTable2.getValueAt(selectedRow, 0);
+
+            OkHttpClient client = new OkHttpClient();
+
+            Request request = new Request.Builder()
+                    .url("http://localhost:9090/api/deleteConsumable")
+                    .post(RequestBody.create(MediaType.parse("application/x-www-form-urlencoded"), "id=" + consumableId))
+                    .build();
+
+            client.newCall(request).enqueue(new Callback() {
+                @Override
+                public void onFailure(Call call, IOException e) {
+                    e.printStackTrace();
+                }
+
+                @Override
+                public void onResponse(Call call, Response response) throws IOException {
+                    if (response.isSuccessful()) {
+                        System.out.println("Фурнитура успешно удалена!");
+                        allСonsumable();
+                    } else {
+                        System.out.println("Ошибка при удалении фурнитуры: " + response.message());
+                    }
+                }
+            });
+        } else {
+            System.out.println("Пожалуйста, выберите набор вышивки для удаления");
+        }
+    }//GEN-LAST:event_jButton13ActionPerformed
+
+    private void jButton12ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton12ActionPerformed
+        OkHttpClient client = new OkHttpClient();
+
+        int selectedRow = jTable2.getSelectedRow();
         if (selectedRow == -1) {
             System.out.println("Выберите набор вышивки для обновления данных");
             return;
         }
 
-        Integer embroideryKitId = (Integer) jTable1.getValueAt(selectedRow, 0);
+        Integer consumableId = (Integer) jTable2.getValueAt(selectedRow, 0);
 
-        String name = jTextField8.getText();
-        String description = jTextField9.getText();
-        String price = jTextField10.getText();
-        String stockQuantity = jTextField11.getText();
+        String name = jTextField12.getText();
+        String description = jTextField13.getText();
+        String price = jTextField14.getText();
+        String stockQuantity = jTextField15.getText();
+        String unit = jTextField16.getText();
 
         MultipartBody.Builder builder = new MultipartBody.Builder()
                 .setType(MultipartBody.FORM)
-                .addFormDataPart("id", String.valueOf(embroideryKitId))
+                .addFormDataPart("id", String.valueOf(consumableId))
                 .addFormDataPart("Name", name)
                 .addFormDataPart("Description", description)
                 .addFormDataPart("Price", price)
-                .addFormDataPart("StockQuantity", stockQuantity);
-
-        if (selectedFile != null) {
-            builder.addFormDataPart("Image", selectedFile.getName(),
-                    RequestBody.create(selectedFile, MediaType.parse("image/png")));
-        }
+                .addFormDataPart("StockQuantity", stockQuantity)
+                .addFormDataPart("Unit", unit);
 
         RequestBody requestBody = builder.build();
 
         Request request = new Request.Builder()
-                .url("http://localhost:9090/api/updateEmbroideryKit")
+                .url("http://localhost:9090/api/updateConsumable")
                 .post(requestBody)
                 .build();
 
@@ -1087,14 +1080,85 @@ public class Seller extends javax.swing.JFrame {
             public void onResponse(Call call, Response response) throws IOException {
                 if (response.isSuccessful()) {
                     String responseData = response.body().string();
-                    System.out.println("Набор вышивки успешно обновлён! ID: " + responseData);
-                    allEmbroiderykit();
+                    System.out.println("Фурнитура успешно обновлена! ID: " + responseData);
+                    allСonsumable();
                 } else {
-                    System.out.println("Ошибка при обновлении набора вышивки: " + response.message());
+                    System.out.println("Ошибка при обновлении фурнитуры: " + response.message());
                 }
             }
         });
-    }//GEN-LAST:event_jButton7ActionPerformed
+    }//GEN-LAST:event_jButton12ActionPerformed
+
+    private void jButton11ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton11ActionPerformed
+        OkHttpClient client = new OkHttpClient();
+
+        String name = jTextField12.getText();
+        String description = jTextField13.getText();
+        String price = jTextField14.getText();
+        String stockQuantity = jTextField15.getText();
+        String unit = jTextField16.getText();
+
+        MultipartBody.Builder builder = new MultipartBody.Builder()
+                .setType(MultipartBody.FORM)
+                .addFormDataPart("Name", name)
+                .addFormDataPart("Description", description)
+                .addFormDataPart("Price", price)
+                .addFormDataPart("StockQuantity", stockQuantity)
+                .addFormDataPart("Unit", unit);
+
+        RequestBody requestBody = builder.build();
+
+        Request request = new Request.Builder()
+                .url("http://localhost:9090/api/addConsumable")
+                .post(requestBody)
+                .build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                e.printStackTrace();
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    String responseData = response.body().string();
+                    System.out.println("Фурнитура успешно добавлена! Ответ сервера: " + responseData);
+                    allСonsumable();
+                } else {
+                    System.out.println("Ошибка при добавлении фурнитуры: " + response.message());
+                }
+            }
+        });
+    }//GEN-LAST:event_jButton11ActionPerformed
+
+    private void jTable2MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jTable2MouseClicked
+        int selectedRow = jTable2.getSelectedRow();
+        if (selectedRow != -1) {
+
+            jTextField12.setText((String) jTable2.getValueAt(selectedRow, 1));
+            jTextField13.setText((String) jTable2.getValueAt(selectedRow, 2));
+            jTextField14.setText((String) jTable2.getValueAt(selectedRow, 3));
+            jTextField15.setText((String) jTable2.getValueAt(selectedRow, 4));
+            jTextField16.setText((String) jTable2.getValueAt(selectedRow, 5));
+
+        }
+    }//GEN-LAST:event_jTable2MouseClicked
+
+    private void jButton16ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton16ActionPerformed
+        JFileChooser fileChooser = new JFileChooser();
+        int ret = fileChooser.showDialog(null, "Выбрать файл");
+        if (ret == JFileChooser.APPROVE_OPTION) {
+            selectedFile = fileChooser.getSelectedFile();
+            ImageIcon icon = new ImageIcon(selectedFile.getPath());
+            jLabel12.setIcon(icon);
+        }
+    }//GEN-LAST:event_jButton16ActionPerformed
+
+    private void jButton10ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton10ActionPerformed
+        dispose();
+        new Auto().setVisible(true);
+    }//GEN-LAST:event_jButton10ActionPerformed
 
     private void jButton8ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton8ActionPerformed
         int selectedRow = jTable1.getSelectedRow();
@@ -1104,9 +1168,9 @@ public class Seller extends javax.swing.JFrame {
             OkHttpClient client = new OkHttpClient();
 
             Request request = new Request.Builder()
-                    .url("http://localhost:9090/api/deleteEmbroideryKit")
-                    .post(RequestBody.create(MediaType.parse("application/x-www-form-urlencoded"), "id=" + embroideryKitId))
-                    .build();
+            .url("http://localhost:9090/api/deleteEmbroideryKit")
+            .post(RequestBody.create(MediaType.parse("application/x-www-form-urlencoded"), "id=" + embroideryKitId))
+            .build();
 
             client.newCall(request).enqueue(new Callback() {
                 @Override
@@ -1129,66 +1193,134 @@ public class Seller extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_jButton8ActionPerformed
 
-    private void jButton6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton6ActionPerformed
-        allCustomers();
-    }//GEN-LAST:event_jButton6ActionPerformed
+    private void jButton7ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton7ActionPerformed
+        OkHttpClient client = new OkHttpClient();
 
-    private void jTable2MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jTable2MouseClicked
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jTable2MouseClicked
-
-    private void jTextField18ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField18ActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jTextField18ActionPerformed
-
-    private void jTextField20ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField20ActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jTextField20ActionPerformed
-
-    private void jTextField21ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField21ActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jTextField21ActionPerformed
-
-    private void jButton11ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton11ActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jButton11ActionPerformed
-
-    private void jButton12ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton12ActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jButton12ActionPerformed
-
-    private void jButton13ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton13ActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jButton13ActionPerformed
-
-    private void jButton14ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton14ActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jButton14ActionPerformed
-
-    private void jButton16ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton16ActionPerformed
-        JFileChooser fileChooser = new JFileChooser();
-        int ret = fileChooser.showDialog(null, "Выбрать файл");
-        if (ret == JFileChooser.APPROVE_OPTION) {
-            selectedFile = fileChooser.getSelectedFile();
-            ImageIcon icon = new ImageIcon(selectedFile.getPath());
-            jLabel12.setIcon(icon);
+        int selectedRow = jTable1.getSelectedRow();
+        if (selectedRow == -1) {
+            System.out.println("Выберите набор вышивки для обновления данных");
+            return;
         }
-    }//GEN-LAST:event_jButton16ActionPerformed
 
-    private void jButton10ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton10ActionPerformed
-        dispose();
-        new Auto().setVisible(true);
-    }//GEN-LAST:event_jButton10ActionPerformed
+        Integer embroideryKitId = (Integer) jTable1.getValueAt(selectedRow, 0);
 
-    private void jButton15ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton15ActionPerformed
-        dispose();
-        new Auto().setVisible(true);
-    }//GEN-LAST:event_jButton15ActionPerformed
+        String name = jTextField8.getText();
+        String description = jTextField9.getText();
+        String price = jTextField10.getText();
+        String stockQuantity = jTextField11.getText();
 
-    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        dispose();
-        new Auto().setVisible(true);
-    }//GEN-LAST:event_jButton1ActionPerformed
+        MultipartBody.Builder builder = new MultipartBody.Builder()
+        .setType(MultipartBody.FORM)
+        .addFormDataPart("id", String.valueOf(embroideryKitId))
+        .addFormDataPart("Name", name)
+        .addFormDataPart("Description", description)
+        .addFormDataPart("Price", price)
+        .addFormDataPart("StockQuantity", stockQuantity);
+
+        if (selectedFile != null) {
+            builder.addFormDataPart("Image", selectedFile.getName(),
+                RequestBody.create(selectedFile, MediaType.parse("image/png")));
+        }
+
+        RequestBody requestBody = builder.build();
+
+        Request request = new Request.Builder()
+        .url("http://localhost:9090/api/updateEmbroideryKit")
+        .post(requestBody)
+        .build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                e.printStackTrace();
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    String responseData = response.body().string();
+                    System.out.println("Набор вышивки успешно обновлён! ID: " + responseData);
+                    allEmbroiderykit();
+                } else {
+                    System.out.println("Ошибка при обновлении набора вышивки: " + response.message());
+                }
+            }
+        });
+    }//GEN-LAST:event_jButton7ActionPerformed
+
+    private void jButton5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton5ActionPerformed
+        OkHttpClient client = new OkHttpClient();
+
+        String name = jTextField8.getText();
+        String description = jTextField9.getText();
+        String price = jTextField10.getText();
+        String stockQuantity = jTextField11.getText();
+
+        MultipartBody.Builder builder = new MultipartBody.Builder()
+        .setType(MultipartBody.FORM)
+        .addFormDataPart("Name", name)
+        .addFormDataPart("Description", description)
+        .addFormDataPart("Price", price)
+        .addFormDataPart("StockQuantity", stockQuantity);
+
+        if (selectedFile != null) {
+            builder.addFormDataPart("Image", selectedFile.getName(),
+                RequestBody.create(selectedFile, MediaType.parse("image/png")));
+        }
+
+        RequestBody requestBody = builder.build();
+
+        Request request = new Request.Builder()
+        .url("http://localhost:9090/api/addEmbroideryKit")
+        .post(requestBody)
+        .build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                e.printStackTrace();
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    String responseData = response.body().string();
+                    System.out.println("Набор вышивки успешно добавлен! Ответ сервера: " + responseData);
+                    allEmbroiderykit();
+                } else {
+                    System.out.println("Ошибка при добавлении набора вышивки: " + response.message());
+                }
+            }
+        });
+    }//GEN-LAST:event_jButton5ActionPerformed
+
+    private void jTextField10ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField10ActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jTextField10ActionPerformed
+
+    private void jTable1MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jTable1MouseClicked
+        int selectedRow = jTable1.getSelectedRow();
+        if (selectedRow != -1) {
+
+            jTextField8.setText((String) jTable1.getValueAt(selectedRow, 1));
+            jTextField9.setText((String) jTable1.getValueAt(selectedRow, 2));
+            jTextField10.setText((String) jTable1.getValueAt(selectedRow, 3));
+            jTextField11.setText((String) jTable1.getValueAt(selectedRow, 4));
+
+            String imagePath = (String) jTable1.getValueAt(selectedRow, 5);
+            if (imagePath != null && !imagePath.isEmpty()) {
+                ImageIcon icon = new ImageIcon(imagePath);
+                jLabel12.setIcon(icon);
+            } else {
+                jLabel12.setIcon(null);
+            }
+
+        }
+    }//GEN-LAST:event_jTable1MouseClicked
+
+    private void jTextField16ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField16ActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jTextField16ActionPerformed
 
     /**
      * @param args the command line arguments
@@ -1254,8 +1386,6 @@ public class Seller extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel18;
     private javax.swing.JLabel jLabel19;
     private javax.swing.JLabel jLabel2;
-    private javax.swing.JLabel jLabel20;
-    private javax.swing.JLabel jLabel21;
     private javax.swing.JLabel jLabel24;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
@@ -1277,14 +1407,12 @@ public class Seller extends javax.swing.JFrame {
     private javax.swing.JTextField jTextField1;
     private javax.swing.JTextField jTextField10;
     private javax.swing.JTextField jTextField11;
+    private javax.swing.JTextField jTextField12;
+    private javax.swing.JTextField jTextField13;
+    private javax.swing.JTextField jTextField14;
     private javax.swing.JTextField jTextField15;
     private javax.swing.JTextField jTextField16;
-    private javax.swing.JTextField jTextField17;
-    private javax.swing.JTextField jTextField18;
-    private javax.swing.JTextField jTextField19;
     private javax.swing.JTextField jTextField2;
-    private javax.swing.JTextField jTextField20;
-    private javax.swing.JTextField jTextField21;
     private javax.swing.JTextField jTextField3;
     private javax.swing.JTextField jTextField4;
     private javax.swing.JTextField jTextField5;
