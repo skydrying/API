@@ -82,6 +82,12 @@ public class MainController {
         return customerRepository.findAll();
     }
 
+    @GetMapping("/getEmbroiderykit")
+    public @ResponseBody
+    Iterable<EmbroideryKit> allEmbroiderykit() {
+        return embroideryKitRepository.findAll();
+    }
+
 
     @PostMapping("/getAutarization")
     public @ResponseBody
@@ -163,7 +169,7 @@ public class MainController {
         user.setSnils(snils);
 
         if (!photoLink.isEmpty()) {
-            String filePath = "C:\\Users\\oneju\\OneDrive\\Рабочий стол\\ПРОЕКТ\\photoLink\\" + photoLink.getOriginalFilename();
+            String filePath = "C:\\Users\\oneju\\OneDrive\\Рабочий стол\\ПРОЕКТ\\photoLink\\photoLink" + photoLink.getOriginalFilename();
             photoLink.transferTo(new File(filePath));
             user.setPhotoLink(filePath);
         } else {
@@ -227,7 +233,7 @@ public class MainController {
         user.setSnils(snils);
 
         if (!photoLink.isEmpty()) {
-            String filePath = "C:\\Users\\oneju\\OneDrive\\Рабочий стол\\ПРОЕКТ\\photoLink\\" + photoLink.getOriginalFilename();
+            String filePath = "C:\\Users\\oneju\\OneDrive\\Рабочий стол\\ПРОЕКТ\\photoLink\\photoLink" + photoLink.getOriginalFilename();
             photoLink.transferTo(new File(filePath));
             user.setPhotoLink(filePath);
         }
@@ -473,80 +479,74 @@ public class MainController {
             return false;
         }
     }
-//
-//    @GetMapping("/getFaculty")
-//    public @ResponseBody
-//    Iterable<Faculty> allFaculty() {
-//        return facultyRepository.findAll();
-//    }
-//
-//    @PostMapping("/addFaculty")
-//    public @ResponseBody
-//    boolean addFaculty(@RequestParam(name = "Nazvanie") String nazvanie) {
-//
-//        Faculty faculty = new Faculty();
-//        faculty.setNazvanie(nazvanie);
-//        facultyRepository.save(faculty);
-//        return true;
-//    }
-//
-//    @PostMapping("/updateFaculty")
-//    public @ResponseBody
-//    boolean updateFaculty (@RequestParam(name = "id") String id,
-//            @RequestParam(name = "Nazvanie") String nazvanie) {
-//
-//        Faculty faculty = facultyRepository.findById(Integer.parseInt(id)).get();
-//        faculty.setNazvanie(nazvanie);
-//        facultyRepository.save(faculty);
-//        return true;
-//    }
-//
-//    @PostMapping("/deleteFaculty")
-//    public @ResponseBody
-//    boolean deleteFaculty(@RequestParam(name = "id") String id) {
-//        facultyRepository.deleteById(Integer.parseInt(id));
-//        return true;
-//    }
-//
-//    @GetMapping("/getSpecialty")
-//    public @ResponseBody
-//    Iterable<Specialty> allSpecialty() {
-//        return specialtyRepository.findAll();
-//    }
-//
-//    @PostMapping("/addSpecialty")
-//    public @ResponseBody
-//    boolean addSpecialty(@RequestParam(name = "Nazvanie") String nazvanie,
-//            @RequestParam(name = "PhotoLink") String photoLink) {
-//
-//        Specialty specialty = new Specialty();
-//        specialty.setNazvanie(nazvanie);
-//        specialty.setPhotoLink(photoLink);
-//        specialtyRepository.save(specialty);
-//        return true;
-//    }
-//
-//    @PostMapping("/updateSpecialty")
-//    public @ResponseBody
-//    boolean updateSpecialty(@RequestParam(name = "id") String id,
-//            @RequestParam(name = "Nazvanie") String nazvanie,
-//            @RequestParam(name = "PhotoLink") String photoLink) {
-//
-//        Specialty specialty = specialtyRepository.findById(Integer.parseInt(id)).get();
-//        specialty.setNazvanie(nazvanie);
-//        specialty.setPhotoLink(photoLink);
-//        specialtyRepository.save(specialty);
-//        return true;
-//
-//    }
-//
-//    @PostMapping("/deleteSpecialty")
-//    public @ResponseBody
-//    boolean deleteSpecialty(@RequestParam(name = "id") String id) {
-//        specialtyRepository.deleteById(Integer.parseInt(id));
-//        return true;
-//    }
-//
+
+    @PostMapping("/addEmbroideryKit")
+    public @ResponseBody
+    ResponseEntity<Integer> addEmbroideryKit(
+            @RequestParam(name = "Name") String name,
+            @RequestParam(name = "Description") String description,
+            @RequestParam(name = "Price") String price,
+            @RequestParam(name = "StockQuantity") String stockQuantity,
+            @RequestParam(name = "Image") MultipartFile image) throws IOException {
+
+        EmbroideryKit embroideryKit = new EmbroideryKit();
+
+        embroideryKit.setName(name);
+        embroideryKit.setDescription(description);
+        embroideryKit.setPrice(price);
+        embroideryKit.setStockQuantity(stockQuantity);
+
+        if (!image.isEmpty()) {
+            String filePath = "C:\\Users\\oneju\\OneDrive\\Рабочий стол\\ПРОЕКТ\\images\\image" + image.getOriginalFilename();
+            image.transferTo(new File(filePath));
+            embroideryKit.setImage(filePath);
+        } else {
+            embroideryKit.setImage(null);
+        }
+
+        EmbroideryKit savedEmbroideryKit = embroideryKitRepository.save(embroideryKit);
+        Integer embroideryKitId = savedEmbroideryKit.getId();
+        return ResponseEntity.ok(embroideryKitId);
+    }
+
+    @PostMapping("/updateEmbroideryKit")
+    public @ResponseBody
+    ResponseEntity<Integer> updateEmbroideryKit(
+            @RequestParam(name = "id") String id,
+            @RequestParam(name = "Name") String name,
+            @RequestParam(name = "Description") String description,
+            @RequestParam(name = "Price") String price,
+            @RequestParam(name = "StockQuantity") String stockQuantity,
+            @RequestParam(name = "Image") MultipartFile image) throws IOException {
+
+        EmbroideryKit embroideryKit = embroideryKitRepository.findById(Integer.parseInt(id)).orElse(null);
+        if (embroideryKit == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        embroideryKit.setName(name);
+        embroideryKit.setDescription(description);
+        embroideryKit.setPrice(price);
+        embroideryKit.setStockQuantity(stockQuantity);
+
+        if (!image.isEmpty()) {
+            String filePath = "C:\\Users\\oneju\\OneDrive\\Рабочий стол\\ПРОЕКТ\\images\\image" + image.getOriginalFilename();
+            image.transferTo(new File(filePath));
+            embroideryKit.setImage(filePath);
+        }
+
+        EmbroideryKit updatedEmbroideryKit = embroideryKitRepository.save(embroideryKit);
+        Integer embroideryKitId = updatedEmbroideryKit.getId();
+        return ResponseEntity.ok(embroideryKitId);
+    }
+
+    @PostMapping("/deleteEmbroideryKit")
+    public @ResponseBody
+    boolean deleteEmbroideryKit(@RequestParam(name = "id") String id) {
+        embroideryKitRepository.deleteById(Integer.parseInt(id));
+        return true;
+    }
+
 //    @GetMapping("/getStudent")
 //    public @ResponseBody
 //    List allSTUD() {
@@ -556,283 +556,48 @@ public class MainController {
 //        }
 //        return list;
 //    }
-//
-//    @PostMapping("/addStudent")
-//    public @ResponseBody
-//    boolean addStudent(@RequestParam(name = "UserId") String userId,
-//            @RequestParam(name = "FacultyId") String facultyid,
-//            @RequestParam(name = "SpecialtyId") String specialtyid,
-//            @RequestParam(name = "FamStatus") String famStatus,
-//            @RequestParam(name = "DateOfBirth") String dateOfBirth,
-//            @RequestParam(name = "DateOfAdmission") String dateOfAdmission,
-//            @RequestParam(name = "Course") String course) {
-//        Student stud = new Student();
-//        Users users = new Users(Integer.parseInt(userId));
-//        Faculty faculty = new Faculty(Integer.parseInt(facultyid));
-//        Specialty specialty = new Specialty(Integer.parseInt(specialtyid));
-//
-//        stud.setUserId(users);
-//        stud.setFacultyid(faculty);
-//        stud.setSpecialtyid(specialty);
-//
-//        stud.setFamStatus(famStatus);
-//
-//        DateFormat format = new java.text.SimpleDateFormat("yyyy-MM-dd");
-//        Date dateOfBirthParsed = null;
-//        Date dateOfAdmissionParsed = null;
-//
-//        try {
-//            dateOfBirthParsed = format.parse(dateOfBirth);
-//        } catch (ParseException ex) {
-//            Logger.getLogger(MainController.class.getName()).log(Level.SEVERE, null, ex);
-//
-//        }
-//
-//        try {
-//            dateOfAdmissionParsed  = format.parse(dateOfAdmission);
-//        } catch (ParseException ex) {
-//            Logger.getLogger(MainController.class.getName()).log(Level.SEVERE, null, ex);
-//        }
-//
-//        stud.setDateOfBirth(dateOfBirthParsed);
-//        stud.setDateOfAdmission(dateOfAdmissionParsed);
-//        stud.setCourse(Integer.parseInt(course));
-//        studentRepository.save(stud);
-//        return true;
-//    }
-//
-//    @PostMapping("/updateStudent")
-//    public @ResponseBody
-//    boolean updateStudent(@RequestParam(name = "StudentId") String studentid,
-//            @RequestParam(name = "UserId") String userId,
-//            @RequestParam(name = "FacultyId") String facultyid,
-//            @RequestParam(name = "SpecialtyId") String specialtyid,
-//            @RequestParam(name = "FamStatus") String famStatus,
-//            @RequestParam(name = "DateOfBirth") String dateOfBirth,
-//            @RequestParam(name = "DateOfAdmission") String dateOfAdmission,
-//            @RequestParam(name = "Course") String course) {
-//        Student stud = studentRepository.findById(Integer.parseInt(studentid)).get();
-//        Users users = new Users(Integer.parseInt(userId));
-//        Faculty faculty = new Faculty(Integer.parseInt(facultyid));
-//        Specialty specialty = new Specialty(Integer.parseInt(specialtyid));
-//
-//        stud.setUserId(users);
-//        stud.setFacultyid(faculty);
-//        stud.setSpecialtyid(specialty);
-//
-//        stud.setFamStatus(famStatus);
-//
-//        DateFormat format = new java.text.SimpleDateFormat("yyyy-MM-dd");
-//        Date dateOfBirthParsed = null;
-//        Date dateOfAdmissionParsed = null;
-//
-//        try {
-//            dateOfBirthParsed = format.parse(dateOfBirth);
-//        } catch (ParseException ex) {
-//            Logger.getLogger(MainController.class.getName()).log(Level.SEVERE, null, ex);
-//
-//        }
-//
-//        try {
-//            dateOfAdmissionParsed  = format.parse(dateOfAdmission);
-//        } catch (ParseException ex) {
-//            Logger.getLogger(MainController.class.getName()).log(Level.SEVERE, null, ex);
-//        }
-//
-//        stud.setDateOfBirth(dateOfBirthParsed);
-//        stud.setDateOfAdmission(dateOfAdmissionParsed);
-//        stud.setCourse(Integer.parseInt(course));
-//        studentRepository.save(stud);
-//        return true;
-//    }
-//
-//    @PostMapping("/deleteStudent")
-//    public @ResponseBody
-//    boolean deleteStudent(@RequestParam(name = "StudentId") String studentid) {
-//        try {
-//            int id = Integer.parseInt(studentid);
-//            if (studentRepository.existsById(id)) {
-//                studentRepository.deleteById(id);
-//                return true;
-//            } else {
-//                return false;
-//            }
-//        } catch (NumberFormatException e) {
-//            return false;
-//        }
-//    }
-//
-//    @GetMapping("/getLegalRepresentative")
-//    public @ResponseBody
-//    List allLR() {
-//        List list = new ArrayList();
-//        for (LegalRepresentative lr : legalrepresentativeRepository.findAll()) {
-//            list.add(lr.getStudentid());
-//        }
-//        return list;
-//    }
-//
-//    @PostMapping("/addLegalRepresentative")
-//    public @ResponseBody
-//    boolean addLegalRepresentative(@RequestParam(name = "StudentId") String studentid,
-//            @RequestParam(name = "SecondName") String secondName,
-//            @RequestParam(name = "FirstName") String firstName,
-//            @RequestParam(name = "MiddleName") String middleName,
-//            @RequestParam(name = "HomeAddress") String homeAddress,
-//            @RequestParam(name = "Phone") String phone,
-//            @RequestParam(name = "RelationshipDegree") String relationshipDegree) {
-//        LegalRepresentative lr = new LegalRepresentative();
-//
-//        Student student = new Student(Integer.parseInt(studentid));
-//
-//        lr.setStudentid(student);
-//        lr.setSecondName(secondName);
-//        lr.setFirstName(firstName);
-//        lr.setMiddleName(middleName);
-//        lr.setHomeAddress(homeAddress);
-//        lr.setPhone(phone);
-//        lr.setRelationshipDegree(relationshipDegree);
-//
-//        legalrepresentativeRepository.save(lr);
-//        return true;
-//    }
-//
-//    @PostMapping("/updateLegalRepresentative")
-//    public @ResponseBody
-//    boolean updateLegalRepresentative(@RequestParam(name = "LegalRepresentativeId") String legalrepresentativeid,
-//            @RequestParam(name = "StudentId") String studentid,
-//            @RequestParam(name = "SecondName") String secondName,
-//            @RequestParam(name = "FirstName") String firstName,
-//            @RequestParam(name = "MiddleName") String middleName,
-//            @RequestParam(name = "HomeAddress") String homeAddress,
-//            @RequestParam(name = "Phone") String phone,
-//            @RequestParam(name = "RelationshipDegree") String relationshipDegree) {
-//
-//        LegalRepresentative lr = legalrepresentativeRepository.findById(Integer.parseInt(legalrepresentativeid)).get();
-//        Student student = new Student(Integer.parseInt(studentid));
-//
-//        lr.setStudentid(student);
-//        lr.setSecondName(secondName);
-//        lr.setFirstName(firstName);
-//        lr.setMiddleName(middleName);
-//        lr.setHomeAddress(homeAddress);
-//        lr.setPhone(phone);
-//        lr.setRelationshipDegree(relationshipDegree);
-//
-//        legalrepresentativeRepository.save(lr);
-//        return true;
-//    }
-//
-//    @PostMapping("/deleteLegalRepresentative")
-//    public @ResponseBody
-//    boolean deleteLegalRepresentative(@RequestParam(name = "LegalRepresentativeId") String legalrepresentativeid) {
-//        try {
-//            int id = Integer.parseInt(legalrepresentativeid);
-//            if (legalrepresentativeRepository.existsById(id)) {
-//                legalrepresentativeRepository.deleteById(id);
-//                return true;
-//            } else {
-//                return false;
-//            }
-//        } catch (NumberFormatException e) {
-//            return false;
-//        }
-//    }
-//
-//    @GetMapping("/getFeedback")
-//    public @ResponseBody
-//    List allF() {
-//        List list = new ArrayList();
-//        for (Feedback fdb : feedbackRepository.findAll()) {
-//            list.add(fdb.getStudentid());
-//        }
-//        return list;
-//    }
-//
-//    @PostMapping("/addFeedback")
-//    public @ResponseBody
-//    boolean addFeedback(@RequestParam(name = "StudentId") String studentid,
-//            @RequestParam(name = "FeedbackText") String feedbackText) {
-//        Feedback fdb = new Feedback();
-//        Student student = new Student(Integer.parseInt(studentid));
-//
-//        fdb.setStudentid(student);
-//        fdb.setFeedbackText(feedbackText);
-//        feedbackRepository.save(fdb);
-//        return true;
-//    }
-//
-//    @PostMapping("/updateFeedback")
-//    public @ResponseBody
-//    boolean updateFeedback(@RequestParam(name = "FeedbackId") String feedbackid,
-//            @RequestParam(name = "StudentId") String studentid,
-//            @RequestParam(name = "FeedbackText") String feedbackText) {
-//        Feedback fdb = feedbackRepository.findById(Integer.parseInt(feedbackid)).get();
-//        Student student = new Student(Integer.parseInt(studentid));
-//
-//        fdb.setStudentid(student);
-//        fdb.setFeedbackText(feedbackText);
-//        feedbackRepository.save(fdb);
-//        return true;
-//    }
-//
-//    @PostMapping("/deleteFeedback")
-//    public @ResponseBody
-//    boolean deleteFeedback(@RequestParam(name = "FeedbackId") String feedbackid) {
-//        try {
-//            int id = Integer.parseInt(feedbackid);
-//            if (feedbackRepository.existsById(id)) {
-//                feedbackRepository.deleteById(id);
-//                return true;
-//            } else {
-//                return false;
-//            }
-//        } catch (NumberFormatException e) {
-//            return false;
-//        }
-//    }
-//
-//
-//    @GetMapping(path="/formindex")
-//    public ModelAndView home() {
-//        return new ModelAndView("index");
-//    }
-//
-//    @GetMapping(path="/formsvedeniy")
-//    public ModelAndView svedeniy() {
-//        return new ModelAndView("info");
-//    }
-//
-//    @GetMapping(path="/formspecial")
-//    public ModelAndView special() {
-//        return new ModelAndView("special");
-//    }
-//
-//    @GetMapping(path="/formcontact")
-//    public ModelAndView contact() {
-//        return new ModelAndView("contact");
-//    }
-//
-//    @GetMapping(path="/formotziv")
-//    public ModelAndView otziv() {
-//        return new ModelAndView("otziv");
-//    }
-//
-//    @GetMapping(path="/formauto")
-//    public ModelAndView auto() {
-//        return new ModelAndView("auto");
-//    }
-//
-//    @GetMapping(path="/formreg")
-//    public ModelAndView reg() {
-//        return new ModelAndView("reg");
-//    }
-//
-//    @GetMapping(path="/formstatus")
-//    public ModelAndView status() {
-//        return new ModelAndView("status");
-//    }
-//    
+
+
+    @GetMapping(path="/formindex")
+    public ModelAndView home() {
+        return new ModelAndView("index");
+    }
+
+    @GetMapping(path="/formsvedeniy")
+    public ModelAndView svedeniy() {
+        return new ModelAndView("info");
+    }
+
+    @GetMapping(path="/formspecial")
+    public ModelAndView special() {
+        return new ModelAndView("special");
+    }
+
+    @GetMapping(path="/formcontact")
+    public ModelAndView contact() {
+        return new ModelAndView("contact");
+    }
+
+    @GetMapping(path="/formotziv")
+    public ModelAndView otziv() {
+        return new ModelAndView("otziv");
+    }
+
+    @GetMapping(path="/formauto")
+    public ModelAndView auto() {
+        return new ModelAndView("auto");
+    }
+
+    @GetMapping(path="/formreg")
+    public ModelAndView reg() {
+        return new ModelAndView("reg");
+    }
+
+    @GetMapping(path="/formstatus")
+    public ModelAndView status() {
+        return new ModelAndView("status");
+    }
+
     
 }
 

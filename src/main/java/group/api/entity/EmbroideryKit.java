@@ -1,3 +1,7 @@
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
 package group.api.entity;
 
 import jakarta.persistence.Basic;
@@ -12,6 +16,10 @@ import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 import java.io.Serializable;
 
+/**
+ *
+ * @author oneju
+ */
 @Entity
 @Table(name = "embroidery_kit")
 @NamedQueries({
@@ -35,9 +43,9 @@ public class EmbroideryKit implements Serializable {
     @Column(name = "Description")
     private String description;
     @Column(name = "Price")
-    private Integer price;
+    private String price;
     @Column(name = "StockQuantity")
-    private Integer stockQuantity;
+    private String stockQuantity;
     @Column(name = "Image")
     private String image;
 
@@ -72,19 +80,19 @@ public class EmbroideryKit implements Serializable {
         this.description = description;
     }
 
-    public Integer getPrice() {
+    public String getPrice() {
         return price;
     }
 
-    public void setPrice(Integer price) {
+    public void setPrice(String price) {
         this.price = price;
     }
 
-    public Integer getStockQuantity() {
+    public String getStockQuantity() {
         return stockQuantity;
     }
 
-    public void setStockQuantity(Integer stockQuantity) {
+    public void setStockQuantity(String stockQuantity) {
         this.stockQuantity = stockQuantity;
     }
 
