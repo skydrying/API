@@ -30,53 +30,6 @@ public class Seller extends javax.swing.JFrame {
 
     private File selectedFile;
 
-    public void allCustomers() {
-        DateFormat format = new java.text.SimpleDateFormat("yyyy-MM-dd");
-        Vector<String> tableHeaders = new Vector<>();
-        tableHeaders.add("Номер");
-        tableHeaders.add("Фамилия");
-        tableHeaders.add("Имя");
-        tableHeaders.add("Отчество");
-        tableHeaders.add("Телефон");
-        tableHeaders.add("Почта");
-        tableHeaders.add("Скидка");
-        tableHeaders.add("Сумма покупок");
-
-        Vector<Vector<Object>> tableData = new Vector<>();
-        OkHttpClient okHttpClient = new OkHttpClient();
-
-        Request request = new Request.Builder()
-                .url("http://localhost:9090/api/getCustomers")
-                .build();
-        try (Response response = okHttpClient.newCall(request).execute()) {
-            JSONArray ja = new JSONArray(response.body().string());
-            for (int i = 0; i < ja.length(); i++) {
-                Vector<Object> oneRow = new Vector<>();
-                JSONObject jo = ja.getJSONObject(i);
-
-                oneRow.add(jo.getInt("id"));
-                oneRow.add(jo.getString("lastName"));
-                oneRow.add(jo.getString("firstName"));
-                oneRow.add(jo.getString("middleName"));
-                oneRow.add(jo.getString("phone"));
-                oneRow.add(jo.getString("email"));
-                oneRow.add(jo.getString("discount"));
-                oneRow.add(jo.getString("totalPurchases"));
-
-                tableData.add(oneRow);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        Vector<Object> oneRow = new Vector<>();
-        oneRow.add("");
-        oneRow.add("");
-        tableData.add(oneRow);
-
-        jTable3.setModel(new DefaultTableModel(tableData, tableHeaders));
-    }
-
     public void allEmbroiderykit() {
         DateFormat format = new java.text.SimpleDateFormat("yyyy-MM-dd");
         Vector<String> tableHeaders = new Vector<>();
@@ -111,11 +64,6 @@ public class Seller extends javax.swing.JFrame {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-        Vector<Object> oneRow = new Vector<>();
-        oneRow.add("");
-        oneRow.add("");
-        tableData.add(oneRow);
 
         jTable1.setModel(new DefaultTableModel(tableData, tableHeaders));
     }
@@ -155,13 +103,51 @@ public class Seller extends javax.swing.JFrame {
             e.printStackTrace();
         }
 
-        Vector<Object> oneRow = new Vector<>();
-        oneRow.add("");
-        oneRow.add("");
-        tableData.add(oneRow);
-
         jTable2.setModel(new DefaultTableModel(tableData, tableHeaders));
     }
+
+    public void allCustomers() {
+        DateFormat format = new java.text.SimpleDateFormat("yyyy-MM-dd");
+        Vector<String> tableHeaders = new Vector<>();
+        tableHeaders.add("Номер");
+        tableHeaders.add("Фамилия");
+        tableHeaders.add("Имя");
+        tableHeaders.add("Отчество");
+        tableHeaders.add("Телефон");
+        tableHeaders.add("Почта");
+        tableHeaders.add("Скидка");
+        tableHeaders.add("Сумма покупок");
+
+        Vector<Vector<Object>> tableData = new Vector<>();
+        OkHttpClient okHttpClient = new OkHttpClient();
+
+        Request request = new Request.Builder()
+                .url("http://localhost:9090/api/getCustomers")
+                .build();
+        try (Response response = okHttpClient.newCall(request).execute()) {
+            JSONArray ja = new JSONArray(response.body().string());
+            for (int i = 0; i < ja.length(); i++) {
+                Vector<Object> oneRow = new Vector<>();
+                JSONObject jo = ja.getJSONObject(i);
+
+                oneRow.add(jo.getInt("id"));
+                oneRow.add(jo.getString("lastName"));
+                oneRow.add(jo.getString("firstName"));
+                oneRow.add(jo.getString("middleName"));
+                oneRow.add(jo.getString("phone"));
+                oneRow.add(jo.getString("email"));
+                oneRow.add(jo.getString("discount"));
+                oneRow.add(jo.getString("totalPurchases"));
+
+                tableData.add(oneRow);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        jTable3.setModel(new DefaultTableModel(tableData, tableHeaders));
+    }
+
 
     /**
      * This method is called from within the constructor to initialize the form.

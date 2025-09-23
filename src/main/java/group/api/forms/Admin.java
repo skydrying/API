@@ -55,88 +55,84 @@ public class Admin extends javax.swing.JFrame {
     private String currentPosition;
 
     public void allUsers() {
-    DateFormat format = new java.text.SimpleDateFormat("yyyy-MM-dd");
-    Vector<String> tableHeaders = new Vector<>();
-    tableHeaders.add("Номер");
-    tableHeaders.add("Фамилия");
-    tableHeaders.add("Имя");
-    tableHeaders.add("Отчество");
-    tableHeaders.add("Телефон");
-    tableHeaders.add("Дата рождения");
-    tableHeaders.add("Дата трудоустройства");
-    tableHeaders.add("Паспортные данные");
-    tableHeaders.add("Снилс");
-    tableHeaders.add("Фотография");
-    tableHeaders.add("Логин");
-    tableHeaders.add("Пароль");
-    tableHeaders.add("Должность");
+        DateFormat format = new java.text.SimpleDateFormat("yyyy-MM-dd");
+        Vector<String> tableHeaders = new Vector<>();
+        tableHeaders.add("Номер");
+        tableHeaders.add("Фамилия");
+        tableHeaders.add("Имя");
+        tableHeaders.add("Отчество");
+        tableHeaders.add("Телефон");
+        tableHeaders.add("Дата рождения");
+        tableHeaders.add("Дата трудоустройства");
+        tableHeaders.add("Паспортные данные");
+        tableHeaders.add("Снилс");
+        tableHeaders.add("Фотография");
+        tableHeaders.add("Логин");
+        tableHeaders.add("Пароль");
+        tableHeaders.add("Должность");
 
-    Vector<Vector<Object>> tableData = new Vector<>();
-    OkHttpClient okHttpClient = new OkHttpClient();
+        Vector<Vector<Object>> tableData = new Vector<>();
+        OkHttpClient okHttpClient = new OkHttpClient();
 
-    Request request = new Request.Builder()
-            .url("http://localhost:9090/api/getUsers")
-            .build();
-    try (Response response = okHttpClient.newCall(request).execute()) {
-        JSONArray ja = new JSONArray(response.body().string());
-        for (int i = 0; i < ja.length(); i++) {
-            Vector<Object> oneRow = new Vector<>();
-            JSONObject jo = ja.getJSONObject(i);
+        Request request = new Request.Builder()
+                .url("http://localhost:9090/api/getUsers")
+                .build();
+        try (Response response = okHttpClient.newCall(request).execute()) {
+            JSONArray ja = new JSONArray(response.body().string());
+            for (int i = 0; i < ja.length(); i++) {
+                Vector<Object> oneRow = new Vector<>();
+                JSONObject jo = ja.getJSONObject(i);
 
-            oneRow.add(jo.getInt("id"));
-            oneRow.add(jo.getString("lastName"));
-            oneRow.add(jo.getString("firstName"));
-            oneRow.add(jo.getString("middleName"));
-            oneRow.add(jo.getString("phone"));
-            oneRow.add(jo.getString("dateOfBirth"));
-            oneRow.add(jo.getString("dateOfEmployment"));
-            oneRow.add(jo.getString("passportData"));
-            oneRow.add(jo.getString("snils"));
-            oneRow.add(jo.getString("photoLink"));
-            oneRow.add(jo.getString("login"));
-            oneRow.add(jo.getString("password"));
+                oneRow.add(jo.getInt("id"));
+                oneRow.add(jo.getString("lastName"));
+                oneRow.add(jo.getString("firstName"));
+                oneRow.add(jo.getString("middleName"));
+                oneRow.add(jo.getString("phone"));
+                oneRow.add(jo.getString("dateOfBirth"));
+                oneRow.add(jo.getString("dateOfEmployment"));
+                oneRow.add(jo.getString("passportData"));
+                oneRow.add(jo.getString("snils"));
+                oneRow.add(jo.getString("photoLink"));
+                oneRow.add(jo.getString("login"));
+                oneRow.add(jo.getString("password"));
 
-            boolean hasPosition = false;
+                boolean hasPosition = false;
 
-            if (jo.getJSONArray("directorCollection") != null) {
-                JSONArray directorCollection = jo.getJSONArray("directorCollection");
-                if (directorCollection.length() != 0) {
-                    oneRow.add("Директор");
-                    hasPosition = true;
+                if (jo.getJSONArray("directorCollection") != null) {
+                    JSONArray directorCollection = jo.getJSONArray("directorCollection");
+                    if (directorCollection.length() != 0) {
+                        oneRow.add("Директор");
+                        hasPosition = true;
+                    }
                 }
-            }
-            if (jo.getJSONArray("sellerCollection") != null) {
-                JSONArray sellerCollection = jo.getJSONArray("sellerCollection");
-                if (sellerCollection.length() != 0) {
-                    oneRow.add("Продавец");
-                    hasPosition = true;
+                if (jo.getJSONArray("sellerCollection") != null) {
+                    JSONArray sellerCollection = jo.getJSONArray("sellerCollection");
+                    if (sellerCollection.length() != 0) {
+                        oneRow.add("Продавец");
+                        hasPosition = true;
+                    }
                 }
-            }
-            if (jo.getJSONArray("productionmasterCollection") != null) {
-                JSONArray productionmasterCollection = jo.getJSONArray("productionmasterCollection");
-                if (productionmasterCollection.length() != 0) {
-                    oneRow.add("Мастер");
-                    hasPosition = true;
+                if (jo.getJSONArray("productionmasterCollection") != null) {
+                    JSONArray productionmasterCollection = jo.getJSONArray("productionmasterCollection");
+                    if (productionmasterCollection.length() != 0) {
+                        oneRow.add("Мастер");
+                        hasPosition = true;
+                    }
                 }
-            }
 
-            if (!hasPosition) {
-                oneRow.add("Пользователь");
-            }
+                if (!hasPosition) {
+                    oneRow.add("Пользователь");
+                }
 
-            tableData.add(oneRow);
+                tableData.add(oneRow);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-    } catch (IOException e) {
-        e.printStackTrace();
+
+
+        jTable1.setModel(new DefaultTableModel(tableData, tableHeaders));
     }
-
-    Vector<Object> oneRow = new Vector<>();
-    oneRow.add("");
-    oneRow.add("");
-    tableData.add(oneRow);
-
-    jTable1.setModel(new DefaultTableModel(tableData, tableHeaders));
-}
 
     public void DateForm() {
         UtilDateModel modelBirth = new UtilDateModel();

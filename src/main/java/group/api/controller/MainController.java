@@ -94,6 +94,28 @@ public class MainController {
         return consumableRepository.findAll();
     }
 
+    @GetMapping("/getOrders")
+    public @ResponseBody
+    List allOrders() {
+        List list = new ArrayList();
+        for (Orders order : orderRepository.findAll()) {
+            list.add(order);
+        }
+        return list;
+    }
+
+    @GetMapping("/getSales")
+    public @ResponseBody
+    Iterable<Sale> allSales() {
+        return saleRepository.findAll();
+    }
+
+    @GetMapping("/getFrameMaterial")
+    public @ResponseBody
+    Iterable<FrameMaterial> allFrameMaterial() {
+        return frameMaterialRepository.findAll();
+    }
+
     @PostMapping("/getAutarization")
     public @ResponseBody
     String getAutorization(@RequestParam(name = "Login") String login, @RequestParam(name = "Password") String password) {

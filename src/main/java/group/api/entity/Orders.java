@@ -52,11 +52,9 @@ public class Orders implements Serializable {
     @Lob
     @Column(name = "Notes")
     private String notes;
-    @JsonIgnore
     @JoinColumn(name = "CustomerID", referencedColumnName = "ID")
     @ManyToOne(optional = false)
     private Customer customerID;
-    @JsonIgnore
     @JoinColumn(name = "SellerID", referencedColumnName = "ID")
     @ManyToOne(optional = false)
     private User sellerID;

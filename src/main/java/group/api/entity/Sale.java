@@ -46,11 +46,9 @@ public class Sale implements Serializable {
     private Integer discountAmount;
     @Column(name = "FinalAmount")
     private Integer finalAmount;
-    @JsonIgnore
     @JoinColumn(name = "CustomerID", referencedColumnName = "ID")
     @ManyToOne(optional = false)
     private Customer customerID;
-    @JsonIgnore
     @JoinColumn(name = "SellerID", referencedColumnName = "ID")
     @ManyToOne(optional = false)
     private User sellerID;
