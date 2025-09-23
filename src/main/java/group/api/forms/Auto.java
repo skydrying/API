@@ -164,8 +164,6 @@ public class Auto extends javax.swing.JFrame {
             e.printStackTrace();
             JOptionPane.showMessageDialog(this, "Ошибка сети. Проверьте подключение к интернету.");
         }
-
-
     }
 
     private void jPasswordField1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jPasswordField1ActionPerformed
