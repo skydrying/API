@@ -3,25 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Форма регистрации</title>
+    <title>Регистрация - Багетная мастерская</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link th:href="@{/css/stylereg.css}" rel="stylesheet">
 </head>
 <body>
     <header class="header">
         <div class="autocontainer">
-            <h1>Университет Прогресса</h1>
-            <nav class="navigation">
-                <ul>
-                    <li><a href="http://localhost:8080/api/formindex">Главная</a></li>
-                    <li><a href="http://localhost:8080/api/formsvedeniy">Сведения об ОО</a></li>
-                    <li><a href="http://localhost:8080/api/formspecial">Специальности</a></li>
-                    <li><a href="http://localhost:8080/api/formcontact">Контакты</a></li>
-                    <li><a href="http://localhost:8080/api/formotziv">Отзывы</a></li>
-                    <li><a href="http://localhost:8080/api/formauto">Войти</a></li>
-                </ul>
-            </nav>
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-palette logo-icon"></i>
+                    <div class="logo-text">
+                        <h1>Багетная мастерская</h1>
+                        <p>Оформление картин и фотографий с 2005 года</p>
+                    </div>
+                </div>
+                <nav class="navigation">
+                    <ul>
+                        <li><a href="http://localhost:9090/api/formindex" class="nav-link">Главная</a></li>
+                        <li><a href="http://localhost:9090/api/formsvedeniy" class="nav-link active">О нас</a></li>
+                        <li><a href="http://localhost:9090/api/formspecial" class="nav-link">Услуги</a></li>
+                        <li><a href="http://localhost:9090/api/formcontact" class="nav-link">Контакты</a></li>
+                        <li><a href="http://localhost:9090/api/formauto" class="nav-link">Войти</a></li>
+                    </ul>
+                </nav>
+            </div>
         </div>
     </header>
+
     <main>
         <section>
             <div class="container">
@@ -29,50 +38,27 @@
                 <div class="form-container">
                     <form id="registration-form">
                         <div class="form-group">
-                            <label for="surname">Фамилия:</label>
-                            <input type="text" id="surname" name="SecondName" required>
+                            <label for="lastname">Фамилия:</label>
+                            <input type="text" id="lastname" name="lastname" required placeholder="Введите вашу фамилию">
                         </div>
                         <div class="form-group">
-                            <label for="name">Имя:</label>
-                            <input type="text" id="name" name="FirstName" required>
+                            <label for="firstname">Имя:</label>
+                            <input type="text" id="firstname" name="firstname" required placeholder="Введите ваше имя">
                         </div>
                         <div class="form-group">
-                            <label for="patronymic">Отчество:</label>
-                            <input type="text" id="patronymic" name="MiddleName" required>
+                            <label for="middlename">Отчество:</label>
+                            <input type="text" id="middlename" name="middlename" required placeholder="Введите ваше отчество">
                         </div>
                         <div class="form-group">
-                            <label for="birthdate">Дата рождения:</label>
-                            <input type="date" id="birthdate" name="DateOfBirth" required>
+                            <label for="phone">Телефон:</label>
+                            <input type="tel" id="phone" name="phone" required placeholder="+7 (XXX) XXX-XX-XX">
                         </div>
                         <div class="form-group">
-                            <label for="employment-date">Дата трудоустройства:</label>
-                            <input type="date" id="employment-date" name="DateOfEmployment" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="passport-data">Паспортные данные:</label>
-                            <input type="text" id="passport-data" name="PassportData" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="snils">СНИЛС:</label>
-                            <input type="text" id="snils" name="SNILS" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="login">Логин:</label>
-                            <input type="text" id="login" name="Logins" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="password">Пароль:</label>
-                            <input type="password" id="password" name="Passwords" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="photo">Фото:</label>
-                            <input type="file" id="photo" name="PhotoLink" required>
+                            <label for="email">Email:</label>
+                            <input type="email" id="email" name="email" required placeholder="example@mail.ru">
                         </div>
                         <button type="submit"><b>Зарегистрироваться</b></button>
                     </form>
-
-                    <br>
-                    <input type="button" value="Проверка статуса регистрации" onclick="location.href='http://localhost:8080/api/formstatus'">
                 </div>
             </div>
         </section>
@@ -80,14 +66,8 @@
 
     <footer class="footer">
         <div class="autocontainer">
-            <p>&copy; 2025 Университет Прогресса. Все права защищены.</p>
+            <p>&copy; 2025 Багетная мастерская. Все права защищены.</p>
         </div>
     </footer>
-    
-   
-
-    
 </body>
 </html>
-
-

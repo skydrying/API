@@ -1,5 +1,6 @@
 C:\Users\oneju\OneDrive\Рабочий стол\ПРОЕКТ\API\src\main\java\group\api\controller\MainController.java
 C:\Users\oneju\OneDrive\Рабочий стол\ПРОЕКТ\API\src\main\java\group\api\repository\CustomerRepository.java
+C:\Users\oneju\OneDrive\Рабочий стол\ПРОЕКТ\API\src\main\java\group\api\telegram\MyTelegramBot.java
 C:\Users\oneju\OneDrive\Рабочий стол\ПРОЕКТ\API\src\main\java\group\api\entity\Seller.java
 C:\Users\oneju\OneDrive\Рабочий стол\ПРОЕКТ\API\src\main\java\group\api\entity\FrameMaterial.java
 C:\Users\oneju\OneDrive\Рабочий стол\ПРОЕКТ\API\src\main\java\group\api\API.java
@@ -8,7 +9,6 @@ C:\Users\oneju\OneDrive\Рабочий стол\ПРОЕКТ\API\src\main\java\group\api\entity\P
 C:\Users\oneju\OneDrive\Рабочий стол\ПРОЕКТ\API\src\main\java\group\api\repository\EmbroideryKitRepository.java
 C:\Users\oneju\OneDrive\Рабочий стол\ПРОЕКТ\API\src\main\java\group\api\repository\FrameMaterialRepository.java
 C:\Users\oneju\OneDrive\Рабочий стол\ПРОЕКТ\API\src\main\java\group\api\forms\TimeLabelFormatter.java
-C:\Users\oneju\OneDrive\Рабочий стол\ПРОЕКТ\API\src\main\java\group\api\telegram\poosto.java
 C:\Users\oneju\OneDrive\Рабочий стол\ПРОЕКТ\API\src\main\java\group\api\repository\SellerRepository.java
 C:\Users\oneju\OneDrive\Рабочий стол\ПРОЕКТ\API\src\main\java\group\api\entity\OrderItem.java
 C:\Users\oneju\OneDrive\Рабочий стол\ПРОЕКТ\API\src\main\java\group\api\entity\SaleItem.java
@@ -31,10 +31,12 @@ C:\Users\oneju\OneDrive\Рабочий стол\ПРОЕКТ\API\src\main\java\group\api\entity\C
 C:\Users\oneju\OneDrive\Рабочий стол\ПРОЕКТ\API\src\main\java\group\api\forms\Admin.java
 C:\Users\oneju\OneDrive\Рабочий стол\ПРОЕКТ\API\src\main\java\group\api\forms\Forms.java
 C:\Users\oneju\OneDrive\Рабочий стол\ПРОЕКТ\API\src\main\java\group\api\repository\OrdersRepository.java
+C:\Users\oneju\OneDrive\Рабочий стол\ПРОЕКТ\API\src\main\java\group\api\telegram\UserSession.java
 C:\Users\oneju\OneDrive\Рабочий стол\ПРОЕКТ\API\src\main\java\group\api\controller\ServletInitializer.java
 C:\Users\oneju\OneDrive\Рабочий стол\ПРОЕКТ\API\src\main\java\group\api\forms\ProductionMaster.java
 C:\Users\oneju\OneDrive\Рабочий стол\ПРОЕКТ\API\src\main\java\group\api\repository\OrderItemRepository.java
 C:\Users\oneju\OneDrive\Рабочий стол\ПРОЕКТ\API\src\main\java\group\api\entity\FrameComponent.java
 C:\Users\oneju\OneDrive\Рабочий стол\ПРОЕКТ\API\src\main\java\group\api\repository\UserRepository.java
 C:\Users\oneju\OneDrive\Рабочий стол\ПРОЕКТ\API\src\main\java\group\api\forms\Auto.java
+C:\Users\oneju\OneDrive\Рабочий стол\ПРОЕКТ\API\src\main\java\group\api\telegram\TelegramBotConfig.java
 C:\Users\oneju\OneDrive\Рабочий стол\ПРОЕКТ\API\src\main\java\group\api\repository\SaleItemRepository.java

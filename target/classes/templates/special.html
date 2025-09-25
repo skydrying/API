@@ -3,50 +3,169 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Специальности</title>
+    <title>Личный кабинет - Багетная мастерская</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link th:href="@{/css/stylespecial.css}" rel="stylesheet">
 </head>
 <body>
+    <!-- Шапка сайта -->
     <header class="header">
         <div class="autocontainer">
-            <h1>Университет Прогресса</h1>
-            <nav class="navigation">
-                <ul>
-                    <li><a href="http://localhost:8080/api/formindex">Главная</a></li>
-                    <li><a href="http://localhost:8080/api/formsvedeniy">Сведения об ОО</a></li>
-                    <li><a href="http://localhost:8080/api/formspecial">Специальности</a></li>
-                    <li><a href="http://localhost:8080/api/formcontact">Контакты</a></li>
-                    <li><a href="http://localhost:8080/api/formotziv">Отзывы</a></li>
-                    <li><a href="http://localhost:8080/api/formauto">Войти</a></li>
-                </ul>
-            </nav>
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-palette logo-icon"></i>
+                    <div class="logo-text">
+                        <h1>Багетная мастерская</h1>
+                        <p>Оформление картин и фотографий с 2005 года</p>
+                    </div>
+                </div>
+                <nav class="navigation">
+                    <ul>
+                        <li><a href="http://localhost:9090/api/formindex" class="nav-link">Главная</a></li>
+                        <li><a href="http://localhost:9090/api/formsvedeniy" class="nav-link active">О нас</a></li>
+                        <li><a href="http://localhost:9090/api/formspecial" class="nav-link">Услуги</a></li>
+                        <li><a href="http://localhost:9090/api/formcontact" class="nav-link">Контакты</a></li>
+                        <li><a href="http://localhost:9090/api/formauto" class="nav-link">Войти</a></li>
+                    </ul>
+                </nav>
+            </div>
         </div>
     </header>
 
     <main class="main-content">
-        <div class="specialties-section">
-            <h2>Специальности Университета Прогресса</h2>
-            <div class="specialty-item">
-                <h3>Вывод данных из базы данных №1</h3>
+        <div class="autocontainer dashboard-section">
+            <h2 class="section-title">Личный кабинет</h2>
+            
+            <!-- Приветствие -->
+            <div class="user-welcome">
+                <h2>Добро пожаловать, Иван Иванов!</h2>
+                <p>Рады видеть вас снова в вашем личном кабинете</p>
+                <div class="user-info">
+                    <div class="info-item">
+                        <strong>Клиентский номер:</strong> #BA-2025-001
+                    </div>
+                    <div class="info-item">
+                        <strong>Статус:</strong> Постоянный клиент
+                    </div>
+                    <div class="info-item">
+                        <strong>Скидка:</strong> 10%
+                    </div>
+                </div>
             </div>
-            <div class="specialty-item">
-                <h3>Вывод данных из базы данных №2</h3>
+
+            <!-- Основные разделы -->
+            <div class="dashboard-grid">
+                <!-- Текущие заказы -->
+                <div class="dashboard-card">
+                    <h3><i class="fas fa-list-alt"></i> Текущие заказы</h3>
+                    <div class="orders-list">
+                        <div class="order-item">
+                            <div class="order-info">
+                                <strong>Заказ #BA-001</strong>
+                                <p>Оформление картины маслом</p>
+                                <small>Создан: 15.01.2025</small>
+                            </div>
+                            <span class="order-status status-in-work">В работе</span>
+                        </div>
+                        <div class="order-item">
+                            <div class="order-info">
+                                <strong>Заказ #BA-002</strong>
+                                <p>Оформление фотографии</p>
+                                <small>Создан: 20.01.2025</small>
+                            </div>
+                            <span class="order-status status-ready">Готов</span>
+                        </div>
+                        <div class="order-item">
+                            <div class="order-info">
+                                <strong>Заказ #BA-003</strong>
+                                <p>Реставрация рамы</p>
+                                <small>Создан: 25.01.2025</small>
+                            </div>
+                            <span class="order-status status-new">Новый</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Быстрые действия -->
+                <div class="dashboard-card">
+                    <h3><i class="fas fa-bolt"></i> Быстрые действия</h3>
+                    <div class="quick-actions">
+                        <a href="#" class="action-btn">
+                            <i class="fas fa-plus"></i><br>Новый заказ
+                        </a>
+                        <a href="#" class="action-btn">
+                            <i class="fas fa-history"></i><br>История заказов
+                        </a>
+                        <a href="#" class="action-btn">
+                            <i class="fas fa-edit"></i><br>Редактировать профиль
+                        </a>
+                        <a href="#" class="action-btn">
+                            <i class="fas fa-download"></i><br>Скачать каталог
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Статистика -->
+                <div class="dashboard-card">
+                    <h3><i class="fas fa-chart-bar"></i> Статистика</h3>
+                    <div class="user-info">
+                        <div class="info-item">
+                            <strong>Всего заказов:</strong><br>15
+                        </div>
+                        <div class="info-item">
+                            <strong>Выполнено:</strong><br>12
+                        </div>
+                        <div class="info-item">
+                            <strong>В работе:</strong><br>3
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="specialty-item">
-                <h3>Вывод данных из базы данных №3</h3>
-            </div>
-            <div class="specialty-item">
-                <h3>Вывод данных из базы данных №4</h3>
-            </div>
-            <div class="specialty-item">
-                <h3>Вывод данных из базы данных №5</h3>
+
+            <!-- История заказов -->
+            <div class="history-section">
+                <h3><i class="fas fa-history"></i> История заказов</h3>
+                <table class="history-table">
+                    <thead>
+                        <tr>
+                            <th>№ Заказа</th>
+                            <th>Услуга</th>
+                            <th>Дата</th>
+                            <th>Стоимость</th>
+                            <th>Статус</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>#BA-015</td>
+                            <td>Оформление вышивки</td>
+                            <td>10.01.2025</td>
+                            <td>5 200 ₽</td>
+                            <td><span class="order-status status-completed">Завершен</span></td>
+                        </tr>
+                        <tr>
+                            <td>#BA-014</td>
+                            <td>Изготовление паспарту</td>
+                            <td>05.01.2025</td>
+                            <td>3 800 ₽</td>
+                            <td><span class="order-status status-completed">Завершен</span></td>
+                        </tr>
+                        <tr>
+                            <td>#BA-013</td>
+                            <td>Оформление картины</td>
+                            <td>28.12.2024</td>
+                            <td>7 500 ₽</td>
+                            <td><span class="order-status status-completed">Завершен</span></td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </main>
 
     <footer class="footer">
         <div class="autocontainer">
-            <p>&copy; 2025 Университет Прогресса. Все права защищены.</p>
+            <p>&copy; 2025 Багетная мастерская. Все права защищены.</p>
         </div>
     </footer>
 </body>

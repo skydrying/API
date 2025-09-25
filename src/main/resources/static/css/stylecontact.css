@@ -1,139 +1,350 @@
-body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 0;
-    background-color: #f4f4f4;
-}
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Georgia', serif;
+        }
 
-.header {
-    background-color: #003366;
-    color: white;
-    padding: 20px 0;
-}
+        :root {
+            --primary: #8B4513;
+            --secondary: #D2B48C;
+            --accent: #A0522D;
+            --light: #FAF0E6;
+            --dark: #3E2723;
+            --gray: #795548;
+            --transition: all 0.3s ease;
+        }
 
-.contactcontainer {
-    width: 90%;
-    margin: 0 auto;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
+        body {
+            background-color: var(--light);
+            color: var(--dark);
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
 
-.navigation ul {
-    list-style: none;
-    padding: 0;
-}
+        .contactcontainer {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
 
-.navigation ul li {
-    display: inline;
-    margin-right: 20px;
-}
+        /* Шапка */
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--dark) 100%);
+            color: white;
+            padding: 15px 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
 
-.navigation ul li a {
-    color: white;
-    text-decoration: none;
-    font-weight: bold;
-}
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
 
-.main-content {
-    padding: 20px;
-}
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
 
-.contact-info {
-    background-color: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    padding: 20px;
-    margin: 20px 0;
-}
+        .logo-icon {
+            font-size: 2.5rem;
+            color: var(--secondary);
+        }
 
-.contact-info h2 {
-    text-align: center;
-    color: #003366;
-}
+        .logo-text h1 {
+            font-size: 1.8rem;
+            margin-bottom: 5px;
+        }
 
-.contact-card {
-    border: 2px solid #003366;
-    border-radius: 5px;
-    padding: 15px;
-    margin: 10px 0;
-    transition: transform 0.3s;
-}
+        .logo-text p {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
 
-.contact-card:hover {
-    transform: scale(1.05);
-}
+        .navigation ul {
+            display: flex;
+            list-style: none;
+            gap: 25px;
+        }
 
-.contact-card h3 {
-    margin: 0;
-    color: #003366;
-}
+        .nav-link {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 8px 5px;
+            transition: var(--transition);
+            position: relative;
+        }
 
-.contact-card p {
-    margin: 5px 0 0;
-}
+        .nav-link:hover, .nav-link.active {
+            color: var(--secondary);
+        }
 
-.contact-form {
-    background-color: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    padding: 20px;
-    margin: 20px 0;
-}
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background-color: var(--secondary);
+            transition: var(--transition);
+        }
 
-.contact-form h2 {
-    text-align: center;
-    color: #003366;
-}
+        .nav-link:hover::after, .nav-link.active::after {
+            width: 100%;
+        }
 
-.form-group {
-    margin-bottom: 15px;
-}
+        /* Основной контент */
+        .main-content {
+            flex: 1;
+            padding: 60px 0;
+        }
 
-.form-group label {
-    display: block;
-    margin-bottom: 5px;
-    color: #003366;
-}
+        .section-title {
+            text-align: center;
+            color: var(--primary);
+            font-size: 2.5rem;
+            margin-bottom: 50px;
+            position: relative;
+        }
 
-.form-group input,
-.form-group textarea {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-}
+        .section-title::after {
+            content: '';
+            display: block;
+            width: 100px;
+            height: 4px;
+            background: var(--secondary);
+            margin: 20px auto;
+            border-radius: 2px;
+        }
 
-.form-group textarea {
-    resize: vertical; 
-}
+        /* Ассортимент */
+        .assortment-section {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
 
-button {
-    background-color: #003366;
-    color: white;
-    border: none;
-    padding: 10px 15px;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-}
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-bottom: 60px;
+        }
 
-button:hover {
-    background-color: #00509e; 
-}
+        .category-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            border: 2px solid var(--secondary);
+            transition: var(--transition);
+        }
 
-.footer {
-    background-color: #003366;
-    color: white;
-    text-align: center;
-    padding: 10px 0;
-    position: relative;
-    bottom: 0;
-    position: fixed;
-    width: 100%;
-    margin-left: -20px;
-}
+        .category-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
 
-.footer p {
-    margin: 5px 0;
-}
+        .category-image {
+            height: 200px;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .category-content {
+            padding: 25px;
+        }
+
+        .category-content h3 {
+            color: var(--primary);
+            margin-bottom: 15px;
+            font-size: 1.4rem;
+        }
+
+        .category-content p {
+            color: var(--gray);
+            margin-bottom: 20px;
+        }
+
+        .price-range {
+            color: var(--accent);
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+        }
+
+        .materials-list {
+            list-style: none;
+            margin-bottom: 20px;
+        }
+
+        .materials-list li {
+            padding: 5px 0;
+            border-bottom: 1px dashed var(--secondary);
+        }
+
+        .materials-list li:last-child {
+            border-bottom: none;
+        }
+
+        .btn {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            padding: 12px 25px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: var(--transition);
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        /* Дополнительные услуги */
+        .services-section {
+            background: white;
+            padding: 50px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border: 2px solid var(--secondary);
+            margin-bottom: 60px;
+        }
+
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+        }
+
+        .service-item {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .service-item i {
+            font-size: 2.5rem;
+            color: var(--primary);
+            margin-bottom: 15px;
+        }
+
+        .service-item h4 {
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+
+        /* Контакты */
+        .contact-info {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--dark) 100%);
+            color: white;
+            padding: 50px;
+            border-radius: 15px;
+            text-align: center;
+        }
+
+        .contact-info h2 {
+            margin-bottom: 30px;
+            color: var(--secondary);
+        }
+
+        .contact-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .contact-card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 25px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+
+        .contact-card h3 {
+            color: var(--secondary);
+            margin-bottom: 15px;
+        }
+
+        .contact-card i {
+            font-size: 2rem;
+            margin-bottom: 15px;
+            color: var(--secondary);
+        }
+
+        /* Подвал */
+        .footer {
+            background: var(--dark);
+            color: white;
+            text-align: center;
+            padding: 2rem 0;
+            margin-top: auto;
+        }
+
+        .footer p {
+            opacity: 0.8;
+        }
+
+        /* Адаптивность */
+        @media (max-width: 992px) {
+            .header-content {
+                flex-direction: column;
+                gap: 20px;
+            }
+            
+            .navigation ul {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            
+            .category-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .navigation ul {
+                gap: 15px;
+            }
+            
+            .section-title {
+                font-size: 2rem;
+            }
+            
+            .services-section, .contact-info {
+                padding: 30px 20px;
+                margin: 0 1rem 40px;
+            }
+            
+            .contact-cards {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .navigation ul {
+                flex-direction: column;
+                align-items: center;
+                gap: 10px;
+            }
+            
+            .category-content, .service-item {
+                padding: 15px;
+            }
+            
+            .services-grid {
+                grid-template-columns: 1fr;
+            }
+        }
