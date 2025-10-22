@@ -8,66 +8,77 @@
     <link th:href="@{/css/stylereg.css}" rel="stylesheet">
 </head>
 <body>
-    <header class="header">
-        <div class="autocontainer">
-            <div class="header-content">
-                <div class="logo">
-                    <i class="fas fa-palette logo-icon"></i>
-                    <div class="logo-text">
-                        <h1>Багетная мастерская</h1>
-                        <p>Оформление картин и фотографий с 2005 года</p>
+<header class="header">
+    <div class="autocontainer">
+        <div class="header-content">
+            <div class="logo">
+                <i class="fas fa-palette logo-icon"></i>
+                <div class="logo-text">
+                    <h1>Багетная мастерская</h1>
+                    <p>Оформление картин и фотографий с 2005 года</p>
+                </div>
+            </div>
+            <nav class="navigation">
+                <ul>
+                    <li><a href="http://localhost:9090/api/formindex" class="nav-link">Главная</a></li>
+                    <li><a href="http://localhost:9090/api/formsvedeniy" class="nav-link active">О нас</a></li>
+                    <li><a href="http://localhost:9090/api/formspecial" class="nav-link">Услуги</a></li>
+                    <li><a href="http://localhost:9090/api/formcontact" class="nav-link">Контакты</a></li>
+                    <li><a href="http://localhost:9090/api/formauto" class="nav-link">Войти</a></li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+</header>
+
+<main>
+    <section>
+        <div class="container">
+            <h2>Регистрация</h2>
+            <div th:if="${errorMessage}" class="alert alert-danger" role="alert">
+                <span th:text="${errorMessage}"></span>
+            </div>
+            <div class="form-container">
+                <form id="registration-form" action="registrationCustomer" method="post">
+                    <div class="form-group">
+                        <label for="lastname">Фамилия:</label>
+                        <input type="text" id="lastname" name="LastName" required placeholder="Введите вашу фамилию">
                     </div>
-                </div>
-                <nav class="navigation">
-                    <ul>
-                        <li><a href="http://localhost:9090/api/formindex" class="nav-link">Главная</a></li>
-                        <li><a href="http://localhost:9090/api/formsvedeniy" class="nav-link active">О нас</a></li>
-                        <li><a href="http://localhost:9090/api/formspecial" class="nav-link">Услуги</a></li>
-                        <li><a href="http://localhost:9090/api/formcontact" class="nav-link">Контакты</a></li>
-                        <li><a href="http://localhost:9090/api/formauto" class="nav-link">Войти</a></li>
-                    </ul>
-                </nav>
+                    <div class="form-group">
+                        <label for="firstname">Имя:</label>
+                        <input type="text" id="firstname" name="FirstName" required placeholder="Введите ваше имя">
+                    </div>
+                    <div class="form-group">
+                        <label for="middlename">Отчество:</label>
+                        <input type="text" id="middlename" name="MiddleName" required placeholder="Введите ваше отчество">
+                    </div>
+                    <div class="form-group">
+                        <label for="phone">Телефон:</label>
+                        <input type="tel" id="phone" name="Phone" required placeholder="+7 (XXX) XXX-XX-XX">
+                    </div>
+                    <div class="form-group">
+                        <label for="login">Логин:</label>
+                        <input type="text" id="login" name="Login" required placeholder="Введите ваш логин">
+                    </div>
+                    <div class="form-group">
+                        <label for="passwords">Пароль:</label>
+                        <input type="text" id="passwords" name="Password" required placeholder="Введите ваш пароль">
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email:</label>
+                        <input type="email" id="email" name="Email" required placeholder="example@mail.ru">
+                    </div>
+                    <button type="submit"><b>Зарегистрироваться</b></button>
+                </form>
             </div>
         </div>
-    </header>
+    </section>
+</main>
 
-    <main>
-        <section>
-            <div class="container">
-                <h2>Регистрация</h2>
-                <div class="form-container">
-                    <form id="registration-form">
-                        <div class="form-group">
-                            <label for="lastname">Фамилия:</label>
-                            <input type="text" id="lastname" name="lastname" required placeholder="Введите вашу фамилию">
-                        </div>
-                        <div class="form-group">
-                            <label for="firstname">Имя:</label>
-                            <input type="text" id="firstname" name="firstname" required placeholder="Введите ваше имя">
-                        </div>
-                        <div class="form-group">
-                            <label for="middlename">Отчество:</label>
-                            <input type="text" id="middlename" name="middlename" required placeholder="Введите ваше отчество">
-                        </div>
-                        <div class="form-group">
-                            <label for="phone">Телефон:</label>
-                            <input type="tel" id="phone" name="phone" required placeholder="+7 (XXX) XXX-XX-XX">
-                        </div>
-                        <div class="form-group">
-                            <label for="email">Email:</label>
-                            <input type="email" id="email" name="email" required placeholder="example@mail.ru">
-                        </div>
-                        <button type="submit"><b>Зарегистрироваться</b></button>
-                    </form>
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <footer class="footer">
-        <div class="autocontainer">
-            <p>&copy; 2025 Багетная мастерская. Все права защищены.</p>
-        </div>
-    </footer>
+<footer class="footer">
+    <div class="autocontainer">
+        <p>&copy; 2025 Багетная мастерская. Все права защищены.</p>
+    </div>
+</footer>
 </body>
 </html>

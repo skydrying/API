@@ -152,6 +152,10 @@ public class Auto extends javax.swing.JFrame {
                         this.dispose();
                         new ProductionMaster().setVisible(true);
                         break;
+                    case "CUSTOMER":
+                        this.dispose();
+                        new Customer().setVisible(true);
+                        break;
                     default:
                         JOptionPane.showMessageDialog(this, "Неверный логин или пароль.");
                         break;

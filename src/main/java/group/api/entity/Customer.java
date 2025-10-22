@@ -1,5 +1,6 @@
 package group.api.entity;
 
+import java.io.Serializable;
 import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -9,10 +10,12 @@ import jakarta.persistence.Id;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
-import java.io.Serializable;
+import jakarta.xml.bind.annotation.XmlRootElement;
+
 
 @Entity
 @Table(name = "customer")
+@XmlRootElement
 @NamedQueries({
     @NamedQuery(name = "Customer.findAll", query = "SELECT c FROM Customer c"),
     @NamedQuery(name = "Customer.findById", query = "SELECT c FROM Customer c WHERE c.id = :id"),
@@ -20,6 +23,8 @@ import java.io.Serializable;
     @NamedQuery(name = "Customer.findByFirstName", query = "SELECT c FROM Customer c WHERE c.firstName = :firstName"),
     @NamedQuery(name = "Customer.findByMiddleName", query = "SELECT c FROM Customer c WHERE c.middleName = :middleName"),
     @NamedQuery(name = "Customer.findByPhone", query = "SELECT c FROM Customer c WHERE c.phone = :phone"),
+    @NamedQuery(name = "Customer.findByLogins", query = "SELECT c FROM Customer c WHERE c.logins = :logins"),
+    @NamedQuery(name = "Customer.findByPasswords", query = "SELECT c FROM Customer c WHERE c.passwords = :passwords"),
     @NamedQuery(name = "Customer.findByEmail", query = "SELECT c FROM Customer c WHERE c.email = :email"),
     @NamedQuery(name = "Customer.findByDiscount", query = "SELECT c FROM Customer c WHERE c.discount = :discount"),
     @NamedQuery(name = "Customer.findByTotalPurchases", query = "SELECT c FROM Customer c WHERE c.totalPurchases = :totalPurchases")})
@@ -39,6 +44,12 @@ public class Customer implements Serializable {
     private String middleName;
     @Column(name = "Phone")
     private String phone;
+    @Basic(optional = false)
+    @Column(name = "logins")
+    private String logins;
+    @Basic(optional = false)
+    @Column(name = "passwords")
+    private String passwords;
     @Column(name = "Email")
     private String email;
     @Column(name = "Discount")
@@ -51,6 +62,12 @@ public class Customer implements Serializable {
 
     public Customer(Integer id) {
         this.id = id;
+    }
+
+    public Customer(Integer id, String logins, String passwords) {
+        this.id = id;
+        this.logins = logins;
+        this.passwords = passwords;
     }
 
     public Integer getId() {
@@ -91,6 +108,22 @@ public class Customer implements Serializable {
 
     public void setPhone(String phone) {
         this.phone = phone;
+    }
+
+    public String getLogins() {
+        return logins;
+    }
+
+    public void setLogins(String logins) {
+        this.logins = logins;
+    }
+
+    public String getPasswords() {
+        return passwords;
+    }
+
+    public void setPasswords(String passwords) {
+        this.passwords = passwords;
     }
 
     public String getEmail() {

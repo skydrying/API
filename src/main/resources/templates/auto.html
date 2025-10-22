@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,53 +8,61 @@
     <link th:href="@{/css/styleauto.css}" rel="stylesheet">
 </head>
 <body>
-    <header class="header">
-        <div class="autocontainer">
-            <div class="header-content">
-                <div class="logo">
-                    <i class="fas fa-palette logo-icon"></i>
-                    <div class="logo-text">
-                        <h1>Багетная мастерская</h1>
-                        <p>Оформление картин и фотографий с 2005 года</p>
-                    </div>
+<header class="header">
+    <div class="autocontainer">
+        <div class="header-content">
+            <div class="logo">
+                <i class="fas fa-palette logo-icon"></i>
+                <div class="logo-text">
+                    <h1>Багетная мастерская</h1>
+                    <p>Оформление картин и фотографий с 2005 года</p>
                 </div>
-                <nav class="navigation">
-                    <ul>
-                        <li><a href="http://localhost:9090/api/formindex" class="nav-link active">Главная</a></li>
-                        <li><a href="http://localhost:9090/api/formsvedeniy" class="nav-link">О нас</a></li>
-                        <li><a href="http://localhost:9090/api/formspecial" class="nav-link">Услуги</a></li>
-                        <li><a href="http://localhost:9090/api/formcontact" class="nav-link">Ассортимент</a></li>
-                        <li><a href="http://localhost:9090/api/formauto" class="nav-link">Войти</a></li>
-                    </ul>
-                </nav>
             </div>
+            <nav class="navigation">
+                <ul>
+                    <li><a href="http://localhost:9090/api/formindex" class="nav-link active">Главная</a></li>
+                    <li><a href="http://localhost:9090/api/formsvedeniy" class="nav-link">О нас</a></li>
+                    <li><a href="http://localhost:9090/api/formspecial" class="nav-link">Услуги</a></li>
+                    <li><a href="http://localhost:9090/api/formcontact" class="nav-link">Ассортимент</a></li>
+                    <li><a href="http://localhost:9090/api/formauto" class="nav-link">Войти</a></li>
+                </ul>
+            </nav>
         </div>
-    </header>
+    </div>
+</header>
 
-    <main class="container">
-        <div class="form-container">
-            <h2>Авторизация</h2>
-            <form action="login.php" method="POST">
-                <div class="form-group">
-                    <label for="email"><b>Логин:</b></label>
-                    <input type="email" id="email" name="email" required placeholder="Введите ваш email">
-                </div>
-                <div class="form-group">
-                    <label for="password"><b>Пароль:</b></label>
-                    <input type="password" id="password" name="password" required placeholder="Введите ваш пароль">
-                </div>
-                <button type="submit"><b>Войти</b></button>
-            </form>
-            <br>
-            <input type="button" value="Зарегистрироваться" onclick="location.href='http://localhost:9090/api/formreg'">
-            <br>
-        </div>
-    </main>
+<main class="container">
+    <div class="form-container">
+        <h2>Авторизация</h2>
 
-    <footer class="footer">
-        <div class="autocontainer">
-            <p>&copy; 2025 Багетная мастерская. Все права защищены.</p>
+        <div th:if="${successMessage}" class="alert alert-success" role="alert">
+            <span th:text="${successMessage}"></span>
         </div>
-    </footer>
+        <div th:if="${errorMessage}" class="alert alert-danger" role="alert">
+            <span th:text="${errorMessage}"></span>
+        </div>
+
+        <form action="getAutarizationSite" method="POST">
+            <div class="form-group">
+                <label for="login"><b>Логин:</b></label>
+                <input type="text" id="login" name="Login" required placeholder="Введите ваш логин">
+            </div>
+            <div class="form-group">
+                <label for="passwords"><b>Пароль:</b></label>
+                <input type="text" id="passwords" name="Password" required placeholder="Введите ваш пароль">
+            </div>
+            <button type="submit"><b>Войти</b></button>
+        </form>
+        <br>
+        <input type="button" value="Зарегистрироваться" onclick="location.href='http://localhost:9090/api/formreg'">
+        <br>
+    </div>
+</main>
+
+<footer class="footer">
+    <div class="autocontainer">
+        <p>&copy; 2025 Багетная мастерская. Все права защищены.</p>
+    </div>
+</footer>
 </body>
 </html>

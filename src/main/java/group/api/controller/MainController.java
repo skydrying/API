@@ -21,23 +21,23 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 import group.api.repository.OrdersRepository;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-@RestController
+@Controller
 @RequestMapping("/api")
 public class MainController {
 
@@ -82,6 +82,28 @@ public class MainController {
         return customerRepository.findAll();
     }
 
+    @GetMapping("/getDiscount")
+    public ResponseEntity<String> getDiscount(@PathVariable Integer id) {
+        Optional<Customer> customerOpt = customerRepository.findById(id);
+        if (customerOpt.isPresent()) {
+            String discount = customerOpt.get().getDiscount();
+            return ResponseEntity.ok(discount);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @GetMapping("/getDiscountTelegram")
+    public ResponseEntity<String> getDiscountTelegram(@PathVariable Integer id) {
+        Optional<Customer> customerOpt = customerRepository.findById(id);
+        if (customerOpt.isPresent()) {
+            String discount = customerOpt.get().getDiscount();
+            return ResponseEntity.ok(discount);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
     @GetMapping("/getEmbroiderykit")
     public @ResponseBody
     Iterable<EmbroideryKit> allEmbroiderykit() {
@@ -119,37 +141,101 @@ public class MainController {
     @PostMapping("/getAutarization")
     public @ResponseBody
     String getAutorization(@RequestParam(name = "Login") String login, @RequestParam(name = "Password") String password) {
+        for (Customer customer : customerRepository.findAll()) {
+            if (customer.getLogins().equals(login) && customer.getPasswords().equals(password)) {
+                return "CUSTOMER";
+            }
+        }
+
         int userId = 0;
-
-    for (User user : userRepository.findAll()) {
-        if (user.getLogin().equals(login) && user.getPassword().equals(password)) {
-            userId = user.getId();
-            break;
-        }
-    }
-    
-        for (Director director : directorRepository.findAll()) {
-            if (director.getIdUser() != null && director.getIdUser().getId() == userId) {
-                return "DIRECTOR";
+        for (User user : userRepository.findAll()) {
+            if (user.getLogin().equals(login) && user.getPassword().equals(password)) {
+                userId = user.getId();
+                break;
             }
         }
 
-        for (Seller seller : sellerRepository.findAll()) {
-            if (seller.getIdUser() != null && seller.getIdUser().getId() == userId) {
-                return "SELLER";
-            }
-        }
-
-        for (Productionmaster productionmaster : productionmasterRepository.findAll()) {
-            if (productionmaster.getIdUser() != null && productionmaster.getIdUser().getId() == userId) {
-                return "PRODUCTIONMASTER";
-            }
-        }
-        
         if (userId != 0) {
+            for (Director director : directorRepository.findAll()) {
+                if (director.getIdUser() != null && director.getIdUser().getId() == userId) {
+                    return "DIRECTOR";
+                }
+            }
+
+            for (Seller seller : sellerRepository.findAll()) {
+                if (seller.getIdUser() != null && seller.getIdUser().getId() == userId) {
+                    return "SELLER";
+                }
+            }
+
+            for (Productionmaster productionmaster : productionmasterRepository.findAll()) {
+                if (productionmaster.getIdUser() != null && productionmaster.getIdUser().getId() == userId) {
+                    return "PRODUCTIONMASTER";
+                }
+            }
+
             return "YES";
         } else {
             return "NO";
+        }
+    }
+
+    @PostMapping("/getAutarizationSite")
+    public String getAutarizationSite(
+            @RequestParam(name = "Login") String login,
+            @RequestParam(name = "Password") String password,
+            RedirectAttributes redirectAttributes,
+            HttpSession session) {
+
+        for (Customer customer : customerRepository.findAll()) {
+            if (customer.getLogins().equals(login) && customer.getPasswords().equals(password)) {
+                session.setAttribute("user", customer);
+                session.setAttribute("role", "customer");
+                redirectAttributes.addFlashAttribute("successMessage", "Авторизация успешна! Вы вошли как пользователь.");
+                return "redirect:/api/formspecial";
+            }
+        }
+
+        int userId = 0;
+        for (User user : userRepository.findAll()) {
+            if (user.getLogin().equals(login) && user.getPassword().equals(password)) {
+                userId = user.getId();
+                session.setAttribute("user", user);
+                break;
+            }
+        }
+
+        if (userId != 0) {
+            for (Director director : directorRepository.findAll()) {
+                if (director.getIdUser() != null && director.getIdUser().getId() == userId) {
+                    session.setAttribute("role", "director");  // Обновляем роль
+                    redirectAttributes.addFlashAttribute("successMessage", "Авторизация успешна! Вы вошли как директор");
+                    return "redirect:/api/formspecial";
+                }
+            }
+
+            for (Seller seller : sellerRepository.findAll()) {
+                if (seller.getIdUser() != null && seller.getIdUser().getId() == userId) {
+                    session.setAttribute("role", "seller");
+                    redirectAttributes.addFlashAttribute("successMessage", "Авторизация успешна! Вы вошли как продавец");
+                    return "redirect:/api/formspecial";
+                }
+            }
+
+            for (Productionmaster productionmaster : productionmasterRepository.findAll()) {
+                if (productionmaster.getIdUser() != null && productionmaster.getIdUser().getId() == userId) {
+                    session.setAttribute("role", "productionmaster");
+                    redirectAttributes.addFlashAttribute("successMessage", "Авторизация успешна! Вы вошли как мастер производства");
+                    return "redirect:/api/formspecial";
+                }
+            }
+
+            session.setAttribute("role", "employee");
+            redirectAttributes.addFlashAttribute("successMessage", "Авторизация успешна! Вы вошли как сотрудник");
+            return "redirect:/api/formspecial";
+        } else {
+            redirectAttributes.addFlashAttribute("errorMessage", "Неверный логин или пароль. Попробуйте снова");
+            return "redirect:/api/formauto";
         }
     }
 
@@ -211,6 +297,8 @@ public class MainController {
         Integer userId = savedUser.getId(); 
         return ResponseEntity.ok(userId);
     }
+
+
     @PostMapping("/updateUser")
     public @ResponseBody
     ResponseEntity<Integer> updateUser(
@@ -305,6 +393,99 @@ public class MainController {
         Integer customerId = savedCustomer.getId();
         return ResponseEntity.ok(customerId);
     }
+
+    @PostMapping("/registrationCustomer")
+    public String registrationCustomer(
+            @RequestParam(name = "LastName") String lastname,
+            @RequestParam(name = "FirstName") String firstname,
+            @RequestParam(name = "MiddleName") String middleName,
+            @RequestParam(name = "Phone") String phone,
+            @RequestParam(name = "Email") String email,
+            @RequestParam(name = "Login") String logins,
+            @RequestParam(name = "Password") String passwords,
+            RedirectAttributes redirectAttributes) throws IOException {
+
+        if (lastname == null || lastname.trim().isEmpty()) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Поле 'Фамилия' не может быть пустым");
+            return "redirect:/api/formreg";
+        }
+        if (firstname == null || firstname.trim().isEmpty()) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Поле 'Имя' не может быть пустым");
+            return "redirect:/api/formreg";
+        }
+        if (middleName == null || middleName.trim().isEmpty()) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Поле 'Отчество' не может быть пустым");
+            return "redirect:/api/formreg";
+        }
+        if (phone == null || phone.trim().isEmpty()) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Поле 'Телефон' не может быть пустым");
+            return "redirect:/api/formreg";
+        }
+        if (email == null || email.trim().isEmpty()) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Поле 'Email' не может быть пустым");
+            return "redirect:/api/formreg";
+        }
+
+        if (!email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Некорректный формат email");
+            return "redirect:/api/formreg";
+        }
+
+        if (!lastname.matches("^[А-Яа-яЁё\\s\\-']+$")) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Поле 'Фамилия' должно содержать только кириллические буквы");
+            return "redirect:/api/formreg";
+        }
+        if (!firstname.matches("^[А-Яа-яЁё\\s\\-']+$")) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Поле 'Имя' должно содержать только кириллические буквы");
+            return "redirect:/api/formreg";
+        }
+        if (!middleName.matches("^[А-Яа-яЁё\\s\\-']+$")) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Поле 'Отчество' должно содержать только кириллические буквы");
+            return "redirect:/api/formreg";
+        }
+
+        if (!phone.matches("^[0-9]+$")) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Поле 'Телефон' должно содержать только цифры");
+            return "redirect:/api/formreg";
+        }
+
+        // Добавленные проверки для логина и пароля
+        if (logins == null || logins.trim().isEmpty()) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Поле 'Логин' не может быть пустым");
+            return "redirect:/api/formreg";
+        }
+        if (!logins.matches("^[a-zA-Z0-9]+$")) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Поле 'Логин' должно содержать только английские буквы");
+            return "redirect:/api/formreg";
+        }
+
+        if (passwords == null || passwords.trim().isEmpty()) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Поле 'Пароль' не может быть пустым");
+            return "redirect:/api/formreg";
+        }
+        if (!passwords.matches("^[a-zA-Z0-9]+$")) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Поле 'Пароль' должно содержать только английские буквы");
+            return "redirect:/api/formreg";
+        }
+
+        Customer customer = new Customer();
+        customer.setLastName(lastname);
+        customer.setFirstName(firstname);
+        customer.setMiddleName(middleName);
+        customer.setPhone(phone);
+        customer.setEmail(email);
+        customer.setLogins(logins);
+        customer.setPasswords(passwords);
+        customer.setDiscount("1");
+        customer.setTotalPurchases("0");
+
+        Customer savedCustomer = customerRepository.save(customer);
+
+        redirectAttributes.addFlashAttribute("successMessage", "Регистрация прошла успешно! Теперь вы можете войти в систему.");
+
+        return "redirect:/api/formauto";
+    }
+
 
     @PostMapping("/updateCustomer")
     public @ResponseBody
@@ -630,15 +811,6 @@ public class MainController {
         return true;
     }
 
-//    @GetMapping("/getStudent")
-//    public @ResponseBody
-//    List allSTUD() {
-//        List list = new ArrayList();
-//        for (Student s : studentRepository.findAll()) {
-//            list.add(s.getUserId());
-//        }
-//        return list;
-//    }
 
 
     @GetMapping(path="/formindex")
@@ -651,9 +823,26 @@ public class MainController {
         return new ModelAndView("info");
     }
 
-    @GetMapping(path="/formspecial")
-    public ModelAndView special() {
-        return new ModelAndView("special");
+    @GetMapping("/formspecial")
+    public String formspecial(HttpSession session, Model model) {
+        Object user = session.getAttribute("user");
+        String role = (String) session.getAttribute("role");
+
+        if (user == null) {
+            return "redirect:/api/formauto";
+        }
+
+        model.addAttribute("user", user);
+        model.addAttribute("role", role);
+
+        if ("customer".equals(role) && user instanceof Customer) {
+            Customer customer = (Customer) user;
+            model.addAttribute("customerId", customer.getId());
+            String fullName = customer.getFirstName() + " " + customer.getMiddleName() + " " + customer.getLastName();
+            model.addAttribute("customerName", fullName);
+        }
+
+        return "special";
     }
 
     @GetMapping(path="/formcontact")
