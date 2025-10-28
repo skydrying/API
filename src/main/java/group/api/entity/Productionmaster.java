@@ -1,6 +1,8 @@
 package group.api.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.io.Serializable;
+import java.util.Collection;
 import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -11,11 +13,14 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
-import java.io.Serializable;
+import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlTransient;
 
 @Entity
 @Table(name = "productionmaster")
+@XmlRootElement
 @NamedQueries({
     @NamedQuery(name = "Productionmaster.findAll", query = "SELECT p FROM Productionmaster p"),
     @NamedQuery(name = "Productionmaster.findById", query = "SELECT p FROM Productionmaster p WHERE p.id = :id")})
@@ -27,6 +32,8 @@ public class Productionmaster implements Serializable {
     @Basic(optional = false)
     @Column(name = "id")
     private Integer id;
+    @OneToMany(mappedBy = "productionMasterID")
+    private Collection<Orders> ordersCollection;
     @JsonIgnore
     @JoinColumn(name = "id_user", referencedColumnName = "ID")
     @ManyToOne
@@ -45,6 +52,15 @@ public class Productionmaster implements Serializable {
 
     public void setId(Integer id) {
         this.id = id;
+    }
+
+    @XmlTransient
+    public Collection<Orders> getOrdersCollection() {
+        return ordersCollection;
+    }
+
+    public void setOrdersCollection(Collection<Orders> ordersCollection) {
+        this.ordersCollection = ordersCollection;
     }
 
     public User getIdUser() {

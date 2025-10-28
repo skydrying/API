@@ -54,7 +54,7 @@ public class MainController {
     @Autowired
     private SaleItemRepository saleItemRepository;
     @Autowired
-    private OrdersRepository orderRepository;
+    private OrdersRepository ordersRepository;
     @Autowired
     private OrderItemRepository orderItemRepository;
     @Autowired
@@ -82,27 +82,6 @@ public class MainController {
         return customerRepository.findAll();
     }
 
-    @GetMapping("/getDiscount")
-    public ResponseEntity<String> getDiscount(@PathVariable Integer id) {
-        Optional<Customer> customerOpt = customerRepository.findById(id);
-        if (customerOpt.isPresent()) {
-            String discount = customerOpt.get().getDiscount();
-            return ResponseEntity.ok(discount);
-        } else {
-            return ResponseEntity.notFound().build();
-        }
-    }
-
-    @GetMapping("/getDiscountTelegram")
-    public ResponseEntity<String> getDiscountTelegram(@PathVariable Integer id) {
-        Optional<Customer> customerOpt = customerRepository.findById(id);
-        if (customerOpt.isPresent()) {
-            String discount = customerOpt.get().getDiscount();
-            return ResponseEntity.ok(discount);
-        } else {
-            return ResponseEntity.notFound().build();
-        }
-    }
 
     @GetMapping("/getEmbroiderykit")
     public @ResponseBody
@@ -120,10 +99,28 @@ public class MainController {
     public @ResponseBody
     List allOrders() {
         List list = new ArrayList();
-        for (Orders order : orderRepository.findAll()) {
+        for (Orders order : ordersRepository.findAll()) {
             list.add(order);
         }
         return list;
+    }
+
+    @PostMapping("/changeOrderStatus")
+    public void changeOrderStatus(Integer orderId, String newStatus) {
+        try {
+            Orders order = ordersRepository.findById(orderId).orElse(null);
+
+            if (order != null) {
+                order.setStatus(newStatus);
+                ordersRepository.save(order);
+                System.out.println("Статус заказа №" + orderId + " изменен на: " + newStatus);
+            } else {
+                System.err.println("Заказ с ID " + orderId + " не найден.");
+            }
+        } catch (Exception e) {
+            System.err.println("Ошибка при изменении статуса заказа: " + e.getMessage());
+            throw e;
+        }
     }
 
     @GetMapping("/getSales")
@@ -141,12 +138,6 @@ public class MainController {
     @PostMapping("/getAutarization")
     public @ResponseBody
     String getAutorization(@RequestParam(name = "Login") String login, @RequestParam(name = "Password") String password) {
-        for (Customer customer : customerRepository.findAll()) {
-            if (customer.getLogins().equals(login) && customer.getPasswords().equals(password)) {
-                return "CUSTOMER";
-            }
-        }
-
         int userId = 0;
         for (User user : userRepository.findAll()) {
             if (user.getLogin().equals(login) && user.getPassword().equals(password)) {
@@ -180,6 +171,48 @@ public class MainController {
         }
     }
 
+    @PostMapping("/getAutarizationTelegramBot")
+    public @ResponseBody
+    String getAutarizationTelegramBot(@RequestParam(name = "Login") String login, @RequestParam(name = "Password") String password) {
+        for (Customer customer : customerRepository.findAll()) {
+            if (customer.getLogins().equals(login) && customer.getPasswords().equals(password)) {
+                return "CUSTOMER:" + customer.getId();
+            }
+        }
+
+        int userId = 0;
+        for (User user : userRepository.findAll()) {
+            if (user.getLogin().equals(login) && user.getPassword().equals(password)) {
+                userId = user.getId();
+                break;
+            }
+        }
+
+        if (userId != 0) {
+            for (Director director : directorRepository.findAll()) {
+                if (director.getIdUser() != null && director.getIdUser().getId() == userId) {
+                    return "DIRECTOR:" + userId;
+                }
+            }
+
+            for (Seller seller : sellerRepository.findAll()) {
+                if (seller.getIdUser() != null && seller.getIdUser().getId() == userId) {
+                    return "SELLER:" + userId;
+                }
+            }
+
+            for (Productionmaster productionmaster : productionmasterRepository.findAll()) {
+                if (productionmaster.getIdUser() != null && productionmaster.getIdUser().getId() == userId) {
+                    return "PRODUCTIONMASTER:" + userId;
+                }
+            }
+
+            return "EMPLOYEE:" + userId;
+        } else {
+            return "NO";
+        }
+    }
+
     @PostMapping("/getAutarizationSite")
     public String getAutarizationSite(
             @RequestParam(name = "Login") String login,
@@ -208,7 +241,7 @@ public class MainController {
         if (userId != 0) {
             for (Director director : directorRepository.findAll()) {
                 if (director.getIdUser() != null && director.getIdUser().getId() == userId) {
-                    session.setAttribute("role", "director");  // Обновляем роль
+                    session.setAttribute("role", "director");
                     redirectAttributes.addFlashAttribute("successMessage", "Авторизация успешна! Вы вошли как директор");
                     return "redirect:/api/formspecial";
                 }
@@ -481,7 +514,7 @@ public class MainController {
 
         Customer savedCustomer = customerRepository.save(customer);
 
-        redirectAttributes.addFlashAttribute("successMessage", "Регистрация прошла успешно! Теперь вы можете войти в систему.");
+        redirectAttributes.addFlashAttribute("successMessage", "Регистрация прошла успешно! Теперь вы можете войти в систему");
 
         return "redirect:/api/formauto";
     }
@@ -812,19 +845,64 @@ public class MainController {
     }
 
 
+    @GetMapping("/formindex")
+    public String formindex(HttpSession session, Model model) {
+        Object user = session.getAttribute("user");
+        String role = (String) session.getAttribute("role");
 
-    @GetMapping(path="/formindex")
-    public ModelAndView home() {
-        return new ModelAndView("index");
+        model.addAttribute("user", user);
+        model.addAttribute("role", role);
+
+        if (user != null) {
+            String lastName = "";
+            String initials = "";
+            if (user instanceof Customer) {
+                Customer customer = (Customer) user;
+                lastName = customer.getLastName();
+                initials = customer.getFirstName().substring(0, 1) + "." +
+                        (customer.getMiddleName() != null ? customer.getMiddleName().substring(0, 1) + "." : "");
+            } else if (user instanceof User) {
+                User userObj = (User) user;
+                lastName = userObj.getLastName();
+                initials = userObj.getFirstName().substring(0, 1) + "." +
+                        (userObj.getMiddleName() != null ? userObj.getMiddleName().substring(0, 1) + "." : "");
+            }
+            model.addAttribute("userDisplayName", lastName + " " + initials);
+        }
+
+        return "index";
     }
 
-    @GetMapping(path="/formsvedeniy")
-    public ModelAndView svedeniy() {
-        return new ModelAndView("info");
+    @GetMapping("/formsvedeniy")
+    public String formsvedeniy(HttpSession session, Model model) {
+        Object user = session.getAttribute("user");
+        String role = (String) session.getAttribute("role");
+
+        model.addAttribute("user", user);
+        model.addAttribute("role", role);
+
+        if (user != null) {
+            String lastName = "";
+            String initials = "";
+            if (user instanceof Customer) {
+                Customer customer = (Customer) user;
+                lastName = customer.getLastName();
+                initials = customer.getFirstName().substring(0, 1) + "." +
+                        (customer.getMiddleName() != null ? customer.getMiddleName().substring(0, 1) + "." : "");
+            } else if (user instanceof User) {
+                User userObj = (User) user;
+                lastName = userObj.getLastName();
+                initials = userObj.getFirstName().substring(0, 1) + "." +
+                        (userObj.getMiddleName() != null ? userObj.getMiddleName().substring(0, 1) + "." : "");
+            }
+            model.addAttribute("userDisplayName", lastName + " " + initials);
+        }
+
+        return "info";
     }
 
     @GetMapping("/formspecial")
-    public String formspecial(HttpSession session, Model model) {
+    public String formspecial(Model model, HttpSession session) {
         Object user = session.getAttribute("user");
         String role = (String) session.getAttribute("role");
 
@@ -835,24 +913,145 @@ public class MainController {
         model.addAttribute("user", user);
         model.addAttribute("role", role);
 
+        List<Orders> allOrders = new ArrayList<>();
+        for (Orders order : ordersRepository.findAll()) {
+            allOrders.add(order);
+        }
+
+        List<Orders> orders = new ArrayList<>();
+
         if ("customer".equals(role) && user instanceof Customer) {
             Customer customer = (Customer) user;
             model.addAttribute("customerId", customer.getId());
-            String fullName = customer.getFirstName() + " " + customer.getMiddleName() + " " + customer.getLastName();
+            String fullName = customer.getFirstName() + " " +
+                    (customer.getMiddleName() != null ? customer.getMiddleName() + " " : "") +
+                    customer.getLastName();
             model.addAttribute("customerName", fullName);
+            model.addAttribute("discount", customer.getDiscount());
+            model.addAttribute("totalPurchases", customer.getTotalPurchases());
+            model.addAttribute("email", customer.getEmail());
+            model.addAttribute("phone", customer.getPhone());
+
+            for (Orders order : allOrders) {
+                if (order.getCustomerID() != null && order.getCustomerID().getId().equals(customer.getId())) {
+                    orders.add(order);
+                }
+            }
+        } else if (user instanceof User) {
+            User userObj = (User) user;
+            model.addAttribute("customerId", userObj.getId());
+            model.addAttribute("dateOfBirth", userObj.getDateOfBirth());
+            model.addAttribute("dateOfEmployment", userObj.getDateOfEmployment());
+            model.addAttribute("passportData", userObj.getPassportData());
+            model.addAttribute("snils", userObj.getSnils());
+            model.addAttribute("photoLink", userObj.getPhotoLink());
+            model.addAttribute("phone", userObj.getPhone());
+            String fullName = userObj.getFirstName() + " " +
+                    (userObj.getMiddleName() != null ? userObj.getMiddleName() + " " : "") +
+                    userObj.getLastName();
+            model.addAttribute("customerName", fullName);
+
+            for (Orders order : allOrders) {
+                if (order.getSellerID() != null && order.getSellerID().getId().equals(userObj.getId())) {
+                    orders.add(order);
+                }
+            }
         }
+
+        model.addAttribute("orders", orders);
+        List<Orders> currentOrders = new ArrayList<>();
+        for (Orders order : orders) {
+            if (!"Готово".equals(order.getStatus())) {
+                currentOrders.add(order);
+            }
+        }
+        model.addAttribute("currentOrders", currentOrders);
+        List<Orders> historyOrders = new ArrayList<>();
+        for (Orders order : orders) {
+            if ("Готово".equals(order.getStatus())) {
+                historyOrders.add(order);
+            }
+        }
+        model.addAttribute("historyOrders", historyOrders);
+
+        String lastName = "";
+        String initials = "";
+        if (user instanceof Customer) {
+            Customer customer = (Customer) user;
+            lastName = customer.getLastName();
+            initials = customer.getFirstName().substring(0, 1) + "." +
+                    (customer.getMiddleName() != null ? customer.getMiddleName().substring(0, 1) + "." : "");
+        } else if (user instanceof User) {
+            User userObj = (User) user;
+            lastName = userObj.getLastName();
+            initials = userObj.getFirstName().substring(0, 1) + "." +
+                    (userObj.getMiddleName() != null ? userObj.getMiddleName().substring(0, 1) + "." : "");
+        }
+        model.addAttribute("userDisplayName", lastName + " " + initials);
 
         return "special";
     }
 
-    @GetMapping(path="/formcontact")
-    public ModelAndView contact() {
-        return new ModelAndView("contact");
+    @PostMapping("/logout")
+    public String logout(HttpSession session) {
+        session.invalidate();
+        return "redirect:/api/formindex";
     }
 
-    @GetMapping(path="/formotziv")
-    public ModelAndView otziv() {
-        return new ModelAndView("otziv");
+    @GetMapping("/formassortiment")
+    public String formassortiment(HttpSession session, Model model) {
+        Object user = session.getAttribute("user");
+        String role = (String) session.getAttribute("role");
+
+        model.addAttribute("user", user);
+        model.addAttribute("role", role);
+
+        if (user != null) {
+            String lastName = "";
+            String initials = "";
+            if (user instanceof Customer) {
+                Customer customer = (Customer) user;
+                lastName = customer.getLastName();
+                initials = customer.getFirstName().substring(0, 1) + "." +
+                        (customer.getMiddleName() != null ? customer.getMiddleName().substring(0, 1) + "." : "");
+            } else if (user instanceof User) {
+                User userObj = (User) user;
+                lastName = userObj.getLastName();
+                initials = userObj.getFirstName().substring(0, 1) + "." +
+                        (userObj.getMiddleName() != null ? userObj.getMiddleName().substring(0, 1) + "." : "");
+            }
+            model.addAttribute("userDisplayName", lastName + " " + initials);
+        }
+
+        return "assortiment";
+    }
+
+    @GetMapping("/formcontact")
+    public String formcontact(HttpSession session, Model model) {
+        Object user = session.getAttribute("user");
+        String role = (String) session.getAttribute("role");
+
+        model.addAttribute("user", user);
+        model.addAttribute("role", role);
+
+        if (user != null) {
+            String lastName = "";
+            String initials = "";
+            if (user instanceof Customer) {
+                Customer customer = (Customer) user;
+                lastName = customer.getLastName();
+                initials = customer.getFirstName().substring(0, 1) + "." +
+                        (customer.getMiddleName() != null ? customer.getMiddleName().substring(0, 1) + "." : "");
+            } else if (user instanceof User) {
+                User userObj = (User) user;
+                lastName = userObj.getLastName();
+                initials = userObj.getFirstName().substring(0, 1) + "." +
+                        (userObj.getMiddleName() != null ? userObj.getMiddleName().substring(0, 1) + "." : "");
+            }
+            model.addAttribute("userDisplayName", lastName + " " + initials);
+        }
+
+        return "contact";
     }
 
     @GetMapping(path="/formauto")
@@ -864,13 +1063,6 @@ public class MainController {
     public ModelAndView reg() {
         return new ModelAndView("reg");
     }
-
-    @GetMapping(path="/formstatus")
-    public ModelAndView status() {
-        return new ModelAndView("status");
-    }
-
-    
 }
 
 

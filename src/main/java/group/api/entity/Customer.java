@@ -1,7 +1,10 @@
+
 package group.api.entity;
 
 import java.io.Serializable;
+import java.util.Collection;
 import jakarta.persistence.Basic;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -9,8 +12,10 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlTransient;
 
 
 @Entity
@@ -56,6 +61,8 @@ public class Customer implements Serializable {
     private String discount;
     @Column(name = "TotalPurchases")
     private String totalPurchases;
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "customerID")
+    private Collection<Orders> ordersCollection;
 
     public Customer() {
     }
@@ -148,6 +155,15 @@ public class Customer implements Serializable {
 
     public void setTotalPurchases(String totalPurchases) {
         this.totalPurchases = totalPurchases;
+    }
+
+    @XmlTransient
+    public Collection<Orders> getOrdersCollection() {
+        return ordersCollection;
+    }
+
+    public void setOrdersCollection(Collection<Orders> ordersCollection) {
+        this.ordersCollection = ordersCollection;
     }
 
     @Override

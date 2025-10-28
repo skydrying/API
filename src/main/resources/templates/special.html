@@ -5,10 +5,45 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Личный кабинет - Багетная мастерская</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link th:href="@{/css/stylespecial.css}" rel="stylesheet">  <!-- Проверьте, что файл css/stylespecial.css существует в static/ -->
+    <link th:href="@{/css/stylespecial.css}" rel="stylesheet">
+    <style>
+        .user-name {
+            font-weight: bold;
+            color: #333;
+            margin-right: 10px;
+        }
+        .logout-btn {
+            background: none;
+            border: none;
+            color: #d9534f; /* Красный для выхода */
+            cursor: pointer;
+            text-decoration: underline;
+            font-size: 16px;
+        }
+        .logout-btn:hover {
+            color: #c9302c;
+        }
+        .order-status {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .status-in-work {
+            background-color: #f0ad4e; /* Оранжевый для "В работе" */
+            color: white;
+        }
+        .status-completed {
+            background-color: #5cb85c; /* Зеленый для "Готово" */
+            color: white;
+        }
+        .no-orders {
+            color: #777;
+            font-style: italic;
+        }
+    </style>
 </head>
 <body>
-<!-- Шапка -->
 <header class="header">
     <div class="autocontainer">
         <div class="header-content">
@@ -22,10 +57,18 @@
             <nav class="navigation">
                 <ul>
                     <li><a href="http://localhost:9090/api/formindex" class="nav-link">Главная</a></li>
-                    <li><a href="http://localhost:9090/api/formsvedeniy" class="nav-link active">О нас</a></li>
-                    <li><a href="http://localhost:9090/api/formspecial" class="nav-link">Услуги</a></li>
+                    <li><a href="http://localhost:9090/api/formsvedeniy" class="nav-link">О нас</a></li>
+                    <li><a href="http://localhost:9090/api/formassortiment" class="nav-link">Ассортимент</a></li>
                     <li><a href="http://localhost:9090/api/formcontact" class="nav-link">Контакты</a></li>
-                    <li><a href="http://localhost:9090/api/formauto" class="nav-link">Войти</a></li>
+                    <li th:if="${user != null}">
+                        <span class="nav-link user-name" th:text="${userDisplayName}" onclick="redirectToPersonal()">Иванов И.И.</span>
+                        <form th:action="@{/api/logout}" method="post" style="display: inline;">
+                            <button type="submit" class="nav-link logout-btn">Выйти</button>
+                        </form>
+                    </li>
+                    <li th:if="${user == null}">
+                        <a href="http://localhost:9090/api/formauto" class="nav-link active">Войти</a>
+                    </li>
                 </ul>
             </nav>
         </div>
@@ -49,13 +92,52 @@
             <p>Рады видеть вас снова в вашем личном кабинете</p>
             <div class="user-info">
                 <div class="info-item">
-                    <strong>Клиентский номер:</strong> <span th:text="'#BA-2025-' + ${customerId}">#BA-2025-001</span>
+                    <strong th:text="${role == 'customer' ? 'Клиентский номер:' : 'Номер сотрудника:'}"></strong> <span th:text="'' + ${customerId}"></span>
                 </div>
                 <div class="info-item">
                     <strong>Статус:</strong> <span th:text="${role == 'customer' ? 'Постоянный клиент' : (role == 'director' ? 'Директор' : (role == 'seller' ? 'Продавец' : (role == 'productionmaster' ? 'Мастер производства' : 'Сотрудник')))}">Постоянный клиент</span>
                 </div>
                 <div class="info-item" th:if="${role == 'customer'}">
-                    <strong>Скидка:</strong> 10%
+                    <strong>Скидка:</strong> <span th:text="${discount} + '%'">10%</span>
+                </div>
+            </div>
+        </div>
+
+        <div th:if="${user != null}" class="dashboard-card profile-section">
+            <h3><i class="fas fa-user"></i> Личные данные</h3>
+            <div class="user-info">
+                <div class="info-item">
+                    <strong>Фамилия:</strong> <span th:text="${user.lastName}"></span>
+                </div>
+                <div class="info-item">
+                    <strong>Имя:</strong> <span th:text="${user.firstName}"></span>
+                </div>
+                <div class="info-item">
+                    <strong>Отчество:</strong> <span th:text="${user.middleName != null ? user.middleName : 'Не указано'}"></span>
+                </div>
+                <div class="info-item">
+                    <strong>Телефон:</strong> <span th:text="${phone}"></span>
+                </div>
+                <div class="info-item" th:if="${role == 'customer'}">
+                    <strong>Email:</strong> <span th:text="${email}"></span>
+                </div>
+                <div class="info-item" th:if="${role == 'customer'}">
+                    <strong>Общая сумма покупок:</strong> <span th:text="${totalPurchases} + ' ₽'"></span>
+                </div>
+                <div class="info-item" th:if="${role != 'customer'}">
+                    <strong>Дата рождения:</strong> <span th:text="${dateOfBirth != null ? #dates.format(dateOfBirth, 'dd.MM.yyyy') : 'Не указано'}"></span>
+                </div>
+                <div class="info-item" th:if="${role != 'customer'}">
+                    <strong>Дата трудоустройства:</strong> <span th:text="${dateOfEmployment != null ? #dates.format(dateOfEmployment, 'dd.MM.yyyy') : 'Не указано'}"></span>
+                </div>
+                <div class="info-item" th:if="${role != 'customer'}">
+                    <strong>Паспортные данные:</strong> <span th:text="${passportData != null ? passportData : 'Не указано'}"></span> <!-- Скрыть в продакшене -->
+                </div>
+                <div class="info-item" th:if="${role != 'customer'}">
+                    <strong>СНИЛС:</strong> <span th:text="${snils != null ? snils : 'Не указано'}"></span>
+                </div>
+                <div class="info-item" th:if="${role != 'customer'}">
+                    <strong>Ссылка на фото:</strong> <span th:text="${photoLink != null ? photoLink : 'Не указано'}"></span>
                 </div>
             </div>
         </div>
@@ -64,13 +146,16 @@
             <div class="dashboard-card">
                 <h3><i class="fas fa-list-alt"></i> Текущие заказы</h3>
                 <div class="orders-list">
-                    <div class="order-item">
+                    <div th:if="${#lists.isEmpty(currentOrders)}" class="no-orders">
+                        <p>Нет текущих заказов</p>
+                    </div>
+                    <div th:each="order : ${currentOrders}" class="order-item">
                         <div class="order-info">
-                            <strong>Заказ #BA-001</strong>
-                            <p>Оформление картины маслом</p>
-                            <small>Создан: 15.01.2025</small>
+                            <strong th:text="'Заказ #' + ${order.id}"></strong> <!-- Предполагаем поле id (номер заказа) -->
+                            <p th:text="${order.notes != null ? order.notes : 'Не указано'}"></p> <!-- Вывод notes вместо статического текста -->
+                            <small th:text="'Создан: ' + (${order.orderDate != null ? #dates.format(order.orderDate, 'dd.MM.yyyy') : 'Дата не указана'})"></small> <!-- Заменил createdDate на orderDate -->
                         </div>
-                        <span class="order-status status-in-work">В работе</span>
+                        <span class="order-status status-in-work" th:text="${order.status != null ? order.status : 'Неизвестно'}"></span> <!-- Предполагаем поле status -->
                     </div>
                 </div>
             </div>
@@ -88,7 +173,7 @@
                 <h3><i class="fas fa-chart-bar"></i> Статистика</h3>
                 <div class="user-info">
                     <div class="info-item">
-                        <strong>Всего заказов:</strong><br>15
+                        <strong>Всего заказов:</strong> <span th:text="${#lists.size(orders)}"></span>
                     </div>
                 </div>
             </div>
@@ -107,12 +192,15 @@
                 </tr>
                 </thead>
                 <tbody>
-                <tr>
-                    <td>#BA-015</td>
-                    <td>Оформление вышивки</td>
-                    <td>10.01.2025</td>
-                    <td>5 200 ₽</td>
-                    <td><span class="order-status status-completed">Завершен</span></td>
+                <tr th:if="${#lists.isEmpty(historyOrders)}">
+                    <td colspan="5" class="no-orders">История заказов пуста</td>
+                </tr>
+                <tr th:each="order : ${historyOrders}">
+                    <td th:text="'#' + ${order.id}"></td>
+                    <td th:text="${order.notes != null ? order.notes : 'Не указано'}"></td> <!-- Вывод notes вместо статического текста -->
+                    <td th:text="${order.orderDate != null ? #dates.format(order.orderDate, 'dd.MM.yyyy') : 'Не указана'}"></td> <!-- Заменил createdDate на orderDate -->
+                    <td th:text="${order.TotalAmount != null ? (order.TotalAmount + ' ₽') : 'Не указана'}"></td> <!-- Предполагаем поле TotalAmount -->
+                    <td><span class="order-status status-completed" th:text="${order.status != null ? order.status : 'Неизвестно'}"></span></td>
                 </tr>
                 </tbody>
             </table>
@@ -125,5 +213,11 @@
         <p>&copy; 2025 Багетная мастерская. Все права защищены.</p>
     </div>
 </footer>
+
+<script>
+    function redirectToPersonal() {
+        window.location.href = 'http://localhost:9090/api/formspecial';
+    }
+</script>
 </body>
 </html>

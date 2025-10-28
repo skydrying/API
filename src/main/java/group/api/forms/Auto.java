@@ -152,21 +152,17 @@ public class Auto extends javax.swing.JFrame {
                         this.dispose();
                         new ProductionMaster().setVisible(true);
                         break;
-                    case "CUSTOMER":
-                        this.dispose();
-                        new Customer().setVisible(true);
-                        break;
                     default:
-                        JOptionPane.showMessageDialog(this, "Неверный логин или пароль.");
+                        JOptionPane.showMessageDialog(this, "Неверный логин или пароль");
                         break;
                 }
             } else {
-                JOptionPane.showMessageDialog(this, "Ошибка при авторизации. Попробуйте позже.");
+                JOptionPane.showMessageDialog(this, "Ошибка при авторизации. Попробуйте позже");
             }
          }
         } catch (IOException e) {
             e.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Ошибка сети. Проверьте подключение к интернету.");
+            JOptionPane.showMessageDialog(this, "Ошибка сети. Проверьте подключение к интернету");
         }
     }
 

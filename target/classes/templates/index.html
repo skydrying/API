@@ -6,6 +6,24 @@
     <title>Багетная мастерская</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link th:href="@{/css/styleindex.css}" rel="stylesheet">
+    <style>
+        .user-name {
+            font-weight: bold;
+            color: #333;
+            margin-right: 10px;
+        }
+        .logout-btn {
+            background: none;
+            border: none;
+            color: #d9534f; /* Красный для выхода */
+            cursor: pointer;
+            text-decoration: underline;
+            font-size: 16px;
+        }
+        .logout-btn:hover {
+            color: #c9302c;
+        }
+    </style>
 </head>
 <body>
     <!-- Шапка сайта -->
@@ -23,14 +41,19 @@
                     <ul>
                         <li><a href="http://localhost:9090/api/formindex" class="nav-link active">Главная</a></li>
                         <li><a href="http://localhost:9090/api/formsvedeniy" class="nav-link">О нас</a></li>
-                        <li><a href="http://localhost:9090/api/formspecial" class="nav-link">Услуги</a></li>
-                        <li><a href="http://localhost:9090/api/formcontact" class="nav-link">Ассортимент</a></li>
-                        <li><a href="http://localhost:9090/api/formauto" class="nav-link">Войти</a></li>
+                        <li><a href="http://localhost:9090/api/formassortiment" class="nav-link">Ассортимент</a></li>
+                        <li><a href="http://localhost:9090/api/formcontact" class="nav-link">Контакты</a></li>
+                        <li th:if="${user != null}">
+                            <span class="nav-link user-name" th:text="${userDisplayName}" onclick="redirectToPersonal()">Иванов И.И.</span>
+                            <form th:action="@{/api/logout}" method="post" style="display: inline;">
+                                <button type="submit" class="nav-link logout-btn">Выйти</button>
+                            </form>
+                        </li>
+                        <li th:if="${user == null}">
+                            <a href="http://localhost:9090/api/formauto" class="nav-link">Войти</a>
+                        </li>
                     </ul>
                 </nav>
-               <button class="auth-btn" onclick="location.href='http://localhost:9090/api/formauto'">
-               <i class="fas fa-user"></i> Войти
-               </button>
             </div>
         </div>
     </header>
@@ -40,7 +63,7 @@
             <div class="hero-content">
                 <h2>Искусство в достойном обрамлении</h2>
                 <p>Профессиональное оформление картин, фотографий и вышивок в багетные рамы. Более 15 лет создаём эстетику для вашего интерьера</p>
-                <a href="http://localhost:9090/api/formspecial" class="cta-button">Посмотреть услуги</a>
+                <a href="http://localhost:9090/api/formspecial" class="cta-button">Посмотреть ассортимент</a>
             </div>
         </div>
     </section>
@@ -210,5 +233,11 @@
             </div>
         </div>
     </footer>
+
+    <script>
+        function redirectToPersonal() {
+            window.location.href = 'http://localhost:9090/api/formspecial';
+        }
+    </script>
 </body>
 </html>

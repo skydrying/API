@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ассортимент - Багетная мастерская</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link th:href="@{/css/styleassortiment.css}" rel="stylesheet">
+    <style>
+        .user-name {
+            font-weight: bold;
+            color: #333;
+            margin-right: 10px;
+        }
+        .logout-btn {
+            background: none;
+            border: none;
+            color: #d9534f; /* Красный для выхода */
+            cursor: pointer;
+            text-decoration: underline;
+            font-size: 16px;
+        }
+        .logout-btn:hover {
+            color: #c9302c;
+        }
+    </style>
+</head>
+<body>
+<header class="header">
+    <div class="contactcontainer">
+        <div class="header-content">
+            <div class="logo">
+                <i class="fas fa-palette logo-icon"></i>
+                <div class="logo-text">
+                    <h1>Багетная мастерская</h1>
+                    <p>Оформление картин и фотографий с 2005 года</p>
+                </div>
+            </div>
+            <nav class="navigation">
+                <ul>
+                    <li><a href="http://localhost:9090/api/formindex" class="nav-link">Главная</a></li>
+                    <li><a href="http://localhost:9090/api/formsvedeniy" class="nav-link">О нас</a></li>
+                    <li><a href="http://localhost:9090/api/formassortiment" class="nav-link active">Ассортимент</a></li>
+                    <li><a href="http://localhost:9090/api/formcontact" class="nav-link">Контакты</a></li>
+                    <li th:if="${user != null}">
+                        <span class="nav-link user-name" th:text="${userDisplayName}" onclick="redirectToPersonal()">Иванов И.И.</span>
+                        <form th:action="@{/api/logout}" method="post" style="display: inline;">
+                            <button type="submit" class="nav-link logout-btn">Выйти</button>
+                        </form>
+                    </li>
+                    <li th:if="${user == null}">
+                        <a href="http://localhost:9090/api/formauto" class="nav-link">Войти</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+</header>
+
+<main class="main-content">
+    <div class="contactcontainer assortment-section">
+        <h2 class="section-title">Наш ассортимент</h2>
+
+        <!-- Виды багета -->
+        <div class="category-grid">
+            <div class="category-card">
+                <div class="category-image" style="background-image: url('https://avatars.mds.yandex.net/i?id=2a000001991b21d4d2d964347e50d1a7a2a4-16134031-yarec&n=13')"></div>
+                <div class="category-content">
+                    <h3>Деревянный багет</h3>
+                    <p>Классические рамы из натурального дерева с резьбой и позолотой</p>
+                    <div class="price-range">от 1 500 ₽/п.м.</div>
+                    <ul class="materials-list">
+                        <li>Дуб, ясень, орех</li>
+                        <li>Позолота 24 карата</li>
+                        <li>Ручная резьба</li>
+                        <li>Антикварная патина</li>
+                    </ul>
+                    <button class="btn">Выбрать</button>
+                </div>
+            </div>
+
+            <div class="category-card">
+                <div class="category-image" style="background-image: url('https://i9.photo.2gis.com/images/branch/72/10133099190304916_0329.jpg')"></div>
+                <div class="category-content">
+                    <h3>Пластиковый багет</h3>
+                    <p>Современные легкие рамы с широкой палитрой цветов</p>
+                    <div class="price-range">от 800 ₽/п.м.</div>
+                    <ul class="materials-list">
+                        <li>Водостойкий пластик</li>
+                        <li>200+ цветов</li>
+                        <li>Имитация дерева</li>
+                        <li>Металлические эффекты</li>
+                    </ul>
+                    <button class="btn">Выбрать</button>
+                </div>
+            </div>
+
+            <div class="category-card">
+                <div class="category-image" style="background-image: url('https://amiel.club/uploads/posts/2022-10/1665001341_25-amiel-club-p-dekorativnii-baget-dlya-sten-vkontakte-26.jpg')"></div>
+                <div class="category-content">
+                    <h3>Алюминиевый багет</h3>
+                    <p>Стильные рамы для современного интерьера и фотографий</p>
+                    <div class="price-range">от 1 200 ₽/п.м.</div>
+                    <ul class="materials-list">
+                        <li>Анодированный алюминий</li>
+                        <li>Хромированные поверхности</li>
+                        <li>Матовые и глянцевые</li>
+                        <li>Угловые соединения</li>
+                    </ul>
+                    <button class="btn">Выбрать</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Дополнительные услуги -->
+        <div class="services-section">
+            <h2 class="section-title">Дополнительные услуги</h2>
+            <div class="services-grid">
+                <div class="service-item">
+                    <i class="fas fa-cut"></i>
+                    <h4>Паспарту</h4>
+                    <p>Изготовление паспарту любых размеров и цветов</p>
+                    <div class="price-range">от 500 ₽</div>
+                </div>
+                <div class="service-item">
+                    <i class="fas fa-shield-alt"></i>
+                    <h4>Защитное стекло</h4>
+                    <p>Антибликовое, музейное, ударопрочное стекло</p>
+                    <div class="price-range">от 300 ₽</div>
+                </div>
+                <div class="service-item">
+                    <i class="fas fa-hammer"></i>
+                    <h4>Реставрация рам</h4>
+                    <p>Восстановление старинных и антикварных рам</p>
+                    <div class="price-range">от 2 000 ₽</div>
+                </div>
+                <div class="service-item">
+                    <i class="fas fa-truck"></i>
+                    <h4>Доставка и монтаж</h4>
+                    <p>Профессиональный монтаж в любом месте города</p>
+                    <div class="price-range">от 1 000 ₽</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Контакты -->
+        <div class="contact-info">
+            <h2>Консультация по ассортименту</h2>
+            <div class="contact-cards">
+                <div class="contact-card">
+                    <i class="fas fa-phone"></i>
+                    <h3>Телефон</h3>
+                    <p>+7 (495) 123-45-67</p>
+                </div>
+                <div class="contact-card">
+                    <i class="fas fa-envelope"></i>
+                    <h3>Email</h3>
+                    <p>info@art-rama.ru</p>
+                </div>
+                <div class="contact-card">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <h3>Адрес</h3>
+                    <p>г. Москва, ул. Художественная, д. 15</p>
+                </div>
+                <div class="contact-card">
+                    <i class="fas fa-clock"></i>
+                    <h3>Время работы</h3>
+                    <p>Пн-Пт: 10:00-20:00<br>Сб-Вс: 11:00-18:00</p>
+                </div>
+            </div>
+            <button class="btn">Получить консультацию</button>
+        </div>
+    </div>
+</main>
+
+<footer class="footer">
+    <div class="contactcontainer">
+        <p>&copy; 2025 Багетная мастерская. Все права защищены.</p>
+    </div>
+</footer>
+
+<script>
+    function redirectToPersonal() {
+        window.location.href = 'http://localhost:9090/api/formspecial';
+    }
+</script>
+</body>
+</html>

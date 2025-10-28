@@ -1,6 +1,7 @@
 package group.api.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.io.Serializable;
+import java.util.Date;
 import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -15,11 +16,11 @@ import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
-import java.io.Serializable;
-import java.util.Date;
+import jakarta.xml.bind.annotation.XmlRootElement;
 
 @Entity
 @Table(name = "orders")
+@XmlRootElement
 @NamedQueries({
     @NamedQuery(name = "Orders.findAll", query = "SELECT o FROM Orders o"),
     @NamedQuery(name = "Orders.findById", query = "SELECT o FROM Orders o WHERE o.id = :id"),
@@ -55,6 +56,9 @@ public class Orders implements Serializable {
     @JoinColumn(name = "CustomerID", referencedColumnName = "ID")
     @ManyToOne(optional = false)
     private Customer customerID;
+    @JoinColumn(name = "ProductionMasterID", referencedColumnName = "id")
+    @ManyToOne
+    private Productionmaster productionMasterID;
     @JoinColumn(name = "SellerID", referencedColumnName = "ID")
     @ManyToOne(optional = false)
     private User sellerID;
@@ -128,6 +132,14 @@ public class Orders implements Serializable {
 
     public void setCustomerID(Customer customerID) {
         this.customerID = customerID;
+    }
+
+    public Productionmaster getProductionMasterID() {
+        return productionMasterID;
+    }
+
+    public void setProductionMasterID(Productionmaster productionMasterID) {
+        this.productionMasterID = productionMasterID;
     }
 
     public User getSellerID() {

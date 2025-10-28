@@ -21,10 +21,18 @@
             <nav class="navigation">
                 <ul>
                     <li><a href="http://localhost:9090/api/formindex" class="nav-link">Главная</a></li>
-                    <li><a href="http://localhost:9090/api/formsvedeniy" class="nav-link active">О нас</a></li>
-                    <li><a href="http://localhost:9090/api/formspecial" class="nav-link">Услуги</a></li>
+                    <li><a href="http://localhost:9090/api/formsvedeniy" class="nav-link">О нас</a></li>
+                    <li><a href="http://localhost:9090/api/formassortiment" class="nav-link">Ассортимент</a></li>
                     <li><a href="http://localhost:9090/api/formcontact" class="nav-link">Контакты</a></li>
-                    <li><a href="http://localhost:9090/api/formauto" class="nav-link">Войти</a></li>
+                    <li th:if="${user != null}">
+                        <span class="nav-link user-name" th:text="${userDisplayName}" onclick="redirectToPersonal()">Иванов И.И.</span>
+                        <form th:action="@{/api/logout}" method="post" style="display: inline;">
+                            <button type="submit" class="nav-link logout-btn">Выйти</button>
+                        </form>
+                    </li>
+                    <li th:if="${user == null}">
+                        <a href="http://localhost:9090/api/formauto" class="nav-link active">Войти</a>
+                    </li>
                 </ul>
             </nav>
         </div>
@@ -80,5 +88,11 @@
         <p>&copy; 2025 Багетная мастерская. Все права защищены.</p>
     </div>
 </footer>
+
+<script>
+    function redirectToPersonal() {
+        window.location.href = 'http://localhost:9090/api/formspecial';
+    }
+</script>
 </body>
 </html>

@@ -1,10 +1,10 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package group.api.entity;
 
+import java.io.Serializable;
+import java.util.Collection;
+import java.util.Date;
 import jakarta.persistence.Basic;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -16,16 +16,13 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
-import java.io.Serializable;
-import java.util.Collection;
-import java.util.Date;
+import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlTransient;
 
-/**
- *
- * @author oneju
- */
+
 @Entity
 @Table(name = "user")
+@XmlRootElement
 @NamedQueries({
     @NamedQuery(name = "User.findAll", query = "SELECT u FROM User u"),
     @NamedQuery(name = "User.findById", query = "SELECT u FROM User u WHERE u.id = :id"),
@@ -72,10 +69,8 @@ public class User implements Serializable {
     private String login;
     @Column(name = "Password")
     private String password;
-    @OneToMany(mappedBy = "idUser")
-    private Collection<Seller> sellerCollection;
-    @OneToMany(mappedBy = "idUser")
-    private Collection<Director> directorCollection;
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "sellerID")
+    private Collection<Orders> ordersCollection;
     @OneToMany(mappedBy = "idUser")
     private Collection<Productionmaster> productionmasterCollection;
 
@@ -182,22 +177,16 @@ public class User implements Serializable {
         this.password = password;
     }
 
-    public Collection<Seller> getSellerCollection() {
-        return sellerCollection;
+    @XmlTransient
+    public Collection<Orders> getOrdersCollection() {
+        return ordersCollection;
     }
 
-    public void setSellerCollection(Collection<Seller> sellerCollection) {
-        this.sellerCollection = sellerCollection;
+    public void setOrdersCollection(Collection<Orders> ordersCollection) {
+        this.ordersCollection = ordersCollection;
     }
 
-    public Collection<Director> getDirectorCollection() {
-        return directorCollection;
-    }
-
-    public void setDirectorCollection(Collection<Director> directorCollection) {
-        this.directorCollection = directorCollection;
-    }
-
+    @XmlTransient
     public Collection<Productionmaster> getProductionmasterCollection() {
         return productionmasterCollection;
     }
