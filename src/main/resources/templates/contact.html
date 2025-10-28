@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Контакты - Багетная мастерская</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link th:href="@{/css/styleassortiment.css}" rel="stylesheet">
+    <style>
+        .user-name {
+            font-weight: bold;
+            color: #333;
+            margin-right: 10px;
+        }
+        .logout-btn {
+            background: none;
+            border: none;
+            color: #d9534f; /* Красный для выхода */
+            cursor: pointer;
+            text-decoration: underline;
+            font-size: 16px;
+        }
+        .logout-btn:hover {
+            color: #c9302c;
+        }
+    </style>
+</head>
+<body>
+<header class="header">
+    <div class="contactcontainer">
+        <div class="header-content">
+            <div class="logo">
+                <i class="fas fa-palette logo-icon"></i>
+                <div class="logo-text">
+                    <h1>Багетная мастерская</h1>
+                    <p>Оформление картин и фотографий с 2005 года</p>
+                </div>
+            </div>
+            <nav class="navigation">
+                <ul>
+                    <li><a href="http://localhost:9090/api/formindex" class="nav-link">Главная</a></li>
+                    <li><a href="http://localhost:9090/api/formsvedeniy" class="nav-link">О нас</a></li>
+                    <li><a href="http://localhost:9090/api/formassortiment" class="nav-link">Ассортимент</a></li>
+                    <li><a href="http://localhost:9090/api/formcontact" class="nav-link active">Контакты</a></li>
+                    <li th:if="${user != null}">
+                        <span class="nav-link user-name" th:text="${userDisplayName}" onclick="redirectToPersonal()">Иванов И.И.</span>
+                        <form th:action="@{/api/logout}" method="post" style="display: inline;">
+                            <button type="submit" class="nav-link logout-btn">Выйти</button>
+                        </form>
+                    </li>
+                    <li th:if="${user == null}">
+                        <a href="http://localhost:9090/api/formauto" class="nav-link active">Войти</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+</header>
+
+<main class="main-content">
+</main>
+
+<footer class="footer">
+    <div class="contactcontainer">
+        <p>&copy; 2025 Багетная мастерская. Все права защищены.</p>
+    </div>
+</footer>
+
+<script>
+    function redirectToPersonal() {
+        window.location.href = 'http://localhost:9090/api/formspecial';
+    }
+</script>
+</body>
+</html>
