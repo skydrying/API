@@ -1,6 +1,7 @@
 package group.api.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import group.api.forms.ProductionMaster;
 import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -68,7 +69,7 @@ public class CustomFrameOrder implements Serializable {
     @JsonIgnore
     @JoinColumn(name = "ProductionMasterID", referencedColumnName = "ID")
     @ManyToOne
-    private User productionMasterID;
+    private Productionmaster productionMasterID;
 
     public CustomFrameOrder() {
     }
@@ -173,11 +174,11 @@ public class CustomFrameOrder implements Serializable {
         this.orderID = orderID;
     }
 
-    public User getProductionMasterID() {
+    public Productionmaster getProductionMasterID() {
         return productionMasterID;
     }
 
-    public void setProductionMasterID(User productionMasterID) {
+    public void setProductionMasterID(Productionmaster productionMasterID) {
         this.productionMasterID = productionMasterID;
     }
 

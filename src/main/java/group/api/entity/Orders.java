@@ -2,6 +2,8 @@ package group.api.entity;
 
 import java.io.Serializable;
 import java.util.Date;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -53,12 +55,15 @@ public class Orders implements Serializable {
     @Lob
     @Column(name = "Notes")
     private String notes;
+    @JsonIgnore
     @JoinColumn(name = "CustomerID", referencedColumnName = "ID")
     @ManyToOne(optional = false)
     private Customer customerID;
+    @JsonIgnore
     @JoinColumn(name = "ProductionMasterID", referencedColumnName = "id")
     @ManyToOne
     private Productionmaster productionMasterID;
+    @JsonIgnore
     @JoinColumn(name = "SellerID", referencedColumnName = "ID")
     @ManyToOne(optional = false)
     private User sellerID;

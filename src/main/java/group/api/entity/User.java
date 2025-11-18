@@ -69,6 +69,10 @@ public class User implements Serializable {
     private String login;
     @Column(name = "Password")
     private String password;
+    @OneToMany(mappedBy = "idUser")
+    private Collection<Seller> sellerCollection;
+    @OneToMany(mappedBy = "idUser")
+    private Collection<Director> directorCollection;
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "sellerID")
     private Collection<Orders> ordersCollection;
     @OneToMany(mappedBy = "idUser")
@@ -175,6 +179,24 @@ public class User implements Serializable {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    @XmlTransient
+    public Collection<Seller> getSellerCollection() {
+        return sellerCollection;
+    }
+
+    public void setSellerCollection(Collection<Seller> sellerCollection) {
+        this.sellerCollection = sellerCollection;
+    }
+
+    @XmlTransient
+    public Collection<Director> getDirectorCollection() {
+        return directorCollection;
+    }
+
+    public void setDirectorCollection(Collection<Director> directorCollection) {
+        this.directorCollection = directorCollection;
     }
 
     @XmlTransient

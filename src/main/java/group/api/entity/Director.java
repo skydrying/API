@@ -1,6 +1,7 @@
 package group.api.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.io.Serializable;
 import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -12,10 +13,12 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
-import java.io.Serializable;
+import jakarta.xml.bind.annotation.XmlRootElement;
+
 
 @Entity
 @Table(name = "director")
+@XmlRootElement
 @NamedQueries({
     @NamedQuery(name = "Director.findAll", query = "SELECT d FROM Director d"),
     @NamedQuery(name = "Director.findById", query = "SELECT d FROM Director d WHERE d.id = :id")})

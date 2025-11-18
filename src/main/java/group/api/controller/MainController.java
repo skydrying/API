@@ -1,6 +1,7 @@
 package group.api.controller;
 
 import group.api.entity.*;
+import group.api.forms.ProductionMaster;
 import group.api.repository.EmbroideryKitRepository;
 import group.api.repository.SellerRepository;
 import group.api.repository.UserRepository;
@@ -27,6 +28,7 @@ import java.util.logging.Logger;
 
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -82,7 +84,6 @@ public class MainController {
         return customerRepository.findAll();
     }
 
-
     @GetMapping("/getEmbroiderykit")
     public @ResponseBody
     Iterable<EmbroideryKit> allEmbroiderykit() {
@@ -93,6 +94,101 @@ public class MainController {
     public @ResponseBody
     Iterable<Consumable> allConsumable() {
         return consumableRepository.findAll();
+    }
+
+    @GetMapping("/getFrameMaterial")
+    public @ResponseBody
+    Iterable<FrameMaterial> getFrameMaterial() {
+        return frameMaterialRepository.findAll();
+    }
+
+    @GetMapping("/getFrameComponent")
+    public @ResponseBody
+    Iterable<FrameComponent> allFrameComponent() {
+        return frameComponentRepository.findAll();
+    }
+
+    @GetMapping("/getCustomFrameOrder")
+    public @ResponseBody
+    Iterable<CustomFrameOrder> allCustomFrameOrder() {
+        return customFrameOrderRepository.findAll();
+    }
+
+    @PostMapping("/createOrder")
+    public Orders createOrder(@RequestBody Orders order) {
+        return ordersRepository.save(order);
+    }
+
+    @PostMapping("/createCustomFrameOrder")
+    public CustomFrameOrder createCustomFrameOrder(@RequestBody CustomFrameOrder customFrameOrder) {
+        return customFrameOrderRepository.save(customFrameOrder);
+    }
+
+    public Orders updateOrder(Orders order) {
+        return ordersRepository.save(order);
+    }
+
+    public CustomFrameOrder updateCustomFrameOrder(CustomFrameOrder customFrameOrder) {
+        return customFrameOrderRepository.save(customFrameOrder);
+    }
+
+    @GetMapping("/frameMaterials")
+    public Iterable<FrameMaterial> allFrameMaterial() {
+        return frameMaterialRepository.findAll();
+    }
+
+    @PostMapping("/frameMaterials")
+    public FrameMaterial createFrameMaterial(@RequestBody FrameMaterial frameMaterial) {
+        return frameMaterialRepository.save(frameMaterial);
+    }
+
+    @PutMapping("/frameMaterials")
+    public FrameMaterial updateFrameMaterial(@RequestBody FrameMaterial frameMaterial) {
+        return frameMaterialRepository.save(frameMaterial);
+    }
+
+    @DeleteMapping("/frameMaterials/{id}")
+    public void deleteFrameMaterial(@PathVariable Integer id) {
+        frameMaterialRepository.deleteById(id);
+    }
+
+    // GET - Получение всех компонентов рамок
+    @GetMapping("/frameComponents")
+    public Iterable<FrameComponent> allFC() {
+        return frameComponentRepository.findAll();
+    }
+
+    // POST - Создание нового компонента рамки
+    @PostMapping("/frameComponents")
+    public FrameComponent createFrameComponent(@RequestBody FrameComponent frameComponent) {
+        return frameComponentRepository.save(frameComponent);
+    }
+
+    // PUT - Обновление компонента рамки
+    @PutMapping("/frameComponents")
+    public FrameComponent updateFrameComponent(@RequestBody FrameComponent frameComponent) {
+        return frameComponentRepository.save(frameComponent);
+    }
+
+    // DELETE - Удаление компонента рамки
+    @DeleteMapping("/frameComponents/{id}")
+    public void deleteFrameComponent(@PathVariable Integer id) {
+        frameComponentRepository.deleteById(id);
+    }
+
+    public Productionmaster findProductionMasterByUserId(Long userId) {
+        try {
+            Iterable<Productionmaster> productionMasters = productionmasterRepository.findAll();
+            for (Productionmaster master : productionMasters) {
+                if (master.getIdUser() != null && master.getIdUser().getId().longValue() == userId) {
+                    return master;
+                }
+            }
+            return null;
+        } catch (Exception e) {
+            System.err.println("Error finding production master by user ID: " + e.getMessage());
+            return null;
+        }
     }
 
     @GetMapping("/getOrders")
@@ -127,12 +223,6 @@ public class MainController {
     public @ResponseBody
     Iterable<Sale> allSales() {
         return saleRepository.findAll();
-    }
-
-    @GetMapping("/getFrameMaterial")
-    public @ResponseBody
-    Iterable<FrameMaterial> allFrameMaterial() {
-        return frameMaterialRepository.findAll();
     }
 
     @PostMapping("/getAutarization")
@@ -427,6 +517,38 @@ public class MainController {
         return ResponseEntity.ok(customerId);
     }
 
+    @PostMapping("/registerCustomer")
+    public @ResponseBody
+    ResponseEntity<Integer> registerCustomer(
+            @RequestParam(name = "LastName") String lastname,
+            @RequestParam(name = "FirstName") String firstname,
+            @RequestParam(name = "MiddleName") String middleName,
+            @RequestParam(name = "Phone") String phone,
+            @RequestParam(name = "Email") String email,
+            @RequestParam(name = "Login") String login,
+            @RequestParam(name = "Password") String password) {
+
+        try {
+            Customer customer = new Customer();
+            customer.setLastName(lastname);
+            customer.setFirstName(firstname);
+            customer.setMiddleName(middleName);
+            customer.setPhone(phone);
+            customer.setEmail(email);
+            customer.setLogins(login);
+            customer.setPasswords(password);
+            customer.setDiscount("0");
+            customer.setTotalPurchases("0");
+
+            Customer savedCustomer = customerRepository.save(customer);
+            Integer customerId = savedCustomer.getId();
+            return ResponseEntity.ok(customerId);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(-1);
+        }
+    }
     @PostMapping("/registrationCustomer")
     public String registrationCustomer(
             @RequestParam(name = "LastName") String lastname,
@@ -671,6 +793,16 @@ public class MainController {
         List list = new ArrayList();
         for (Productionmaster pm : productionmasterRepository.findAll()) {
             list.add(pm.getIdUser());
+        }
+        return list;
+    }
+
+    @GetMapping("/getProductionmaster2")
+    public @ResponseBody
+    List<Productionmaster> allPM2() {
+        List<Productionmaster> list = new ArrayList<>();
+        for (Productionmaster pm : productionmasterRepository.findAll()) {
+            list.add(pm); // возвращаем сам Productionmaster, а не его пользователя
         }
         return list;
     }

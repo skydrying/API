@@ -1,4 +1,3 @@
-
 package group.api.entity;
 
 import java.io.Serializable;
@@ -16,7 +15,6 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import jakarta.xml.bind.annotation.XmlTransient;
-
 
 @Entity
 @Table(name = "customer")

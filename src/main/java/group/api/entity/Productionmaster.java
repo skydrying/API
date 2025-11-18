@@ -18,6 +18,7 @@ import jakarta.persistence.Table;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import jakarta.xml.bind.annotation.XmlTransient;
 
+
 @Entity
 @Table(name = "productionmaster")
 @XmlRootElement
