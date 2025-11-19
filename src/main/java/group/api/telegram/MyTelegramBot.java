@@ -41,20 +41,16 @@ public class MyTelegramBot extends TelegramLongPollingBot {
         Long selectedOrderId;
         Integer lastMessageId;
 
-        // Новые поля для навигации по заказам
         List<Orders> currentOrders;
         int currentOrderIndex;
 
-        // Новые поля для навигации по ассортименту
         List<?> currentAssortment;
         int currentAssortmentIndex;
         String currentAssortmentType;
 
-        // Новые поля для заказа рамки
         CustomFrameOrder currentFrameOrder;
         String currentFrameOrderStep;
 
-        // Новые поля для свободных заказов
         List<Orders> freeOrders;
         int currentFreeOrderIndex;
         boolean viewingFreeOrders;
@@ -62,21 +58,37 @@ public class MyTelegramBot extends TelegramLongPollingBot {
         Double currentMaterialEstimate;
         Double currentMaterialActual;
 
-        // Новые поля для управления материалами рамок
         List<FrameMaterial> currentFrameMaterials;
         int currentFrameMaterialIndex;
         FrameMaterial selectedFrameMaterial;
-        String frameMaterialAction; // "ADD", "EDIT", "DELETE"
-        String waitingForField; // Поле, которое ожидаем от пользователя
+        String frameMaterialAction;
+        String waitingForField;
 
         List<FrameComponent> currentFrameComponents;
         int currentFrameComponentIndex;
         FrameComponent selectedFrameComponent;
-        String frameComponentAction; // "ADD", "EDIT", "DELETE"
+        String frameComponentAction;
         String waitingForFieldComponent;
 
         Customer registrationCustomer;
         String registrationStep;
+
+        Reviews currentReview;
+        String reviewStep;
+        boolean hasReview;
+        boolean canLeaveReview;
+
+        List<Orders> allOrdersReport;
+        int currentOrderReportIndex;
+
+        List<Reviews> allReviewsReport;
+        int currentReviewReportIndex;
+
+        List<Object> salesReport; 
+        int currentSalesReportIndex;
+        String currentReportType;
+
+        String lastMessageText;
 
         UserState() {
             this.state = "START";
@@ -95,7 +107,6 @@ public class MyTelegramBot extends TelegramLongPollingBot {
             this.currentMaterialEstimate = null;
             this.currentMaterialActual = null;
 
-            // Инициализация новых полей для управления материалами рамок
             this.currentFrameMaterials = new ArrayList<>();
             this.currentFrameMaterialIndex = 0;
             this.selectedFrameMaterial = null;
@@ -110,6 +121,23 @@ public class MyTelegramBot extends TelegramLongPollingBot {
 
             this.registrationCustomer = new Customer();
             this.registrationStep = "";
+
+            this.currentReview = null;
+            this.reviewStep = "";
+            this.hasReview = false;
+            this.canLeaveReview = false;
+
+            this.allOrdersReport = new ArrayList<>();
+            this.currentOrderReportIndex = 0;
+
+            this.allReviewsReport = new ArrayList<>();
+            this.currentReviewReportIndex = 0;
+
+            this.salesReport = new ArrayList<>();
+            this.currentSalesReportIndex = 0;
+            this.currentReportType = "";
+
+            this.lastMessageText = null;
         }
     }
 
@@ -149,6 +177,11 @@ public class MyTelegramBot extends TelegramLongPollingBot {
         UserState userState = getUserState(chatId);
 
         try {
+            if ("отмена".equalsIgnoreCase(messageText.trim()) && userState.state.startsWith("REGISTRATION_")) {
+                cancelRegistration(chatId, userState, userName);
+                return;
+            }
+
             if ("WAITING_LOGIN".equals(userState.state)) {
                 handleLoginInput(chatId, messageText, userState);
                 return;
@@ -168,7 +201,6 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                 handleActualMaterialInput(chatId, messageText, userState);
                 return;
             }
-            // НОВАЯ ПРОВЕРКА ДЛЯ ОБРАБОТКИ ВВОДА ДАННЫХ МАТЕРИАЛОВ
             else if (userState.waitingForField != null && !userState.waitingForField.isEmpty()) {
                 handleFrameMaterialFieldInput(chatId, messageText, userState);
                 return;
@@ -178,7 +210,11 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                 return;
             }
             else if (userState.state.startsWith("REGISTRATION_")) {
-                handleRegistrationInput(chatId, messageText, userState);
+                handleRegistrationInput(chatId, messageText, userState, userName);
+                return;
+            }
+            else if (userState.state.startsWith("REVIEW_")) {
+                handleReviewInput(chatId, messageText, userState);
                 return;
             }
 
@@ -189,7 +225,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                 case "/auth":
                     startAuthorization(chatId, userState);
                     break;
-                case "/register":  // ДОБАВЬТЕ ЭТОТ CASE
+                case "/register":
                     startRegistration(chatId, userState);
                     break;
                 case "/help":
@@ -215,26 +251,35 @@ public class MyTelegramBot extends TelegramLongPollingBot {
     }
 
     private void startRegistration(Long chatId, UserState userState) {
-        userState.state = "REGISTRATION_FIRST_NAME"; // ИЗМЕНЕНО
+        clearPreviousMenu(chatId);
+        userState.lastMessageId = null;
+        userState.state = "REGISTRATION_FIRST_NAME";
         userState.registrationCustomer = new Customer();
         userState.registrationStep = "FIRST_NAME";
 
         String text = "👋 Добро пожаловать в регистрацию!\n\n" +
                 "Давайте создадим ваш аккаунт покупателя.\n\n" +
-                "📝 Шаг 1: Введите ваше имя:";
+                "📝 Шаг 1: Введите ваше имя:\n\n" +
+                "✏️ В любой момент напишите \"отмена\" для отмены регистрации";
 
         sendMessage(chatId, text);
     }
 
-    private void handleRegistrationInput(Long chatId, String messageText, UserState userState) {
+    private void handleRegistrationInput(Long chatId, String messageText, UserState userState, String userName) {
         try {
+            if ("отмена".equalsIgnoreCase(messageText.trim())) {
+                cancelRegistration(chatId, userState, userName);
+                return;
+            }
+
             switch (userState.state) {
                 case "REGISTRATION_FIRST_NAME":
                     userState.registrationCustomer.setFirstName(messageText.trim());
                     userState.state = "REGISTRATION_LAST_NAME";
                     userState.registrationStep = "LAST_NAME";
                     sendMessage(chatId, "✅ Имя сохранено!\n\n" +
-                            "📝 Шаг 2: Введите вашу фамилию:");
+                            "📝 Шаг 2: Введите вашу фамилию:\n\n" +
+                            "✏️ Или напишите \"отмена\" для отмены регистрации");
                     break;
 
                 case "REGISTRATION_LAST_NAME":
@@ -243,7 +288,8 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                     userState.registrationStep = "MIDDLE_NAME";
                     sendMessage(chatId, "✅ Фамилия сохранена!\n\n" +
                             "📝 Шаг 3: Введите ваше отчество:\n\n" +
-                            "Если отчества нет, напишите \"нет\"");
+                            "Если отчества нет, напишите \"нет\"\n\n" +
+                            "✏️ Или напишите \"отмена\" для отмены регистрации");
                     break;
 
                 case "REGISTRATION_MIDDLE_NAME":
@@ -257,50 +303,54 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                     userState.registrationStep = "PHONE";
                     sendMessage(chatId, "✅ Отчество сохранено!\n\n" +
                             "📝 Шаг 4: Введите ваш номер телефона:\n\n" +
-                            "Пример: +79123456789 или 89123456789");
+                            "Пример: +79123456789 или 89123456789\n\n" +
+                            "✏️ Или напишите \"отмена\" для отмены регистрации");
                     break;
 
                 case "REGISTRATION_PHONE":
                     String phone = messageText.trim();
-                    // Простая валидация телефона
                     if (phone.matches("^[+]?[0-9]{10,15}$")) {
                         userState.registrationCustomer.setPhone(phone);
                         userState.state = "REGISTRATION_EMAIL";
                         userState.registrationStep = "EMAIL";
                         sendMessage(chatId, "✅ Телефон сохранен!\n\n" +
-                                "📝 Шаг 5: Введите ваш email:");
+                                "📝 Шаг 5: Введите ваш email:\n\n" +
+                                "✏️ Или напишите \"отмена\" для отмены регистрации");
                     } else {
                         sendMessage(chatId, "❌ Неверный формат телефона. Пожалуйста, введите номер в формате:\n" +
-                                "+79123456789 или 89123456789");
+                                "+79123456789 или 89123456789\n\n" +
+                                "✏️ Или напишите \"отмена\" для отмены регистрации");
                     }
                     break;
 
                 case "REGISTRATION_EMAIL":
                     String email = messageText.trim();
-                    // Простая валидация email
                     if (email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
                         userState.registrationCustomer.setEmail(email);
                         userState.state = "REGISTRATION_LOGIN";
                         userState.registrationStep = "LOGIN";
                         sendMessage(chatId, "✅ Email сохранен!\n\n" +
-                                "📝 Шаг 6: Придумайте логин для входа:");
+                                "📝 Шаг 6: Придумайте логин для входа:\n\n" +
+                                "✏️ Или напишите \"отмена\" для отмены регистрации");
                     } else {
-                        sendMessage(chatId, "❌ Неверный формат email. Пожалуйста, введите корректный email:");
+                        sendMessage(chatId, "❌ Неверный формат email. Пожалуйста, введите корректный email:\n\n" +
+                                "✏️ Или напишите \"отмена\" для отмены регистрации");
                     }
                     break;
 
                 case "REGISTRATION_LOGIN":
                     String login = messageText.trim();
-                    // Проверяем, не занят ли логин
                     if (isLoginAvailable(login)) {
                         userState.registrationCustomer.setLogins(login);
                         userState.state = "REGISTRATION_PASSWORD";
                         userState.registrationStep = "PASSWORD";
                         sendMessage(chatId, "✅ Логин сохранен!\n\n" +
                                 "📝 Шаг 7: Придумайте пароль:\n\n" +
-                                "Пароль должен содержать не менее 6 символов.");
+                                "Пароль должен содержать не менее 6 символов.\n\n" +
+                                "✏️ Или напишите \"отмена\" для отмены регистрации");
                     } else {
-                        sendMessage(chatId, "❌ Этот логин уже занят. Пожалуйста, выберите другой логин:");
+                        sendMessage(chatId, "❌ Этот логин уже занят. Пожалуйста, выберите другой логин:\n\n" +
+                                "✏️ Или напишите \"отмена\" для отмены регистрации");
                     }
                     break;
 
@@ -312,7 +362,8 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                         userState.registrationStep = "CONFIRM";
                         showRegistrationConfirmation(chatId, userState);
                     } else {
-                        sendMessage(chatId, "❌ Пароль слишком короткий. Пожалуйста, придумайте пароль длиной не менее 6 символов:");
+                        sendMessage(chatId, "❌ Пароль слишком короткий. Пожалуйста, придумайте пароль длиной не менее 6 символов:\n\n" +
+                                "✏️ Или напишите \"отмена\" для отмены регистрации");
                     }
                     break;
 
@@ -328,10 +379,8 @@ public class MyTelegramBot extends TelegramLongPollingBot {
         }
     }
 
-    // НОВЫЙ МЕТОД ДЛЯ ПРОВЕРКИ ДОСТУПНОСТИ ЛОГИНА
     private boolean isLoginAvailable(String login) {
         try {
-            // Проверяем среди пользователей
             Iterable<User> users = mainController.allUsers();
             for (User user : users) {
                 if (user.getLogin() != null && user.getLogin().equals(login)) {
@@ -339,7 +388,6 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                 }
             }
 
-            // Проверяем среди покупателей
             Iterable<Customer> customers = mainController.allCustomers();
             for (Customer customer : customers) {
                 if (customer.getLogins() != null && customer.getLogins().equals(login)) {
@@ -354,7 +402,6 @@ public class MyTelegramBot extends TelegramLongPollingBot {
         }
     }
 
-    // НОВЫЙ МЕТОД ДЛЯ ПОКАЗА ПОДТВЕРЖДЕНИЯ РЕГИСТРАЦИИ
     private void showRegistrationConfirmation(Long chatId, UserState userState) {
         Customer customer = userState.registrationCustomer;
 
@@ -373,14 +420,12 @@ public class MyTelegramBot extends TelegramLongPollingBot {
         InlineKeyboardMarkup keyboard = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
 
-        // Кнопка подтверждения
         List<InlineKeyboardButton> confirmRow = new ArrayList<>();
         InlineKeyboardButton confirmButton = new InlineKeyboardButton();
         confirmButton.setText("✅ Да, всё верно");
         confirmButton.setCallbackData("confirm_registration");
         confirmRow.add(confirmButton);
 
-        // Кнопка отмены
         List<InlineKeyboardButton> cancelRow = new ArrayList<>();
         InlineKeyboardButton cancelButton = new InlineKeyboardButton();
         cancelButton.setText("❌ Нет, исправить");
@@ -394,12 +439,10 @@ public class MyTelegramBot extends TelegramLongPollingBot {
         sendMessageWithInlineKeyboard(chatId, confirmationText.toString(), keyboard);
     }
 
-    // НОВЫЙ МЕТОД ДЛЯ ЗАВЕРШЕНИЯ РЕГИСТРАЦИИ
     private void completeRegistration(Long chatId, UserState userState) {
         try {
             Customer customer = userState.registrationCustomer;
 
-            // Проверяем, что все обязательные поля заполнены
             if (customer.getFirstName() == null || customer.getFirstName().trim().isEmpty() ||
                     customer.getLastName() == null || customer.getLastName().trim().isEmpty() ||
                     customer.getPhone() == null || customer.getPhone().trim().isEmpty() ||
@@ -410,11 +453,10 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                 throw new Exception("Не все обязательные поля заполнены");
             }
 
-            // Сохраняем покупателя через новый метод registerCustomer
             ResponseEntity<Integer> response = mainController.registerCustomer(
                     customer.getLastName().trim(),
                     customer.getFirstName().trim(),
-                    customer.getMiddleName() != null ? customer.getMiddleName().trim() : "", // отчество
+                    customer.getMiddleName() != null ? customer.getMiddleName().trim() : "",
                     customer.getPhone().trim(),
                     customer.getEmail().trim(),
                     customer.getLogins().trim(),
@@ -427,19 +469,16 @@ public class MyTelegramBot extends TelegramLongPollingBot {
             }
 
             if (customerId != null && customerId > 0) {
-                // Авторизуем пользователя
                 userState.state = "AUTHENTICATED";
                 userState.userRole = "ПОКУПАТЕЛЬ";
                 userState.userId = customerId.longValue();
 
-                // Формируем полное имя с учетом отчества
                 String fullName = customer.getLastName() + " " + customer.getFirstName();
                 if (customer.getMiddleName() != null && !customer.getMiddleName().isEmpty()) {
                     fullName += " " + customer.getMiddleName();
                 }
                 userState.fullName = fullName.trim();
 
-                // Очищаем данные регистрации
                 userState.registrationCustomer = new Customer();
                 userState.registrationStep = "";
 
@@ -467,43 +506,47 @@ public class MyTelegramBot extends TelegramLongPollingBot {
         }
     }
 
-    // НОВЫЙ МЕТОД ДЛЯ ОТМЕНЫ РЕГИСТРАЦИИ
-    private void cancelRegistration(Long chatId, UserState userState) {
+    private void cancelRegistration(Long chatId, UserState userState, String userName) {
         userState.state = "START";
         userState.registrationCustomer = new Customer();
         userState.registrationStep = "";
 
         sendMessage(chatId, "❌ Регистрация отменена.\n\n" +
                 "Если хотите попробовать снова, используйте команду /register");
+
+        sendWelcomeMessage(chatId, userName);
     }
 
-    // Метод для обработки ввода данных материалов
     private void handleFrameMaterialFieldInput(Long chatId, String messageText, UserState userState) {
+        clearPreviousMenu(chatId);
         try {
+            if ("отмена".equalsIgnoreCase(messageText.trim())) {
+                cancelFrameMaterialOperation(chatId, userState);
+                return;
+            }
+
             String field = userState.waitingForField;
 
             if ("ADD".equals(userState.frameMaterialAction)) {
-                // Обработка добавления нового материала
                 switch (field) {
                     case "NAME":
                         userState.selectedFrameMaterial.setName(messageText.trim());
                         userState.waitingForField = "DESCRIPTION";
-                        sendMessage(chatId, "✅ Название сохранено.\n\nВведите описание материала:");
+                        sendMessage(chatId, "✅ Название сохранено.\n\nВведите описание материала:\n\n✏️ Или напишите \"отмена\" для отмены добавления");
                         break;
                     case "DESCRIPTION":
                         userState.selectedFrameMaterial.setDescription(messageText.trim());
                         userState.waitingForField = "PRICE_PER_METER";
-                        sendMessage(chatId, "✅ Описание сохранено.\n\nВведите цену за метр (число):");
+                        sendMessage(chatId, "✅ Описание сохранено.\n\nВведите цену за метр (число):\n\n✏️ Или напишите \"отмена\" для отмены добавления");
                         break;
                     case "PRICE_PER_METER":
                         try {
-                            // Используем Integer вместо BigDecimal
                             Integer price = Integer.parseInt(messageText.trim());
                             userState.selectedFrameMaterial.setPricePerMeter(price);
-                            userState.waitingForField = "STOCK_QUANTITY"; // ДОБАВИТЬ ЭТУ СТРОКУ
-                            sendMessage(chatId, "✅ Цена сохранена.\n\nВведите количество на складе (число, в метрах):"); // ДОБАВИТЬ ЭТУ СТРОКУ
+                            userState.waitingForField = "STOCK_QUANTITY";
+                            sendMessage(chatId, "✅ Цена сохранена.\n\nВведите количество на складе (число, в метрах):\n\n✏️ Или напишите \"отмена\" для отмены добавления");
                         } catch (NumberFormatException e) {
-                            sendMessage(chatId, "❌ Пожалуйста, введите корректное целое число для цены:");
+                            sendMessage(chatId, "❌ Пожалуйста, введите корректное целое число для цены:\n\n✏️ Или напишите \"отмена\" для отмены добавления");
                         }
                         break;
                     case "STOCK_QUANTITY":
@@ -511,22 +554,21 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                             Integer quantity = Integer.parseInt(messageText.trim());
                             userState.selectedFrameMaterial.setStockQuantity(quantity);
                             userState.waitingForField = "COLOR";
-                            sendMessage(chatId, "✅ Количество сохранено.\n\nВведите цвет материала:");
+                            sendMessage(chatId, "✅ Количество сохранено.\n\nВведите цвет материала:\n\n✏️ Или напишите \"отмена\" для отмены добавления");
                         } catch (NumberFormatException e) {
-                            sendMessage(chatId, "❌ Пожалуйста, введите корректное число для количества:");
+                            sendMessage(chatId, "❌ Пожалуйста, введите корректное число для количества:\n\n✏️ Или напишите \"отмена\" для отмены добавления");
                         }
                         break;
                     case "COLOR":
                         userState.selectedFrameMaterial.setColor(messageText.trim());
                         userState.waitingForField = "WIDTH";
-                        sendMessage(chatId, "✅ Цвет сохранен.\n\nВведите ширину материала (число, в мм):");
+                        sendMessage(chatId, "✅ Цвет сохранен.\n\nВведите ширину материала (число, в мм):\n\n✏️ Или напишите \"отмена\" для отмены добавления");
                         break;
                     case "WIDTH":
                         try {
                             Integer width = Integer.parseInt(messageText.trim());
                             userState.selectedFrameMaterial.setWidth(width);
 
-                            // Сохраняем материал в базу данных
                             mainController.createFrameMaterial(userState.selectedFrameMaterial);
 
                             sendMessage(chatId, "✅ Материал успешно добавлен!\n\nНазвание: " + userState.selectedFrameMaterial.getName() +
@@ -536,7 +578,6 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                                     "\nЦвет: " + userState.selectedFrameMaterial.getColor() +
                                     "\nШирина: " + userState.selectedFrameMaterial.getWidth() + " мм");
 
-                            // Сбрасываем состояние
                             userState.frameMaterialAction = "";
                             userState.waitingForField = "";
                             userState.selectedFrameMaterial = null;
@@ -544,7 +585,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                             showFrameMaterialsManagementMenu(chatId, userState);
 
                         } catch (NumberFormatException e) {
-                            sendMessage(chatId, "❌ Пожалуйста, введите корректное число для ширины:");
+                            sendMessage(chatId, "❌ Пожалуйста, введите корректное число для ширины:\n\n✏️ Или напишите \"отмена\" для отмены добавления");
                         } catch (Exception e) {
                             System.err.println("Error creating frame material: " + e.getMessage());
                             sendMessage(chatId, "❌ Ошибка при сохранении материала. Попробуйте позже.");
@@ -556,7 +597,11 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                         break;
                 }
             } else if ("EDIT".equals(userState.frameMaterialAction)) {
-                // Обработка редактирования существующего материала
+                if ("отмена".equalsIgnoreCase(messageText.trim())) {
+                    cancelFrameMaterialOperation(chatId, userState);
+                    return;
+                }
+
                 switch (field) {
                     case "NAME":
                         userState.selectedFrameMaterial.setName(messageText.trim());
@@ -566,11 +611,10 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                         break;
                     case "PRICE_PER_METER":
                         try {
-                            // ИСПРАВЛЕНО: используем Integer вместо BigDecimal
                             Integer price = Integer.parseInt(messageText.trim());
                             userState.selectedFrameMaterial.setPricePerMeter(price);
                         } catch (NumberFormatException e) {
-                            sendMessage(chatId, "❌ Пожалуйста, введите корректное целое число для цены:");
+                            sendMessage(chatId, "❌ Пожалуйста, введите корректное целое число для цены:\n\n✏️ Или напишите \"отмена\" для отмены редактирования");
                             return;
                         }
                         break;
@@ -579,7 +623,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                             Integer quantity = Integer.parseInt(messageText.trim());
                             userState.selectedFrameMaterial.setStockQuantity(quantity);
                         } catch (NumberFormatException e) {
-                            sendMessage(chatId, "❌ Пожалуйста, введите корректное число для количества:");
+                            sendMessage(chatId, "❌ Пожалуйста, введите корректное число для количества:\n\n✏️ Или напишите \"отмена\" для отмены редактирования");
                             return;
                         }
                         break;
@@ -591,18 +635,16 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                             Integer width = Integer.parseInt(messageText.trim());
                             userState.selectedFrameMaterial.setWidth(width);
                         } catch (NumberFormatException e) {
-                            sendMessage(chatId, "❌ Пожалуйста, введите корректное число для ширины:");
+                            sendMessage(chatId, "❌ Пожалуйста, введите корректное число для ширины:\n\n✏️ Или напишите \"отмена\" для отмены редактирования");
                             return;
                         }
                         break;
                 }
 
-                // Сохраняем изменения
                 try {
                     mainController.updateFrameMaterial(userState.selectedFrameMaterial);
                     sendMessage(chatId, "✅ Изменения успешно сохранены!");
 
-                    // Сбрасываем состояние
                     userState.frameMaterialAction = "";
                     userState.waitingForField = "";
                     userState.selectedFrameMaterial = null;
@@ -628,7 +670,17 @@ public class MyTelegramBot extends TelegramLongPollingBot {
         }
     }
 
+    private void cancelFrameMaterialOperation(Long chatId, UserState userState) {
+        userState.frameMaterialAction = "";
+        userState.waitingForField = "";
+        userState.selectedFrameMaterial = null;
+
+        sendMessage(chatId, "❌ Операция с материалом отменена.");
+        showFrameMaterialsManagementMenu(chatId, userState);
+    }
+
     private void deleteFrameMaterial(Long chatId, UserState userState) {
+        clearPreviousMenu(chatId);
         try {
             if (userState.selectedFrameMaterial == null) {
                 sendMessage(chatId, "❌ Материал не выбран.");
@@ -640,7 +692,6 @@ public class MyTelegramBot extends TelegramLongPollingBot {
 
             sendMessage(chatId, "✅ Материал \"" + materialName + "\" успешно удален!");
 
-            // Сбрасываем состояние
             userState.frameMaterialAction = "";
             userState.waitingForField = "";
             userState.selectedFrameMaterial = null;
@@ -721,7 +772,23 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                 Long orderId = Long.parseLong(orderIdStr);
                 showOrderDetails(chatId, orderId, userState);
             }
-            // НОВЫЕ ОБРАБОТЧИКИ ДЛЯ УПРАВЛЕНИЯ МАТЕРИАЛАМИ РАМОК
+            else if (data.startsWith("cancel_order_")) {
+                String orderIdStr = data.substring("cancel_order_".length());
+                Long orderId = Long.parseLong(orderIdStr);
+                cancelCustomerOrder(chatId, orderId, userState);
+            }
+            else if (data.startsWith("confirm_cancel_order_")) {
+                String orderIdStr = data.substring("confirm_cancel_order_".length());
+                Long orderId = Long.parseLong(orderIdStr);
+                confirmOrderCancellation(chatId, orderId, userState);
+            }
+            else if ("back_to_orders".equals(data)) {
+                if ("ПОКУПАТЕЛЬ".equals(userState.userRole)) {
+                    showMyOrdersWithNavigation(chatId, userState);
+                } else if ("МАСТЕР ПРОИЗВОДСТВА".equals(userState.userRole)) {
+                    showProductionMasterOrdersWithNavigation(chatId, userState);
+                }
+            }
             else if (data.equals("prev_frame_material") || data.equals("next_frame_material") ||
                     data.equals("no_action_frame_material") || data.equals("select_frame_material")) {
                 handleFrameMaterialNavigation(chatId, data, userState);
@@ -730,6 +797,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                 handleFrameMaterialFieldSelection(chatId, data, userState);
             }
             else if (data.startsWith("frame_material_action_")) {
+                clearPreviousMenu(chatId);
                 handleFrameMaterialAction(chatId, data, userState);
             }
             else if (data.startsWith("select_material_")) {
@@ -740,7 +808,6 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                 userState.currentFrameOrder.setFrameMaterialID(frameMaterial);
                 handleFrameOrderStep(chatId, userState, "WIDTH");
             }
-            // НОВЫЕ ОБРАБОТЧИКИ ДЛЯ УПРАВЛЕНИЯ КОМПОНЕНТАМИ РАМОК
             else if (data.equals("prev_frame_component") || data.equals("next_frame_component") ||
                     data.equals("no_action_frame_component") || data.equals("select_frame_component")) {
                 handleFrameComponentNavigation(chatId, data, userState);
@@ -749,6 +816,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                 handleFrameComponentFieldSelection(chatId, data, userState);
             }
             else if (data.startsWith("frame_component_action_")) {
+                clearPreviousMenu(chatId);
                 handleFrameComponentAction(chatId, data, userState);
             }
             else if ("frame_components_management".equals(data)) {
@@ -759,6 +827,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                 }
             }
             else if ("confirm_delete_frame_component".equals(data)) {
+                clearPreviousMenu(chatId);
                 if ("МАСТЕР ПРОИЗВОДСТВА".equals(userState.userRole) && "AUTHENTICATED".equals(userState.state)) {
                     deleteFrameComponent(chatId, userState);
                 } else {
@@ -766,28 +835,119 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                 }
             }
             else if (data.startsWith("take_free_order_")) {
+                clearPreviousMenu(chatId);
                 String orderIdStr = data.substring("take_free_order_".length());
                 Long orderId = Long.parseLong(orderIdStr);
                 takeFreeOrder(chatId, orderId, userState);
             }
-            // ДОБАВЛЕННЫЕ ОБРАБОТЧИКИ ДЛЯ СМЕНЫ СТАТУСА
             else if (data.startsWith("select_order_")) {
-                // Обработка выбора заказа для смены статуса
+                clearPreviousMenu(chatId);
                 String orderIdStr = data.substring("select_order_".length());
                 Long orderId = Long.parseLong(orderIdStr);
                 sendStatusMenu(chatId, orderId);
             }
             else if (data.startsWith("change_status_")) {
-                // Обработка смены статуса заказа
+                clearPreviousMenu(chatId);
                 String[] parts = data.substring("change_status_".length()).split("_");
                 if (parts.length >= 2) {
                     Long orderId = Long.parseLong(parts[0]);
                     String newStatus = parts[1];
-                    // Собираем полное название статуса, если оно состоит из нескольких частей
                     for (int i = 2; i < parts.length; i++) {
                         newStatus += "_" + parts[i];
                     }
                     changeOrderStatus(chatId, orderId, newStatus, userState);
+                }
+            }
+            else if ("leave_review".equals(data)) {
+                if ("ПОКУПАТЕЛЬ".equals(userState.userRole) && userState.canLeaveReview) {
+                    startReviewProcess(chatId, userState);
+                } else {
+                    sendMessage(chatId, "❌ Невозможно оставить отзыв.");
+                }
+            }
+            else if ("view_review".equals(data)) {
+                if ("ПОКУПАТЕЛЬ".equals(userState.userRole) && userState.hasReview) {
+                    showUserReview(chatId, userState);
+                } else {
+                    sendMessage(chatId, "❌ Отзыв не найден.");
+                }
+            }
+            else if (data.startsWith("review_rating_")) {
+                if ("ПОКУПАТЕЛЬ".equals(userState.userRole)) {
+                    String ratingStr = data.substring("review_rating_".length());
+                    try {
+                        int rating = Integer.parseInt(ratingStr);
+                        handleReviewRating(chatId, rating, userState);
+                    } catch (NumberFormatException e) {
+                        sendMessage(chatId, "❌ Ошибка при выборе оценки.");
+                    }
+                }
+            }
+            else if ("confirm_review".equals(data)) {
+                if ("ПОКУПАТЕЛЬ".equals(userState.userRole)) {
+                    confirmReview(chatId, userState);
+                }
+            }
+            else if ("cancel_review".equals(data)) {
+                if ("ПОКУПАТЕЛЬ".equals(userState.userRole)) {
+                    cancelReview(chatId, userState);
+                }
+            }
+            else if ("delete_review".equals(data)) {
+                if ("ПОКУПАТЕЛЬ".equals(userState.userRole)) {
+                    deleteReview(chatId, userState);
+                }
+            }
+            else if ("confirm_delete_review".equals(data)) {
+                if ("ПОКУПАТЕЛЬ".equals(userState.userRole)) {
+                    confirmDeleteReview(chatId, userState);
+                }
+            }
+            else if (data.equals("prev_order_report") || data.equals("next_order_report") ||
+                    data.equals("no_action_order_report")) {
+                handleOrderReportNavigation(chatId, data, userState);
+            }
+            else if (data.equals("prev_review_report") || data.equals("next_review_report") ||
+                    data.equals("no_action_review_report")) {
+                handleReviewReportNavigation(chatId, data, userState);
+            }
+            else if (data.startsWith("delete_review_")) {
+                String reviewIdStr = data.substring("delete_review_".length());
+                Long reviewId = Long.parseLong(reviewIdStr);
+                deleteReviewAsDirector(chatId, reviewId, userState);
+            }
+            else if (data.startsWith("confirm_delete_review_")) {
+                String reviewIdStr = data.substring("confirm_delete_review_".length());
+                Long reviewId = Long.parseLong(reviewIdStr);
+                confirmDeleteReviewAsDirector(chatId, reviewId, userState);
+            }
+            else if ("director_all_orders".equals(data)) {
+                if ("ДИРЕКТОР".equals(userState.userRole) && "AUTHENTICATED".equals(userState.state)) {
+                    showAllOrdersReport(chatId, userState);
+                } else {
+                    sendMessage(chatId, "❌ Доступ запрещен. Эта функция доступна только для директора.");
+                }
+            }
+            else if ("director_reviews".equals(data)) {
+                if ("ДИРЕКТОР".equals(userState.userRole) && "AUTHENTICATED".equals(userState.state)) {
+                    showAllReviewsReport(chatId, userState);
+                } else {
+                    sendMessage(chatId, "❌ Доступ запрещен. Эта функция доступна только для директора.");
+                }
+            }
+            else if ("director_sales".equals(data)) {
+                if ("ДИРЕКТОР".equals(userState.userRole) && "AUTHENTICATED".equals(userState.state)) {
+                    showSalesReportMenu(chatId, userState);
+                } else {
+                    sendMessage(chatId, "❌ Доступ запрещен. Эта функция доступна только для директора.");
+                }
+            }
+            else if ("sales_total".equals(data) || "sales_monthly".equals(data) || "sales_popular".equals(data)) {
+                clearPreviousMenu(chatId);
+                if ("ДИРЕКТОР".equals(userState.userRole) && "AUTHENTICATED".equals(userState.state)) {
+                    generateSalesReport(chatId, data, userState);
+                } else {
+                    sendMessage(chatId, "❌ Доступ запрещен.");
                 }
             }
 
@@ -798,7 +958,8 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                 completeRegistration(chatId, userState);
             }
             else if ("cancel_registration".equals(data)) {
-                cancelRegistration(chatId, userState);
+                String userName = userState.fullName != null ? userState.fullName.split(" ")[0] : "пользователь";
+                cancelRegistration(chatId, userState, userName);
             }
             else if ("help".equals(data)) {
                 sendHelpMessage(chatId);
@@ -807,6 +968,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                 switch (data) {
                     case "personal_data":
                         if ("AUTHENTICATED".equals(userState.state) && userState.userId != null) {
+                            clearPreviousMenu(chatId);
                             String response = getPersonalDataResponse(userState);
                             InlineKeyboardMarkup keyboard = createBackKeyboard();
                             sendMessageWithInlineKeyboard(chatId, response, keyboard);
@@ -822,6 +984,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                         }
                         break;
                     case "assortment":
+                        clearPreviousMenu(chatId);
                         if ("ПОКУПАТЕЛЬ".equals(userState.userRole) && "AUTHENTICATED".equals(userState.state)) {
                             showAssortmentCategories(chatId);
                         } else {
@@ -829,6 +992,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                         }
                         break;
                     case "order_frame":
+                        clearPreviousMenu(chatId);
                         if ("ПОКУПАТЕЛЬ".equals(userState.userRole) && "AUTHENTICATED".equals(userState.state)) {
                             startFrameOrder(chatId, userState);
                         } else {
@@ -836,6 +1000,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                         }
                         break;
                     case "view_orders":
+                        clearPreviousMenu(chatId);
                         if ("МАСТЕР ПРОИЗВОДСТВА".equals(userState.userRole) && "AUTHENTICATED".equals(userState.state)) {
                             System.out.println("Production master viewing orders for userId: " + userState.userId);
                             showProductionMasterOrdersWithNavigation(chatId, userState);
@@ -844,6 +1009,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                         }
                         break;
                     case "free_orders":
+                        clearPreviousMenu(chatId);
                         if ("МАСТЕР ПРОИЗВОДСТВА".equals(userState.userRole) && "AUTHENTICATED".equals(userState.state)) {
                             showFreeOrdersWithNavigation(chatId, userState);
                         } else {
@@ -851,14 +1017,15 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                         }
                         break;
                     case "change_order_status":
+                        clearPreviousMenu(chatId);
                         if ("МАСТЕР ПРОИЗВОДСТВА".equals(userState.userRole) && "AUTHENTICATED".equals(userState.state)) {
                             sendOrderListForStatusChange(chatId, userState);
                         } else {
                             sendMessage(chatId, "❌ Доступ запрещен. Эта функция доступна только для мастеров производства.");
                         }
                         break;
-                    // НОВЫЙ CASE ДЛЯ УПРАВЛЕНИЯ РАМКАМИ
                     case "frame_materials_management":
+                        clearPreviousMenu(chatId);
                         if ("МАСТЕР ПРОИЗВОДСТВА".equals(userState.userRole) && "AUTHENTICATED".equals(userState.state)) {
                             showFrameMaterialsManagementMenu(chatId, userState);
                         } else {
@@ -866,6 +1033,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                         }
                         break;
                     case "confirm_delete_frame_material":
+                        clearPreviousMenu(chatId);
                         if ("МАСТЕР ПРОИЗВОДСТВА".equals(userState.userRole) && "AUTHENTICATED".equals(userState.state)) {
                             deleteFrameMaterial(chatId, userState);
                         } else {
@@ -873,9 +1041,11 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                         }
                         break;
                     case "exit":
+                        clearPreviousMenu(chatId);
                         logout(chatId, userState);
                         break;
                     case "back_to_menu":
+                        clearPreviousMenu(chatId);
                         sendMainMenu(chatId, userState);
                         break;
                     case "auth":
@@ -892,17 +1062,20 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                     case "cancel_frame_order":
                         cancelFrameOrder(chatId, userState);
                         break;
-                    // Обработка категорий ассортимента
                     case "embroidery_kit":
+                        clearPreviousMenu(chatId);
                         showEmbroideryKitsWithNavigation(chatId, userState);
                         break;
                     case "consumable":
+                        clearPreviousMenu(chatId);
                         showConsumablesWithNavigation(chatId, userState);
                         break;
                     case "frame_component":
+                        clearPreviousMenu(chatId);
                         showFrameComponentsWithNavigation(chatId, userState);
                         break;
                     case "frame_material":
+                        clearPreviousMenu(chatId);
                         showFrameMaterialsWithNavigation(chatId, userState);
                         break;
                     default:
@@ -930,34 +1103,31 @@ public class MyTelegramBot extends TelegramLongPollingBot {
         }
     }
 
-    // Метод для показа меню управления компонентами рамок
     private void showFrameComponentsManagementMenu(Long chatId, UserState userState) {
+        clearPreviousMenu(chatId);
+        userState.lastMessageId = null;
         String text = "🖼️ Управление фурнитурами рамок\n\nВыберите действие:";
         InlineKeyboardMarkup keyboard = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
 
-        // Кнопка "Добавить"
         List<InlineKeyboardButton> addRow = new ArrayList<>();
         InlineKeyboardButton addButton = new InlineKeyboardButton();
         addButton.setText("➕ Добавить");
         addButton.setCallbackData("frame_component_action_ADD");
         addRow.add(addButton);
 
-        // Кнопка "Изменить"
         List<InlineKeyboardButton> editRow = new ArrayList<>();
         InlineKeyboardButton editButton = new InlineKeyboardButton();
         editButton.setText("✏️ Изменить");
         editButton.setCallbackData("frame_component_action_EDIT");
         editRow.add(editButton);
 
-        // Кнопка "Удалить"
         List<InlineKeyboardButton> deleteRow = new ArrayList<>();
         InlineKeyboardButton deleteButton = new InlineKeyboardButton();
         deleteButton.setText("🗑️ Удалить");
         deleteButton.setCallbackData("frame_component_action_DELETE");
         deleteRow.add(deleteButton);
 
-        // Кнопка "Назад"
         List<InlineKeyboardButton> backRow = new ArrayList<>();
         InlineKeyboardButton backButton = new InlineKeyboardButton();
         backButton.setText("🔙 Назад");
@@ -973,8 +1143,8 @@ public class MyTelegramBot extends TelegramLongPollingBot {
         sendMessageWithInlineKeyboard(chatId, text, keyboard);
     }
 
-    // Метод для обработки действий с компонентами рамок
     private void handleFrameComponentAction(Long chatId, String action, UserState userState) {
+        clearPreviousMenu(chatId);
         String actionType = action.substring("frame_component_action_".length());
 
         try {
@@ -990,6 +1160,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                     break;
                 case "DELETE":
                     userState.frameComponentAction = "DELETE";
+                    clearPreviousMenu(chatId);
                     showFrameComponentsForManagement(chatId, userState);
                     break;
             }
@@ -999,14 +1170,15 @@ public class MyTelegramBot extends TelegramLongPollingBot {
         }
     }
 
-    // Метод для начала добавления компонента
     private void startAddFrameComponent(Long chatId, UserState userState) {
         userState.waitingForFieldComponent = "NAME";
-        sendMessage(chatId, "➕ Добавление нового компонента рамки\n\nВведите название компонента:");
+
+        String text = "➕ Добавление нового компонента рамки\n\nВведите название компонента:\n\n✏️ Или напишите \"отмена\" для отмены добавления";
+        sendMessage(chatId, text);
     }
 
-    // Метод для показа списка компонентов для управления
     private void showFrameComponentsForManagement(Long chatId, UserState userState) {
+        clearPreviousMenu(chatId);
         try {
             Iterable<FrameComponent> frameComponents = mainController.allFC();
             List<FrameComponent> componentsList = new ArrayList<>();
@@ -1032,8 +1204,8 @@ public class MyTelegramBot extends TelegramLongPollingBot {
         }
     }
 
-    // Метод для показа текущего компонента при управлении
     private void showCurrentFrameComponentForManagement(Long chatId, UserState userState) {
+        clearPreviousMenu(chatId);
         if (userState.currentFrameComponents == null || userState.currentFrameComponents.isEmpty()) {
             sendMessage(chatId, "❌ Нет компонентов для отображения.");
             return;
@@ -1048,7 +1220,6 @@ public class MyTelegramBot extends TelegramLongPollingBot {
         sendMessageWithInlineKeyboard(chatId, componentText, keyboard);
     }
 
-    // Метод для форматирования деталей компонента
     private String formatFrameComponentDetails(FrameComponent component, int currentNumber, int totalComponents) {
         StringBuilder sb = new StringBuilder();
         sb.append("🖼️ Фурнитура ").append(currentNumber).append(" из ").append(totalComponents).append("\n\n");
@@ -1061,15 +1232,12 @@ public class MyTelegramBot extends TelegramLongPollingBot {
         return sb.toString();
     }
 
-    // Метод для создания клавиатуры управления компонентами
     private InlineKeyboardMarkup createFrameComponentManagementKeyboard(UserState userState, FrameComponent currentComponent) {
         InlineKeyboardMarkup keyboard = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
 
-        // Строка с навигацией
         List<InlineKeyboardButton> navRow = new ArrayList<>();
 
-        // Кнопка "Предыдущий"
         InlineKeyboardButton prevButton = new InlineKeyboardButton();
         prevButton.setText("⬅️ Предыдущий");
         prevButton.setCallbackData("prev_frame_component");
@@ -1082,7 +1250,6 @@ public class MyTelegramBot extends TelegramLongPollingBot {
             navRow.add(disabledPrev);
         }
 
-        // Кнопка "Выбрать этот" для EDIT и DELETE
         if ("EDIT".equals(userState.frameComponentAction) || "DELETE".equals(userState.frameComponentAction)) {
             InlineKeyboardButton selectButton = new InlineKeyboardButton();
             selectButton.setText("✅ Выбрать этот");
@@ -1090,7 +1257,6 @@ public class MyTelegramBot extends TelegramLongPollingBot {
             navRow.add(selectButton);
         }
 
-        // Кнопка "Следующий"
         InlineKeyboardButton nextButton = new InlineKeyboardButton();
         nextButton.setText("Следующий ➡️");
         nextButton.setCallbackData("next_frame_component");
@@ -1105,7 +1271,6 @@ public class MyTelegramBot extends TelegramLongPollingBot {
 
         rows.add(navRow);
 
-        // Кнопка "Назад"
         List<InlineKeyboardButton> backRow = new ArrayList<>();
         InlineKeyboardButton backButton = new InlineKeyboardButton();
         backButton.setText("🔙 Назад");
@@ -1117,7 +1282,6 @@ public class MyTelegramBot extends TelegramLongPollingBot {
         return keyboard;
     }
 
-    // Метод для обработки навигации по компонентам
     private void handleFrameComponentNavigation(Long chatId, String action, UserState userState) {
         if (action.equals("no_action_frame_component")) {
             return;
@@ -1134,6 +1298,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                 editCurrentFrameComponentForManagement(chatId, userState);
             }
         } else if (action.equals("select_frame_component")) {
+            clearPreviousMenu(chatId);
             userState.selectedFrameComponent = userState.currentFrameComponents.get(userState.currentFrameComponentIndex);
 
             if ("EDIT".equals(userState.frameComponentAction)) {
@@ -1163,8 +1328,8 @@ public class MyTelegramBot extends TelegramLongPollingBot {
         }
     }
 
-    // Метод для показа меню редактирования компонента
     private void showEditFrameComponentMenu(Long chatId, UserState userState) {
+        clearPreviousMenu(chatId);
         if (userState.selectedFrameComponent == null) {
             sendMessage(chatId, "❌ Ошибка: фурнитура не выбрана");
             showFrameComponentsManagementMenu(chatId, userState);
@@ -1177,7 +1342,6 @@ public class MyTelegramBot extends TelegramLongPollingBot {
         InlineKeyboardMarkup keyboard = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
 
-        // Кнопки для выбора поля для изменения
         String[] fields = {"NAME", "DESCRIPTION", "PRICE", "STOCK_QUANTITY", "TYPE"};
         String[] fieldNames = {"📝 Название", "📋 Описание", "💰 Цена", "📦 Количество", "📋 Тип"};
 
@@ -1190,7 +1354,6 @@ public class MyTelegramBot extends TelegramLongPollingBot {
             rows.add(row);
         }
 
-        // Кнопка "Назад"
         List<InlineKeyboardButton> backRow = new ArrayList<>();
         InlineKeyboardButton backButton = new InlineKeyboardButton();
         backButton.setText("🔙 Назад к списку");
@@ -1202,47 +1365,45 @@ public class MyTelegramBot extends TelegramLongPollingBot {
         sendMessageWithInlineKeyboard(chatId, text, keyboard);
     }
 
-    // Метод для обработки выбора поля для изменения компонента
     private void handleFrameComponentFieldSelection(Long chatId, String data, UserState userState) {
+        clearPreviousMenu(chatId);
         String field = data.substring("frame_component_field_".length());
         userState.waitingForFieldComponent = field;
 
         String prompt = "";
         switch (field) {
             case "NAME":
-                prompt = "Введите новое название компонента:";
+                prompt = "Введите новое название компонента:\n\n✏️ Или напишите \"отмена\" для отмены редактирования";
                 break;
             case "DESCRIPTION":
-                prompt = "Введите новое описание компонента:";
+                prompt = "Введите новое описание компонента:\n\n✏️ Или напишите \"отмена\" для отмены редактирования";
                 break;
             case "PRICE":
-                prompt = "Введите новую цену (число):";
+                prompt = "Введите новую цену (число):\n\n✏️ Или напишите \"отмена\" для отмены редактирования";
                 break;
             case "STOCK_QUANTITY":
-                prompt = "Введите новое количество на складе (число):";
+                prompt = "Введите новое количество на складе (число):\n\n✏️ Или напишите \"отмена\" для отмены редактирования";
                 break;
             case "TYPE":
-                prompt = "Введите новый тип компонента:";
+                prompt = "Введите новый тип компонента:\n\n✏️ Или напишите \"отмена\" для отмены редактирования";
                 break;
         }
 
         sendMessage(chatId, prompt);
     }
 
-    // Метод для показа подтверждения удаления компонента
     private void showDeleteComponentConfirmation(Long chatId, UserState userState) {
+        clearPreviousMenu(chatId);
         String text = "🗑️ Вы уверены, что хотите удалить фурнитуру:\n\"" + userState.selectedFrameComponent.getName() + "\"?\n\nЭта операция необратима!";
         InlineKeyboardMarkup keyboard = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
 
-        // Кнопка подтверждения удаления
         List<InlineKeyboardButton> confirmRow = new ArrayList<>();
         InlineKeyboardButton confirmButton = new InlineKeyboardButton();
         confirmButton.setText("✅ Да, удалить");
         confirmButton.setCallbackData("confirm_delete_frame_component");
         confirmRow.add(confirmButton);
 
-        // Кнопка отмены
         List<InlineKeyboardButton> cancelRow = new ArrayList<>();
         InlineKeyboardButton cancelButton = new InlineKeyboardButton();
         cancelButton.setText("❌ Отмена");
@@ -1256,8 +1417,8 @@ public class MyTelegramBot extends TelegramLongPollingBot {
         sendMessageWithInlineKeyboard(chatId, text, keyboard);
     }
 
-    // Метод для удаления компонента
     private void deleteFrameComponent(Long chatId, UserState userState) {
+        clearPreviousMenu(chatId);
         try {
             if (userState.selectedFrameComponent == null) {
                 sendMessage(chatId, "❌ Фурнитура не выбрана");
@@ -1269,7 +1430,6 @@ public class MyTelegramBot extends TelegramLongPollingBot {
 
             sendMessage(chatId, "✅ Фурнитура \"" + componentName + "\" успешно удалена!");
 
-            // Сбрасываем состояние
             userState.frameComponentAction = "";
             userState.waitingForFieldComponent = "";
             userState.selectedFrameComponent = null;
@@ -1286,32 +1446,36 @@ public class MyTelegramBot extends TelegramLongPollingBot {
         }
     }
 
-    // Метод для обработки ввода данных компонентов
     private void handleFrameComponentFieldInput(Long chatId, String messageText, UserState userState) {
+        clearPreviousMenu(chatId);
         try {
+            if ("отмена".equalsIgnoreCase(messageText.trim())) {
+                cancelFrameComponentOperation(chatId, userState);
+                return;
+            }
+
             String field = userState.waitingForFieldComponent;
 
             if ("ADD".equals(userState.frameComponentAction)) {
-                // Обработка добавления нового компонента
                 switch (field) {
                     case "NAME":
                         userState.selectedFrameComponent.setName(messageText.trim());
                         userState.waitingForFieldComponent = "DESCRIPTION";
-                        sendMessage(chatId, "✅ Название сохранено.\n\nВведите описание компонента:");
+                        sendMessage(chatId, "✅ Название сохранено.\n\nВведите описание компонента:\n\n✏️ Или напишите \"отмена\" для отмены добавления");
                         break;
                     case "DESCRIPTION":
                         userState.selectedFrameComponent.setDescription(messageText.trim());
                         userState.waitingForFieldComponent = "PRICE";
-                        sendMessage(chatId, "✅ Описание сохранено.\n\nВведите цену (число):");
+                        sendMessage(chatId, "✅ Описание сохранено.\n\nВведите цену (число):\n\n✏️ Или напишите \"отмена\" для отмены добавления");
                         break;
                     case "PRICE":
                         try {
                             Integer price = Integer.parseInt(messageText.trim());
                             userState.selectedFrameComponent.setPrice(price);
                             userState.waitingForFieldComponent = "STOCK_QUANTITY";
-                            sendMessage(chatId, "✅ Цена сохранена.\n\nВведите количество на складе (число):");
+                            sendMessage(chatId, "✅ Цена сохранена.\n\nВведите количество на складе (число):\n\n✏️ Или напишите \"отмена\" для отмены добавления");
                         } catch (NumberFormatException e) {
-                            sendMessage(chatId, "❌ Пожалуйста, введите корректное целое число для цены:");
+                            sendMessage(chatId, "❌ Пожалуйста, введите корректное целое число для цены:\n\n✏️ Или напишите \"отмена\" для отмены добавления");
                         }
                         break;
                     case "STOCK_QUANTITY":
@@ -1319,15 +1483,14 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                             Integer quantity = Integer.parseInt(messageText.trim());
                             userState.selectedFrameComponent.setStockQuantity(quantity);
                             userState.waitingForFieldComponent = "TYPE";
-                            sendMessage(chatId, "✅ Количество сохранено.\n\nВведите тип компонента:");
+                            sendMessage(chatId, "✅ Количество сохранено.\n\nВведите тип компонента:\n\n✏️ Или напишите \"отмена\" для отмены добавления");
                         } catch (NumberFormatException e) {
-                            sendMessage(chatId, "❌ Пожалуйста, введите корректное число для количества:");
+                            sendMessage(chatId, "❌ Пожалуйста, введите корректное число для количества:\n\n✏️ Или напишите \"отмена\" для отмены добавления");
                         }
                         break;
                     case "TYPE":
                         userState.selectedFrameComponent.setType(messageText.trim());
 
-                        // Сохраняем компонент в базу данных
                         mainController.createFrameComponent(userState.selectedFrameComponent);
 
                         sendMessage(chatId, "✅ Фурнитура успешно добавлена!\n\nНазвание: " + userState.selectedFrameComponent.getName() +
@@ -1336,7 +1499,6 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                                 "\nКоличество: " + userState.selectedFrameComponent.getStockQuantity() + " шт." +
                                 "\nТип: " + userState.selectedFrameComponent.getType());
 
-                        // Сбрасываем состояние
                         userState.frameComponentAction = "";
                         userState.waitingForFieldComponent = "";
                         userState.selectedFrameComponent = null;
@@ -1346,7 +1508,12 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                         break;
                 }
             } else if ("EDIT".equals(userState.frameComponentAction)) {
-                // Обработка редактирования существующего компонента
+
+                if ("отмена".equalsIgnoreCase(messageText.trim())) {
+                    cancelFrameComponentOperation(chatId, userState);
+                    return;
+                }
+
                 switch (field) {
                     case "NAME":
                         userState.selectedFrameComponent.setName(messageText.trim());
@@ -1359,7 +1526,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                             Integer price = Integer.parseInt(messageText.trim());
                             userState.selectedFrameComponent.setPrice(price);
                         } catch (NumberFormatException e) {
-                            sendMessage(chatId, "❌ Пожалуйста, введите корректное целое число для цены:");
+                            sendMessage(chatId, "❌ Пожалуйста, введите корректное целое число для цены:\n\n✏️ Или напишите \"отмена\" для отмены редактирования");
                             return;
                         }
                         break;
@@ -1368,7 +1535,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                             Integer quantity = Integer.parseInt(messageText.trim());
                             userState.selectedFrameComponent.setStockQuantity(quantity);
                         } catch (NumberFormatException e) {
-                            sendMessage(chatId, "❌ Пожалуйста, введите корректное число для количества:");
+                            sendMessage(chatId, "❌ Пожалуйста, введите корректное число для количества:\n\n✏️ Или напишите \"отмена\" для отмены редактирования");
                             return;
                         }
                         break;
@@ -1377,12 +1544,10 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                         break;
                 }
 
-                // Сохраняем изменения
                 try {
                     mainController.updateFrameComponent(userState.selectedFrameComponent);
                     sendMessage(chatId, "✅ Изменения успешно сохранены!");
 
-                    // Сбрасываем состояние
                     userState.frameComponentAction = "";
                     userState.waitingForFieldComponent = "";
                     userState.selectedFrameComponent = null;
@@ -1408,34 +1573,40 @@ public class MyTelegramBot extends TelegramLongPollingBot {
         }
     }
 
-    // Метод для показа меню управления материалами рамок
+    private void cancelFrameComponentOperation(Long chatId, UserState userState) {
+        userState.frameComponentAction = "";
+        userState.waitingForFieldComponent = "";
+        userState.selectedFrameComponent = null;
+
+        sendMessage(chatId, "❌ Операция с фурнитурой отменена.");
+        showFrameComponentsManagementMenu(chatId, userState);
+    }
+
     private void showFrameMaterialsManagementMenu(Long chatId, UserState userState) {
+        clearPreviousMenu(chatId);
+        userState.lastMessageId = null;
         String text = "🖼️ Управление материалами для рамок\n\nВыберите действие:";
         InlineKeyboardMarkup keyboard = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
 
-        // Кнопка "Добавить"
         List<InlineKeyboardButton> addRow = new ArrayList<>();
         InlineKeyboardButton addButton = new InlineKeyboardButton();
         addButton.setText("➕ Добавить");
         addButton.setCallbackData("frame_material_action_ADD");
         addRow.add(addButton);
 
-        // Кнопка "Изменить"
         List<InlineKeyboardButton> editRow = new ArrayList<>();
         InlineKeyboardButton editButton = new InlineKeyboardButton();
         editButton.setText("✏️ Изменить");
         editButton.setCallbackData("frame_material_action_EDIT");
         editRow.add(editButton);
 
-        // Кнопка "Удалить"
         List<InlineKeyboardButton> deleteRow = new ArrayList<>();
         InlineKeyboardButton deleteButton = new InlineKeyboardButton();
         deleteButton.setText("🗑️ Удалить");
         deleteButton.setCallbackData("frame_material_action_DELETE");
         deleteRow.add(deleteButton);
 
-        // Кнопка "Назад"
         List<InlineKeyboardButton> backRow = new ArrayList<>();
         InlineKeyboardButton backButton = new InlineKeyboardButton();
         backButton.setText("🔙 Назад");
@@ -1451,8 +1622,9 @@ public class MyTelegramBot extends TelegramLongPollingBot {
         sendMessageWithInlineKeyboard(chatId, text, keyboard);
     }
 
-    // Метод для обработки действий с материалами рамок
+
     private void handleFrameMaterialAction(Long chatId, String action, UserState userState) {
+        clearPreviousMenu(chatId);
         String actionType = action.substring("frame_material_action_".length());
 
         try {
@@ -1477,13 +1649,15 @@ public class MyTelegramBot extends TelegramLongPollingBot {
         }
     }
 
-    // Метод для начала добавления материала
+
     private void startAddFrameMaterial(Long chatId, UserState userState) {
         userState.waitingForField = "NAME";
-        sendMessage(chatId, "➕ Добавление нового материала для рамки\n\nВведите название материала:");
+
+        String text = "➕ Добавление нового материала для рамки\n\nВведите название материала:\n\n✏️ Или напишите \"отмена\" для отмены добавления";
+        sendMessage(chatId, text);
     }
 
-    // Метод для показа списка материалов для управления
+
     private void showFrameMaterialsForManagement(Long chatId, UserState userState) {
         try {
             Iterable<FrameMaterial> frameMaterials = mainController.allFrameMaterial();
@@ -1510,7 +1684,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
         }
     }
 
-    // Метод для показа текущего материала при управлении
+
     private void showCurrentFrameMaterialForManagement(Long chatId, UserState userState) {
         if (userState.currentFrameMaterials == null || userState.currentFrameMaterials.isEmpty()) {
             sendMessage(chatId, "❌ Нет материалов для отображения.");
@@ -1526,7 +1700,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
         sendMessageWithInlineKeyboard(chatId, materialText, keyboard);
     }
 
-    // Метод для форматирования деталей материала
+
     private String formatFrameMaterialDetails(FrameMaterial material, int currentNumber, int totalMaterials) {
         StringBuilder sb = new StringBuilder();
         sb.append("🖼️ Материал ").append(currentNumber).append(" из ").append(totalMaterials).append("\n\n");
@@ -1540,15 +1714,15 @@ public class MyTelegramBot extends TelegramLongPollingBot {
         return sb.toString();
     }
 
-    // Метод для создания клавиатуры управления материалами
+
     private InlineKeyboardMarkup createFrameMaterialManagementKeyboard(UserState userState, FrameMaterial currentMaterial) {
         InlineKeyboardMarkup keyboard = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
 
-        // Строка с навигацией
+
         List<InlineKeyboardButton> navRow = new ArrayList<>();
 
-        // Кнопка "Предыдущий"
+
         InlineKeyboardButton prevButton = new InlineKeyboardButton();
         prevButton.setText("⬅️ Предыдущий");
         prevButton.setCallbackData("prev_frame_material");
@@ -1561,7 +1735,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
             navRow.add(disabledPrev);
         }
 
-        // Кнопка "Выбрать этот" для EDIT и DELETE
+
         if ("EDIT".equals(userState.frameMaterialAction) || "DELETE".equals(userState.frameMaterialAction)) {
             InlineKeyboardButton selectButton = new InlineKeyboardButton();
             selectButton.setText("✅ Выбрать этот");
@@ -1569,7 +1743,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
             navRow.add(selectButton);
         }
 
-        // Кнопка "Следующий"
+
         InlineKeyboardButton nextButton = new InlineKeyboardButton();
         nextButton.setText("Следующий ➡️");
         nextButton.setCallbackData("next_frame_material");
@@ -1584,7 +1758,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
 
         rows.add(navRow);
 
-        // Кнопка "Назад"
+
         List<InlineKeyboardButton> backRow = new ArrayList<>();
         InlineKeyboardButton backButton = new InlineKeyboardButton();
         backButton.setText("🔙 Назад");
@@ -1596,7 +1770,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
         return keyboard;
     }
 
-    // Метод для обработки навигации по материалам
+
     private void handleFrameMaterialNavigation(Long chatId, String action, UserState userState) {
         if (action.equals("no_action_frame_material")) {
             return;
@@ -1613,6 +1787,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                 editCurrentFrameMaterialForManagement(chatId, userState);
             }
         } else if (action.equals("select_frame_material")) {
+            clearPreviousMenu(chatId);
             userState.selectedFrameMaterial = userState.currentFrameMaterials.get(userState.currentFrameMaterialIndex);
 
             if ("EDIT".equals(userState.frameMaterialAction)) {
@@ -1642,7 +1817,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
         }
     }
 
-    // Метод для показа меню редактирования материала
+
     private void showEditFrameMaterialMenu(Long chatId, UserState userState) {
         if (userState.selectedFrameMaterial == null) {
             sendMessage(chatId, "❌ Ошибка: материал не выбран.");
@@ -1656,7 +1831,6 @@ public class MyTelegramBot extends TelegramLongPollingBot {
         InlineKeyboardMarkup keyboard = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
 
-        // Кнопки для выбора поля для изменения
         String[] fields = {"NAME", "DESCRIPTION", "PRICE_PER_METER", "STOCK_QUANTITY", "COLOR", "WIDTH"};
         String[] fieldNames = {"📝 Название", "📋 Описание", "💰 Цена за метр", "📦 Количество", "🎨 Цвет", "📏 Ширина"};
 
@@ -1669,7 +1843,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
             rows.add(row);
         }
 
-        // Кнопка "Назад"
+
         List<InlineKeyboardButton> backRow = new ArrayList<>();
         InlineKeyboardButton backButton = new InlineKeyboardButton();
         backButton.setText("🔙 Назад к списку");
@@ -1681,50 +1855,50 @@ public class MyTelegramBot extends TelegramLongPollingBot {
         sendMessageWithInlineKeyboard(chatId, text, keyboard);
     }
 
-    // Метод для обработки выбора поля для изменения
     private void handleFrameMaterialFieldSelection(Long chatId, String data, UserState userState) {
+        clearPreviousMenu(chatId);
         String field = data.substring("frame_material_field_".length());
         userState.waitingForField = field;
 
         String prompt = "";
         switch (field) {
             case "NAME":
-                prompt = "Введите новое название материала:";
+                prompt = "Введите новое название материала:\n\n✏️ Или напишите \"отмена\" для отмены редактирования";
                 break;
             case "DESCRIPTION":
-                prompt = "Введите новое описание материала:";
+                prompt = "Введите новое описание материала:\n\n✏️ Или напишите \"отмена\" для отмены редактирования";
                 break;
             case "PRICE_PER_METER":
-                prompt = "Введите новую цену за метр (число):";
+                prompt = "Введите новую цену за метр (число):\n\n✏️ Или напишите \"отмена\" для отмены редактирования";
                 break;
             case "STOCK_QUANTITY":
-                prompt = "Введите новое количество на складе (число, в метрах):";
+                prompt = "Введите новое количество на складе (число, в метрах):\n\n✏️ Или напишите \"отмена\" для отмены редактирования";
                 break;
             case "COLOR":
-                prompt = "Введите новый цвет материала:";
+                prompt = "Введите новый цвет материала:\n\n✏️ Или напишите \"отмена\" для отмены редактирования";
                 break;
             case "WIDTH":
-                prompt = "Введите новую ширину материала (число, в мм):";
+                prompt = "Введите новую ширину материала (число, в мм):\n\n✏️ Или напишите \"отмена\" для отмены редактирования";
                 break;
         }
 
         sendMessage(chatId, prompt);
     }
 
-    // Метод для показа подтверждения удаления
+
     private void showDeleteConfirmation(Long chatId, UserState userState) {
         String text = "🗑️ Вы уверены, что хотите удалить материал:\n\"" + userState.selectedFrameMaterial.getName() + "\"?\n\nЭта операция необратима!";
         InlineKeyboardMarkup keyboard = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
 
-        // Кнопка подтверждения удаления
+
         List<InlineKeyboardButton> confirmRow = new ArrayList<>();
         InlineKeyboardButton confirmButton = new InlineKeyboardButton();
         confirmButton.setText("✅ Да, удалить");
         confirmButton.setCallbackData("confirm_delete_frame_material");
         confirmRow.add(confirmButton);
 
-        // Кнопка отмены
+
         List<InlineKeyboardButton> cancelRow = new ArrayList<>();
         InlineKeyboardButton cancelButton = new InlineKeyboardButton();
         cancelButton.setText("❌ Отмена");
@@ -1738,13 +1912,13 @@ public class MyTelegramBot extends TelegramLongPollingBot {
         sendMessageWithInlineKeyboard(chatId, text, keyboard);
     }
 
-    // Новый метод для показа свободных заказов с навигацией
+
     private void showFreeOrdersWithNavigation(Long chatId, UserState userState) {
         try {
             List<Orders> allOrders = (List<Orders>) mainController.allOrders();
             List<Orders> freeOrders = new ArrayList<>();
 
-            // Ищем заказы без ProductionMasterID
+
             for (Orders order : allOrders) {
                 if (order.getProductionMasterID() == null || order.getProductionMasterID().getIdUser() == null) {
                     freeOrders.add(order);
@@ -1767,7 +1941,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
         }
     }
 
-    // Новый метод для показа текущего свободного заказа
+
     private void showCurrentFreeOrder(Long chatId, UserState userState) {
         if (userState.freeOrders == null || userState.freeOrders.isEmpty()) {
             sendMessage(chatId, "❌ Нет свободных заказов для отображения.");
@@ -1780,7 +1954,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
         sendMessageWithInlineKeyboard(chatId, orderText, keyboard);
     }
 
-    // Новый метод для форматирования деталей свободного заказа
+
     private String formatFreeOrderDetails(Orders order, int currentNumber, int totalOrders) {
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
 
@@ -1789,7 +1963,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
         sb.append("🆔 Номер заказа: ").append(order.getId()).append("\n");
         sb.append("📅 Дата заказа: ").append(order.getOrderDate() != null ? dateFormat.format(order.getOrderDate()) : "Не указана").append("\n");
 
-        // Получаем информацию о покупателе
+
         if (order.getCustomerID() != null) {
             Customer customer = order.getCustomerID();
             String customerName = (customer.getLastName() != null ? customer.getLastName() : "") + " " +
@@ -1807,7 +1981,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
             sb.append("📝 Примечания: ").append(order.getNotes()).append("\n");
         }
 
-        // Проверяем, есть ли custom_frame_order для этого заказа
+
         try {
             Iterable<CustomFrameOrder> customFrameOrders = mainController.allCustomFrameOrder();
             for (CustomFrameOrder customOrder : customFrameOrders) {
@@ -1831,15 +2005,15 @@ public class MyTelegramBot extends TelegramLongPollingBot {
         return sb.toString();
     }
 
-    // Новый метод для создания клавиатуры навигации по свободным заказам
+
     private InlineKeyboardMarkup createFreeOrderNavigationKeyboard(UserState userState, Orders currentOrder) {
         InlineKeyboardMarkup keyboard = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
 
-        // Строка с навигацией
+
         List<InlineKeyboardButton> navRow = new ArrayList<>();
 
-        // Кнопка "Предыдущий"
+
         InlineKeyboardButton prevButton = new InlineKeyboardButton();
         prevButton.setText("⬅️ Предыдущий");
         prevButton.setCallbackData("prev_free_order");
@@ -1852,13 +2026,13 @@ public class MyTelegramBot extends TelegramLongPollingBot {
             navRow.add(disabledPrev);
         }
 
-        // Кнопка "Взять заказ"
+
         InlineKeyboardButton takeOrderButton = new InlineKeyboardButton();
         takeOrderButton.setText("✅ Взять заказ");
         takeOrderButton.setCallbackData("take_free_order_" + currentOrder.getId());
         navRow.add(takeOrderButton);
 
-        // Кнопка "Следующий"
+
         InlineKeyboardButton nextButton = new InlineKeyboardButton();
         nextButton.setText("Следующий ➡️");
         nextButton.setCallbackData("next_free_order");
@@ -1873,10 +2047,10 @@ public class MyTelegramBot extends TelegramLongPollingBot {
 
         rows.add(navRow);
 
-        // Строка с дополнительными действиями
+
         List<InlineKeyboardButton> actionRow = new ArrayList<>();
 
-        // Кнопка возврата в меню
+
         InlineKeyboardButton backButton = new InlineKeyboardButton();
         backButton.setText("🔙 В меню");
         backButton.setCallbackData("back_to_menu");
@@ -1888,10 +2062,10 @@ public class MyTelegramBot extends TelegramLongPollingBot {
         return keyboard;
     }
 
-    // Новый метод для взятия свободного заказа
+
     private void takeFreeOrder(Long chatId, Long orderId, UserState userState) {
         try {
-            // Находим заказ
+
             Orders orderToTake = null;
             for (Orders order : userState.freeOrders) {
                 if (order.getId().longValue() == orderId.longValue()) {
@@ -1913,10 +2087,10 @@ public class MyTelegramBot extends TelegramLongPollingBot {
 
             userState.selectedOrderId = orderId;
 
-            // Сохраняем найденного мастера производства
+
             userState.currentFrameOrder.setProductionMasterID(productionMaster);
 
-            // Переходим в состояние ожидания ввода примерного количества материала
+
             userState.state = "WAITING_MATERIAL_ESTIMATE";
             sendMessage(chatId, "📏 Введите примерное количество материала для заказа №" + orderId + " (в метрах):\n\n" +
                     "Введите число, например: 2.5");
@@ -1943,7 +2117,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
 
             userState.currentMaterialEstimate = materialEstimate;
 
-            // Теперь запрашиваем стоимость заказа
+
             userState.state = "WAITING_ORDER_COST";
             sendMessage(chatId, "💵 Теперь введите стоимость заказа №" + userState.selectedOrderId + " (в рублях):\n\n" +
                     "Введите число, например: 1500");
@@ -1961,7 +2135,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
             Iterable<CustomFrameOrder> customFrameOrders = mainController.allCustomFrameOrder();
             for (CustomFrameOrder customOrder : customFrameOrders) {
                 if (customOrder.getOrderID() != null && customOrder.getOrderID().getId().longValue() == orderId.longValue()) {
-                    // Устанавливаем мастера производства и примерное количество материала
+
                     customOrder.setProductionMasterID(productionMaster);
                     if (materialEstimate != null) {
                         customOrder.setEstimatedMaterialUsage(BigDecimal.valueOf(materialEstimate));
@@ -2014,14 +2188,14 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                 return;
             }
 
-            // Обновляем заказ
+
             orderToUpdate.setProductionMasterID(productionMaster);
             orderToUpdate.setTotalAmount(cost);
 
-            // Сохраняем изменения в заказе
+
             mainController.updateOrder(orderToUpdate);
 
-            // Обновляем custom_frame_order - добавляем примерное количество материала
+
             updateCustomFrameOrderWithEstimate(userState.selectedOrderId, productionMaster, userState.currentMaterialEstimate);
 
             sendMessage(chatId, "✅ Заказ №" + userState.selectedOrderId + " успешно взят!\n" +
@@ -2029,7 +2203,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                     "📏 Примерное количество материала: " + userState.currentMaterialEstimate + " м.\n\n" +
                     "Теперь этот заказ отображается в ваших заказах.");
 
-            // Сбрасываем состояние
+
             userState.state = "AUTHENTICATED";
             userState.selectedOrderId = null;
             userState.viewingFreeOrders = false;
@@ -2064,7 +2238,8 @@ public class MyTelegramBot extends TelegramLongPollingBot {
     }
 
     private void startFrameOrder(Long chatId, UserState userState) {
-        // Проверяем, что пользователь авторизован как покупатель
+        clearPreviousMenu(chatId);
+        userState.lastMessageId = null;
         if (!"AUTHENTICATED".equals(userState.state) || !"ПОКУПАТЕЛЬ".equals(userState.userRole)) {
             sendMessage(chatId, "❌ Для заказа рамки необходимо авторизоваться как покупатель.");
             sendMainMenu(chatId, userState);
@@ -2075,11 +2250,12 @@ public class MyTelegramBot extends TelegramLongPollingBot {
         userState.state = "FRAME_ORDER_MATERIAL";
         userState.currentFrameOrderStep = "MATERIAL";
 
-        // Показываем доступные материалы для выбора
+
         showFrameMaterialsForSelection(chatId);
     }
 
     private void showFrameMaterialsForSelection(Long chatId) {
+        clearPreviousMenu(chatId);
         try {
             Iterable<FrameMaterial> frameMaterials = mainController.allFrameMaterial();
             List<FrameMaterial> availableMaterials = new ArrayList<>();
@@ -2115,7 +2291,6 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                 rows.add(row);
             }
 
-            // Кнопка отмены
             List<InlineKeyboardButton> cancelRow = new ArrayList<>();
             InlineKeyboardButton cancelButton = new InlineKeyboardButton();
             cancelButton.setText("❌ Отменить заказ");
@@ -2180,7 +2355,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
     }
 
     private void handleFrameOrderInput(Long chatId, String messageText, UserState userState) {
-        // Проверяем, что пользователь все еще авторизован
+
         if (!"AUTHENTICATED".equals(userState.state) && !userState.state.startsWith("FRAME_ORDER_")) {
             sendMessage(chatId, "❌ Сессия истекла. Пожалуйста, начните заказ заново.");
             sendMainMenu(chatId, userState);
@@ -2253,7 +2428,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
             System.err.println("Error handling frame order input: " + e.getMessage());
             sendMessage(chatId, "❌ Произошла ошибка. Попробуйте начать заказ заново.");
 
-            // Сбрасываем состояние заказа
+
             userState.currentFrameOrder = new CustomFrameOrder();
             userState.currentFrameOrderStep = "";
             userState.state = "AUTHENTICATED";
@@ -2264,7 +2439,6 @@ public class MyTelegramBot extends TelegramLongPollingBot {
 
     private void showFrameOrderConfirmation(Long chatId, UserState userState) {
         try {
-            // Получаем информацию о выбранном материале
             FrameMaterial selectedMaterial = null;
             Iterable<FrameMaterial> frameMaterials = mainController.allFrameMaterial();
             for (FrameMaterial material : frameMaterials) {
@@ -2376,7 +2550,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
 
             mainController.createCustomFrameOrder(userState.currentFrameOrder);
 
-            // ОТПРАВЛЯЕМ УВЕДОМЛЕНИЯ МАСТЕРАМ
+
             notifyMastersAboutNewOrder(savedOrder);
 
             sendMessage(chatId, "🎉 Заказ рамки успешно создан!\n\n" +
@@ -2385,7 +2559,6 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                     new SimpleDateFormat("dd.MM.yyyy").format(newOrder.getDueDate()) + "\n\n" +
                     "Спасибо за заказ! Вы можете отслеживать статус в разделе \"Мои заказы\".");
 
-            // Сбрасываем состояние заказа и возвращаем в главное меню
             userState.currentFrameOrder = new CustomFrameOrder();
             userState.currentFrameOrderStep = "";
             userState.state = "AUTHENTICATED";
@@ -2397,7 +2570,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
             e.printStackTrace();
             sendMessage(chatId, "❌ Ошибка при создании заказа. Попробуйте позже.");
 
-            // В случае ошибки также сбрасываем состояние
+
             userState.currentFrameOrder = new CustomFrameOrder();
             userState.currentFrameOrderStep = "";
             userState.state = "AUTHENTICATED";
@@ -2407,9 +2580,11 @@ public class MyTelegramBot extends TelegramLongPollingBot {
     }
 
     private void cancelFrameOrder(Long chatId, UserState userState) {
+        clearPreviousMenu(chatId);
         userState.currentFrameOrder = new CustomFrameOrder();
         userState.state = "AUTHENTICATED";
         userState.currentFrameOrderStep = "";
+        userState.lastMessageId = null;
         sendMessage(chatId, "❌ Заказ рамки отменен.");
         sendMainMenu(chatId, userState);
     }
@@ -2430,14 +2605,14 @@ public class MyTelegramBot extends TelegramLongPollingBot {
 
     private void notifyMastersAboutNewOrder(Orders newOrder) {
         try {
-            // Получаем всех мастеров производства
+
             Iterable<Productionmaster> productionMasters = mainController.allPM2();
 
             for (Productionmaster master : productionMasters) {
                 if (master.getIdUser() != null && master.getIdUser().getId() != null) {
                     Long masterUserId = master.getIdUser().getId().longValue();
 
-                    // Ищем chatId мастера по его userId
+
                     Long masterChatId = findChatIdByUserId(masterUserId);
 
                     if (masterChatId != null) {
@@ -2451,7 +2626,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
     }
 
     private Long findChatIdByUserId(Long userId) {
-        // Ищем chatId по userId в userStates
+
         for (Map.Entry<Long, UserState> entry : userStates.entrySet()) {
             if (entry.getValue().userId != null && entry.getValue().userId.longValue() == userId.longValue()) {
                 return entry.getKey();
@@ -2468,7 +2643,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                     "💰 Сумма: " + (order.getTotalAmount() != null ? order.getTotalAmount() : "Не указана") + " руб.\n" +
                     "📊 Статус: " + (order.getStatus() != null ? order.getStatus() : "Новый") + "\n";
 
-            // Добавляем информацию о покупателе
+
             if (order.getCustomerID() != null) {
                 Customer customer = order.getCustomerID();
                 String customerName = (customer.getLastName() != null ? customer.getLastName() : "") + " " +
@@ -2480,7 +2655,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                 }
             }
 
-            // Проверяем, есть ли custom_frame_order для этого заказа
+
             try {
                 Iterable<CustomFrameOrder> customFrameOrders = mainController.allCustomFrameOrder();
                 for (CustomFrameOrder customOrder : customFrameOrders) {
@@ -2501,18 +2676,18 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                 System.err.println("Error getting custom frame order details: " + e.getMessage());
             }
 
-            // Добавляем кнопки для быстрых действий
+
             InlineKeyboardMarkup keyboard = new InlineKeyboardMarkup();
             List<List<InlineKeyboardButton>> rows = new ArrayList<>();
 
-            // Кнопка "Посмотреть заказ"
+
             List<InlineKeyboardButton> viewRow = new ArrayList<>();
             InlineKeyboardButton viewButton = new InlineKeyboardButton();
             viewButton.setText("📋 Посмотреть заказ");
             viewButton.setCallbackData("view_order_" + order.getId());
             viewRow.add(viewButton);
 
-            // Кнопка "Взять заказ" (если заказ свободный)
+
             List<InlineKeyboardButton> takeRow = new ArrayList<>();
             InlineKeyboardButton takeButton = new InlineKeyboardButton();
             takeButton.setText("✅ Взять заказ");
@@ -2564,7 +2739,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
             List<Orders> allOrders = (List<Orders>) mainController.allOrders();
             List<Orders> freeOrders = new ArrayList<>();
 
-            // Ищем свободные заказы
+
             for (Orders order : allOrders) {
                 if (order.getProductionMasterID() == null || order.getProductionMasterID().getIdUser() == null) {
                     freeOrders.add(order);
@@ -2592,7 +2767,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
         sb.append("📊 Статус: ").append(order.getStatus() != null ? order.getStatus() : "Не указан").append("\n");
         sb.append("⏰ Срок выполнения: ").append(order.getDueDate() != null ? dateFormat.format(order.getDueDate()) : "Не указан").append("\n");
 
-        // Информация о покупателе
+
         if (order.getCustomerID() != null) {
             Customer customer = order.getCustomerID();
             String customerName = (customer.getLastName() != null ? customer.getLastName() : "") + " " +
@@ -2614,7 +2789,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
             sb.append("📝 Примечания: ").append(order.getNotes()).append("\n");
         }
 
-        // Информация о рамке
+
         try {
             Iterable<CustomFrameOrder> customFrameOrders = mainController.allCustomFrameOrder();
             for (CustomFrameOrder customOrder : customFrameOrders) {
@@ -2648,7 +2823,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
         InlineKeyboardMarkup keyboard = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
 
-        // Если заказ свободный, добавляем кнопку "Взять заказ"
+
         if (order.getProductionMasterID() == null) {
             List<InlineKeyboardButton> takeRow = new ArrayList<>();
             InlineKeyboardButton takeButton = new InlineKeyboardButton();
@@ -2658,7 +2833,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
             rows.add(takeRow);
         }
 
-        // Кнопка "Свободные заказы"
+
         List<InlineKeyboardButton> freeOrdersRow = new ArrayList<>();
         InlineKeyboardButton freeOrdersButton = new InlineKeyboardButton();
         freeOrdersButton.setText("🆓 Свободные заказы");
@@ -2666,7 +2841,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
         freeOrdersRow.add(freeOrdersButton);
         rows.add(freeOrdersRow);
 
-        // Кнопка "Назад в меню"
+
         List<InlineKeyboardButton> backRow = new ArrayList<>();
         InlineKeyboardButton backButton = new InlineKeyboardButton();
         backButton.setText("🔙 В меню");
@@ -2678,9 +2853,20 @@ public class MyTelegramBot extends TelegramLongPollingBot {
         return keyboard;
     }
 
-    // Обновленный метод sendMainMenu для добавления кнопки "Свободные заказы"
     private void sendMainMenu(Long chatId, UserState userState) {
+        clearPreviousMenu(chatId);
+        checkReviewConditions(chatId, userState);
+
         String text = "⭐ Добро пожаловать, " + userState.fullName + "!\n\nВыберите действие:";
+
+
+        InlineKeyboardMarkup keyboard = createMainMenuKeyboard(userState);
+        sendMessageWithInlineKeyboard(chatId, text, keyboard);
+
+        userState.lastMessageText = text;
+    }
+
+    private InlineKeyboardMarkup createMainMenuKeyboard(UserState userState) {
         InlineKeyboardMarkup keyboard = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
         List<InlineKeyboardButton> row1 = new ArrayList<>();
@@ -2707,6 +2893,22 @@ public class MyTelegramBot extends TelegramLongPollingBot {
             orderFrameButton.setCallbackData("order_frame");
             row2.add(orderFrameButton);
 
+            if (userState.canLeaveReview) {
+                List<InlineKeyboardButton> reviewRow = new ArrayList<>();
+                InlineKeyboardButton leaveReviewButton = new InlineKeyboardButton();
+                leaveReviewButton.setText("⭐ Оставить отзыв");
+                leaveReviewButton.setCallbackData("leave_review");
+                reviewRow.add(leaveReviewButton);
+                rows.add(reviewRow);
+            } else if (userState.hasReview) {
+                List<InlineKeyboardButton> reviewRow = new ArrayList<>();
+                InlineKeyboardButton viewReviewButton = new InlineKeyboardButton();
+                viewReviewButton.setText("📝 Мой отзыв");
+                viewReviewButton.setCallbackData("view_review");
+                reviewRow.add(viewReviewButton);
+                rows.add(reviewRow);
+            }
+
             rows.add(row1);
             rows.add(row2);
 
@@ -2727,14 +2929,12 @@ public class MyTelegramBot extends TelegramLongPollingBot {
             changeStatusButton.setCallbackData("change_order_status");
             row2.add(changeStatusButton);
 
-            // НОВАЯ КНОПКА ДЛЯ УПРАВЛЕНИЯ КОМПОНЕНТАМИ
             List<InlineKeyboardButton> row3 = new ArrayList<>();
             InlineKeyboardButton frameComponentsButton = new InlineKeyboardButton();
             frameComponentsButton.setText("🖼️ Управление фурнитурами");
             frameComponentsButton.setCallbackData("frame_components_management");
             row3.add(frameComponentsButton);
 
-            // Существующая кнопка для материалов
             InlineKeyboardButton frameMaterialsButton = new InlineKeyboardButton();
             frameMaterialsButton.setText("📦 Управление материалами");
             frameMaterialsButton.setCallbackData("frame_materials_management");
@@ -2743,7 +2943,32 @@ public class MyTelegramBot extends TelegramLongPollingBot {
             rows.add(row1);
             rows.add(row2);
             rows.add(row3);
-        } else {
+        } else if ("ДИРЕКТОР".equals(userState.userRole)) {
+
+
+            List<InlineKeyboardButton> reportsRow1 = new ArrayList<>();
+            InlineKeyboardButton allOrdersButton = new InlineKeyboardButton();
+            allOrdersButton.setText("📊 Все заказы");
+            allOrdersButton.setCallbackData("director_all_orders");
+            reportsRow1.add(allOrdersButton);
+
+            InlineKeyboardButton salesButton = new InlineKeyboardButton();
+            salesButton.setText("💰 Продажи");
+            salesButton.setCallbackData("director_sales");
+            reportsRow1.add(salesButton);
+
+            List<InlineKeyboardButton> reportsRow2 = new ArrayList<>();
+            InlineKeyboardButton reviewsButton = new InlineKeyboardButton();
+            reviewsButton.setText("⭐ Отзывы");
+            reviewsButton.setCallbackData("director_reviews");
+            reportsRow2.add(reviewsButton);
+
+            rows.add(row1);
+            rows.add(reportsRow1);
+            rows.add(reportsRow2);
+        }
+
+        else {
             rows.add(row1);
         }
 
@@ -2755,11 +2980,295 @@ public class MyTelegramBot extends TelegramLongPollingBot {
         rows.add(exitRow);
 
         keyboard.setKeyboard(rows);
+        return keyboard;
+    }
 
+    private void checkReviewConditions(Long chatId, UserState userState) {
+        try {
+            if (!"ПОКУПАТЕЛЬ".equals(userState.userRole)) {
+                return;
+            }
+
+
+            boolean hasCompletedOrder = false;
+            List<Orders> allOrders = (List<Orders>) mainController.allOrders();
+
+            for (Orders order : allOrders) {
+                if (order.getCustomerID() != null &&
+                        order.getCustomerID().getId().longValue() == userState.userId &&
+                        "Забран".equals(order.getStatus())) {
+                    hasCompletedOrder = true;
+                    break;
+                }
+            }
+
+
+            boolean hasExistingReview = false;
+            Iterable<Reviews> allReviews = mainController.allReviews();
+            for (Reviews review : allReviews) {
+                if (review.getIdCustomer() != null &&
+                        review.getIdCustomer().getId().longValue() == userState.userId) {
+                    hasExistingReview = true;
+                    break;
+                }
+            }
+
+            userState.canLeaveReview = hasCompletedOrder && !hasExistingReview;
+            userState.hasReview = hasExistingReview;
+
+        } catch (Exception e) {
+            System.err.println("Error checking review conditions: " + e.getMessage());
+            userState.canLeaveReview = false;
+            userState.hasReview = false;
+        }
+    }
+
+    private void startReviewProcess(Long chatId, UserState userState) {
+        clearPreviousMenu(chatId);
+        userState.lastMessageId = null;
+        userState.currentReview = new Reviews();
+        userState.state = "REVIEW_DESCRIPTION";
+        userState.reviewStep = "DESCRIPTION";
+
+        sendMessage(chatId, "📝 Напишите ваш отзыв:\n\n" +
+                "Опишите ваши впечатления от работы с нашей мастерской.");
+    }
+
+    private void handleReviewInput(Long chatId, String messageText, UserState userState) {
+        try {
+            switch (userState.state) {
+                case "REVIEW_DESCRIPTION":
+                    userState.currentReview.setName(messageText.trim());
+                    userState.state = "REVIEW_RATING";
+                    userState.reviewStep = "RATING";
+                    showRatingSelection(chatId, userState);
+                    break;
+            }
+        } catch (Exception e) {
+            System.err.println("Error handling review input: " + e.getMessage());
+            sendMessage(chatId, "❌ Ошибка при обработке отзыва. Попробуйте позже.");
+            userState.state = "AUTHENTICATED";
+            sendMainMenu(chatId, userState);
+        }
+    }
+
+    private void showRatingSelection(Long chatId, UserState userState) {
+        String text = "⭐ Теперь оцените нашу работу:\n\n" +
+                "Выберите оценку от 1 до 5 звезд:";
+
+        InlineKeyboardMarkup keyboard = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+
+
+        for (int i = 1; i <= 5; i++) {
+            List<InlineKeyboardButton> row = new ArrayList<>();
+            InlineKeyboardButton ratingButton = new InlineKeyboardButton();
+            ratingButton.setText("⭐".repeat(i) + " (" + i + ")");
+            ratingButton.setCallbackData("review_rating_" + i);
+            row.add(ratingButton);
+            rows.add(row);
+        }
+
+
+        List<InlineKeyboardButton> cancelRow = new ArrayList<>();
+        InlineKeyboardButton cancelButton = new InlineKeyboardButton();
+        cancelButton.setText("❌ Отменить");
+        cancelButton.setCallbackData("cancel_review");
+        cancelRow.add(cancelButton);
+        rows.add(cancelRow);
+
+        keyboard.setKeyboard(rows);
         sendMessageWithInlineKeyboard(chatId, text, keyboard);
     }
 
-    // Обновленный метод startAuthorization для сброса всех состояний
+    private void handleReviewRating(Long chatId, int rating, UserState userState) {
+        userState.currentReview.setEstimation(rating);
+        userState.state = "REVIEW_CONFIRM";
+        userState.reviewStep = "CONFIRM";
+
+        showReviewConfirmation(chatId, userState);
+    }
+
+    private void showReviewConfirmation(Long chatId, UserState userState) {
+        StringBuilder confirmationText = new StringBuilder();
+        confirmationText.append("✅ Проверьте ваш отзыв:\n\n");
+        confirmationText.append("📝 Текст отзыва:\n").append(userState.currentReview.getName()).append("\n\n");
+        confirmationText.append("⭐ Оценка: ").append("⭐".repeat(userState.currentReview.getEstimation())).append(" (").append(userState.currentReview.getEstimation()).append("/5)\n\n");
+        confirmationText.append("Всё верно?");
+
+        InlineKeyboardMarkup keyboard = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+
+        List<InlineKeyboardButton> confirmRow = new ArrayList<>();
+        InlineKeyboardButton confirmButton = new InlineKeyboardButton();
+        confirmButton.setText("✅ Да, отправить отзыв");
+        confirmButton.setCallbackData("confirm_review");
+        confirmRow.add(confirmButton);
+
+        List<InlineKeyboardButton> cancelRow = new ArrayList<>();
+        InlineKeyboardButton cancelButton = new InlineKeyboardButton();
+        cancelButton.setText("❌ Нет, изменить");
+        cancelButton.setCallbackData("cancel_review");
+        cancelRow.add(cancelButton);
+
+        rows.add(confirmRow);
+        rows.add(cancelRow);
+
+        keyboard.setKeyboard(rows);
+        sendMessageWithInlineKeyboard(chatId, confirmationText.toString(), keyboard);
+    }
+
+    private void confirmReview(Long chatId, UserState userState) {
+        try {
+            Customer customer = findCustomerById(userState.userId);
+            if (customer == null) {
+                sendMessage(chatId, "❌ Ошибка: покупатель не найден.");
+                userState.state = "AUTHENTICATED";
+                sendMainMenu(chatId, userState);
+                return;
+            }
+
+            userState.currentReview.setIdCustomer(customer);
+            userState.currentReview.setDatereview(new Date());
+
+            mainController.addReviewTG(userState.currentReview);
+
+            sendMessage(chatId, "✅ Спасибо за ваш отзыв!\n\n" +
+                    "Ваше мнение очень важно для нас!");
+
+            userState.currentReview = null;
+            userState.state = "AUTHENTICATED";
+            userState.hasReview = true;
+            userState.canLeaveReview = false;
+
+            sendMainMenu(chatId, userState);
+
+        } catch (Exception e) {
+            System.err.println("Error confirming review: " + e.getMessage());
+            sendMessage(chatId, "❌ Ошибка при сохранении отзыва. Попробуйте позже.");
+            userState.state = "AUTHENTICATED";
+            sendMainMenu(chatId, userState);
+        }
+    }
+
+    private void cancelReview(Long chatId, UserState userState) {
+        clearPreviousMenu(chatId);
+        userState.currentReview = null;
+        userState.state = "AUTHENTICATED";
+        userState.reviewStep = "";
+        sendMessage(chatId, "❌ Создание отзыва отменено.");
+        sendMainMenu(chatId, userState);
+    }
+
+    private void showUserReview(Long chatId, UserState userState) {
+        clearPreviousMenu(chatId);
+        try {
+            Reviews userReview = findReviewByCustomerId(userState.userId);
+            if (userReview == null) {
+                sendMessage(chatId, "❌ Отзыв не найден.");
+                userState.hasReview = false;
+                sendMainMenu(chatId, userState);
+                return;
+            }
+
+            SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm");
+
+            String reviewText = "📝 Ваш отзыв:\n\n" +
+                    "📅 Дата: " + dateFormat.format(userReview.getDatereview()) + "\n" +
+                    "⭐ Оценка: " + "⭐".repeat(userReview.getEstimation()) + " (" + userReview.getEstimation() + "/5)\n\n" +
+                    "📋 Текст отзыва:\n" + userReview.getName();
+
+            InlineKeyboardMarkup keyboard = new InlineKeyboardMarkup();
+            List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+
+            List<InlineKeyboardButton> deleteRow = new ArrayList<>();
+            InlineKeyboardButton deleteButton = new InlineKeyboardButton();
+            deleteButton.setText("🗑️ Удалить отзыв");
+            deleteButton.setCallbackData("delete_review");
+            deleteRow.add(deleteButton);
+
+            List<InlineKeyboardButton> backRow = new ArrayList<>();
+            InlineKeyboardButton backButton = new InlineKeyboardButton();
+            backButton.setText("🔙 В меню");
+            backButton.setCallbackData("back_to_menu");
+            backRow.add(backButton);
+
+            rows.add(deleteRow);
+            rows.add(backRow);
+
+            keyboard.setKeyboard(rows);
+            sendMessageWithInlineKeyboard(chatId, reviewText, keyboard);
+
+        } catch (Exception e) {
+            System.err.println("Error showing user review: " + e.getMessage());
+            sendMessage(chatId, "❌ Ошибка при загрузке отзыва.");
+            sendMainMenu(chatId, userState);
+        }
+    }
+
+    private void deleteReview(Long chatId, UserState userState) {
+        clearPreviousMenu(chatId);
+        String text = "🗑️ Вы уверены, что хотите удалить ваш отзыв?\n\n" +
+                "Эта операция необратима!";
+
+        InlineKeyboardMarkup keyboard = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+
+        List<InlineKeyboardButton> confirmRow = new ArrayList<>();
+        InlineKeyboardButton confirmButton = new InlineKeyboardButton();
+        confirmButton.setText("✅ Да, удалить");
+        confirmButton.setCallbackData("confirm_delete_review");
+        confirmRow.add(confirmButton);
+
+        List<InlineKeyboardButton> cancelRow = new ArrayList<>();
+        InlineKeyboardButton cancelButton = new InlineKeyboardButton();
+        cancelButton.setText("❌ Отмена");
+        cancelButton.setCallbackData("view_review");
+        cancelRow.add(cancelButton);
+
+        rows.add(confirmRow);
+        rows.add(cancelRow);
+
+        keyboard.setKeyboard(rows);
+        sendMessageWithInlineKeyboard(chatId, text, keyboard);
+    }
+
+    private void confirmDeleteReview(Long chatId, UserState userState) {
+        try {
+            Reviews userReview = findReviewByCustomerId(userState.userId);
+            if (userReview != null) {
+                mainController.delReview(userReview.getId());
+            }
+            clearPreviousMenu(chatId);
+            sendMessage(chatId, "✅ Ваш отзыв успешно удален!");
+
+            userState.hasReview = false;
+            userState.canLeaveReview = true;
+
+            sendMainMenu(chatId, userState);
+
+        } catch (Exception e) {
+            System.err.println("Error deleting review: " + e.getMessage());
+            sendMessage(chatId, "❌ Ошибка при удалении отзыва. Попробуйте позже.");
+            sendMainMenu(chatId, userState);
+        }
+    }
+
+    private Reviews findReviewByCustomerId(Long customerId) {
+        try {
+            Iterable<Reviews> allReviews = mainController.allReviews();
+            for (Reviews review : allReviews) {
+                if (review.getIdCustomer() != null &&
+                        review.getIdCustomer().getId().longValue() == customerId) {
+                    return review;
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error finding review by customer ID: " + e.getMessage());
+        }
+        return null;
+    }
+
     private void startAuthorization(Long chatId, UserState userState) {
         userState.state = "WAITING_LOGIN";
         userState.login = null;
@@ -2777,33 +3286,33 @@ public class MyTelegramBot extends TelegramLongPollingBot {
         userState.currentFreeOrderIndex = 0;
         userState.viewingFreeOrders = false;
 
-        // ДОБАВИТЬ СБРОС ПОЛЕЙ ДЛЯ УПРАВЛЕНИЯ МАТЕРИАЛАМИ
         userState.currentFrameMaterials.clear();
         userState.currentFrameMaterialIndex = 0;
         userState.selectedFrameMaterial = null;
         userState.frameMaterialAction = "";
         userState.waitingForField = "";
 
-        // СБРОС ПОЛЕЙ ДЛЯ УПРАВЛЕНИЯ КОМПОНЕНТАМИ
         userState.currentFrameComponents.clear();
         userState.currentFrameComponentIndex = 0;
         userState.selectedFrameComponent = null;
         userState.frameComponentAction = "";
         userState.waitingForFieldComponent = "";
 
-        // СБРОС РЕГИСТРАЦИОННЫХ ДАННЫХ
         userState.registrationCustomer = new Customer();
         userState.registrationStep = "";
+
+        userState.currentReview = null;
+        userState.reviewStep = "";
+        userState.hasReview = false;
+        userState.canLeaveReview = false;
 
         sendMessage(chatId, "🔐 Введите ваш логин:");
     }
 
-    // Обновленный метод logout для сброса всех состояний
     private void logout(Long chatId, UserState userState) {
         if ("AUTHENTICATED".equals(userState.state)) {
             String fullName = userState.fullName;
 
-            // Сброс всех состояний
             userState.state = "START";
             userState.login = null;
             userState.userRole = null;
@@ -2823,29 +3332,31 @@ public class MyTelegramBot extends TelegramLongPollingBot {
             userState.currentMaterialEstimate = null;
             userState.currentMaterialActual = null;
 
-            // Сброс полей для управления материалами
             userState.currentFrameMaterials.clear();
             userState.currentFrameMaterialIndex = 0;
             userState.selectedFrameMaterial = null;
             userState.frameMaterialAction = "";
             userState.waitingForField = "";
 
-            // Сброс полей для управления компонентами
             userState.currentFrameComponents.clear();
             userState.currentFrameComponentIndex = 0;
             userState.selectedFrameComponent = null;
             userState.frameComponentAction = "";
             userState.waitingForFieldComponent = "";
 
-            // Сброс регистрационных данных
             userState.registrationCustomer = new Customer();
             userState.registrationStep = "";
+
+            userState.currentReview = null;
+            userState.reviewStep = "";
+            userState.hasReview = false;
+            userState.canLeaveReview = false;
 
             String text = "👋 До новых встреч, " + fullName + "!";
             InlineKeyboardMarkup keyboard = new InlineKeyboardMarkup();
             List<List<InlineKeyboardButton>> rows = new ArrayList<>();
 
-            // Строка с авторизацией и регистрацией
+
             List<InlineKeyboardButton> authRow = new ArrayList<>();
             InlineKeyboardButton authButton = new InlineKeyboardButton();
             authButton.setText("🔐 Авторизоваться");
@@ -2866,7 +3377,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
         }
     }
 
-    // Обновленный метод sendHelpMessage для добавления информации о новой функции
+
     private void sendHelpMessage(Long chatId) {
         UserState userState = getUserState(chatId);
 
@@ -2908,7 +3419,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
         sendMessage(chatId, help);
     }
 
-    // Остальные существующие методы без изменений
+
     private void handleAssortmentNavigation(Long chatId, String action, UserState userState) {
         if (action.equals("no_action_assortment")) {
             return;
@@ -2945,11 +3456,13 @@ public class MyTelegramBot extends TelegramLongPollingBot {
     }
 
     private void showAssortmentCategories(Long chatId) {
+        UserState userState = getUserState(chatId);
+        clearPreviousMenu(chatId);
+        userState.lastMessageId = null;
         String text = "🛍️ Что хотите посмотреть?";
         InlineKeyboardMarkup keyboard = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
 
-        // Создаем кнопки для категорий
         List<InlineKeyboardButton> row1 = new ArrayList<>();
         InlineKeyboardButton embroideryButton = new InlineKeyboardButton();
         embroideryButton.setText("🎨 Вышивка");
@@ -2991,6 +3504,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
     }
 
     private void showEmbroideryKitsWithNavigation(Long chatId, UserState userState) {
+        clearPreviousMenu(chatId);
         try {
             Iterable<EmbroideryKit> embroideryKits = mainController.allEmbroiderykit();
             List<EmbroideryKit> availableKits = new ArrayList<>();
@@ -3028,6 +3542,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
     }
 
     private void showConsumablesWithNavigation(Long chatId, UserState userState) {
+        clearPreviousMenu(chatId);
         try {
             Iterable<Consumable> consumables = mainController.allConsumable();
             List<Consumable> availableConsumables = new ArrayList<>();
@@ -3065,6 +3580,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
     }
 
     private void showFrameComponentsWithNavigation(Long chatId, UserState userState) {
+        clearPreviousMenu(chatId);
         try {
             Iterable<FrameComponent> frameComponents = mainController.allFrameComponent();
             List<FrameComponent> availableComponents = new ArrayList<>();
@@ -3095,6 +3611,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
     }
 
     private void showFrameMaterialsWithNavigation(Long chatId, UserState userState) {
+        clearPreviousMenu(chatId);
         try {
             Iterable<FrameMaterial> frameMaterials = mainController.allFrameMaterial();
             List<FrameMaterial> availableMaterials = new ArrayList<>();
@@ -3133,7 +3650,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
         Object currentItem = userState.currentAssortment.get(userState.currentAssortmentIndex);
         String itemText = formatAssortmentItemDetails(currentItem, userState.currentAssortmentIndex + 1, userState.currentAssortment.size(), userState.currentAssortmentType);
 
-        // Создаем клавиатуру с навигацией
+
         InlineKeyboardMarkup keyboard = createAssortmentNavigationKeyboard(userState);
 
         sendMessageWithInlineKeyboard(chatId, itemText, keyboard);
@@ -3211,10 +3728,10 @@ public class MyTelegramBot extends TelegramLongPollingBot {
         InlineKeyboardMarkup keyboard = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
 
-        // Строка с навигацией
+
         List<InlineKeyboardButton> navRow = new ArrayList<>();
 
-        // Кнопка "Предыдущий"
+
         InlineKeyboardButton prevButton = new InlineKeyboardButton();
         prevButton.setText("⬅️ Предыдущий");
         prevButton.setCallbackData("prev_assortment");
@@ -3227,7 +3744,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
             navRow.add(disabledPrev);
         }
 
-        // Кнопка "Следующий"
+
         InlineKeyboardButton nextButton = new InlineKeyboardButton();
         nextButton.setText("Следующий ➡️");
         nextButton.setCallbackData("next_assortment");
@@ -3242,16 +3759,16 @@ public class MyTelegramBot extends TelegramLongPollingBot {
 
         rows.add(navRow);
 
-        // Строка с дополнительными действиями
+
         List<InlineKeyboardButton> actionRow = new ArrayList<>();
 
-        // Кнопка возврата к категориям
+
         InlineKeyboardButton categoriesButton = new InlineKeyboardButton();
         categoriesButton.setText("🔙 К категориям");
         categoriesButton.setCallbackData("assortment");
         actionRow.add(categoriesButton);
 
-        // Кнопка возврата в меню
+
         InlineKeyboardButton backButton = new InlineKeyboardButton();
         backButton.setText("🔙 В меню");
         backButton.setCallbackData("back_to_menu");
@@ -3279,6 +3796,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                 editCurrentOrder(chatId, userState);
             }
         } else if (action.equals("change_current_order_status")) {
+            clearPreviousMenu(chatId);
             if (!userState.currentOrders.isEmpty()) {
                 Orders currentOrder = userState.currentOrders.get(userState.currentOrderIndex);
                 userState.selectedOrderId = currentOrder.getId().longValue();
@@ -3299,12 +3817,13 @@ public class MyTelegramBot extends TelegramLongPollingBot {
         if (userState.lastMessageId != null) {
             editMessageWithInlineKeyboard(chatId, userState.lastMessageId, orderText, keyboard);
         } else {
-            // Если lastMessageId не сохранен, отправляем новое сообщение
+
             sendMessageWithInlineKeyboard(chatId, orderText, keyboard);
         }
     }
 
     private void showMyOrdersWithNavigation(Long chatId, UserState userState) {
+        clearPreviousMenu(chatId);
         try {
             Long customerId = userState.userId;
             List<Orders> allOrders = (List<Orders>) mainController.allOrders();
@@ -3338,7 +3857,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
 
             List<Orders> masterOrders = new ArrayList<>();
             for (Orders order : allOrders) {
-                // Добавлена проверка на null для order.getProductionMasterID() и getIdUser()
+
                 if (order.getProductionMasterID() != null &&
                         order.getProductionMasterID().getIdUser() != null &&
                         order.getProductionMasterID().getIdUser().getId().longValue() == masterId) {
@@ -3369,8 +3888,21 @@ public class MyTelegramBot extends TelegramLongPollingBot {
 
         Orders currentOrder = userState.currentOrders.get(userState.currentOrderIndex);
         String orderText = formatOrderDetails(currentOrder, userState.currentOrderIndex + 1, userState.currentOrders.size());
+        userState.lastMessageText = orderText;
+
         InlineKeyboardMarkup keyboard = createOrderNavigationKeyboard(userState);
-        sendMessageWithInlineKeyboard(chatId, orderText, keyboard);
+
+        SendMessage message = new SendMessage();
+        message.setChatId(chatId.toString());
+        message.setText(orderText);
+        message.setReplyMarkup(keyboard);
+
+        try {
+            Message sentMessage = execute(message);
+            userState.lastMessageId = sentMessage.getMessageId();
+        } catch (TelegramApiException e) {
+            System.err.println("Failed to send order message: " + e.getMessage());
+        }
     }
 
     private String formatOrderDetails(Orders order, int currentNumber, int totalOrders) {
@@ -3394,12 +3926,34 @@ public class MyTelegramBot extends TelegramLongPollingBot {
             sb.append("📝 Примечания: ").append(order.getNotes()).append("\n");
         }
 
+
+        try {
+            Iterable<CustomFrameOrder> customFrameOrders = mainController.allCustomFrameOrder();
+            for (CustomFrameOrder customOrder : customFrameOrders) {
+                if (customOrder.getOrderID() != null && customOrder.getOrderID().getId().longValue() == order.getId().longValue()) {
+                    sb.append("\n🖼️ Информация о рамке:\n");
+                    sb.append("• Ширина: ").append(customOrder.getWidth()).append(" мм\n");
+                    sb.append("• Высота: ").append(customOrder.getHeight()).append(" мм\n");
+                    if (customOrder.getColor() != null) {
+                        sb.append("• Цвет: ").append(customOrder.getColor()).append("\n");
+                    }
+                    if (customOrder.getStyle() != null) {
+                        sb.append("• Стиль: ").append(customOrder.getStyle()).append("\n");
+                    }
+                    break;
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error getting custom frame details: " + e.getMessage());
+        }
+
         return sb.toString();
     }
 
     private InlineKeyboardMarkup createOrderNavigationKeyboard(UserState userState) {
         InlineKeyboardMarkup keyboard = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+
 
         List<InlineKeyboardButton> navRow = new ArrayList<>();
 
@@ -3429,6 +3983,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
 
         rows.add(navRow);
 
+
         List<InlineKeyboardButton> actionRow = new ArrayList<>();
 
         if ("МАСТЕР ПРОИЗВОДСТВА".equals(userState.userRole)) {
@@ -3436,7 +3991,17 @@ public class MyTelegramBot extends TelegramLongPollingBot {
             changeStatusButton.setText("🔄 Изменить статус");
             changeStatusButton.setCallbackData("change_current_order_status");
             actionRow.add(changeStatusButton);
+        } else if ("ПОКУПАТЕЛЬ".equals(userState.userRole)) {
+            Orders currentOrder = userState.currentOrders.get(userState.currentOrderIndex);
+
+            if (canCancelOrder(currentOrder)) {
+                InlineKeyboardButton cancelOrderButton = new InlineKeyboardButton();
+                cancelOrderButton.setText("❌ Отменить заказ");
+                cancelOrderButton.setCallbackData("cancel_order_" + currentOrder.getId());
+                actionRow.add(cancelOrderButton);
+            }
         }
+
 
         InlineKeyboardButton backButton = new InlineKeyboardButton();
         backButton.setText("🔙 Вернуться в меню");
@@ -3449,6 +4014,86 @@ public class MyTelegramBot extends TelegramLongPollingBot {
 
         keyboard.setKeyboard(rows);
         return keyboard;
+    }
+
+
+    private boolean canCancelOrder(Orders order) {
+        if (order.getStatus() == null) {
+            return false;
+        }
+
+        String status = order.getStatus();
+
+        return "Новый".equals(status) || "Выполняется".equals(status);
+    }
+
+    private void cancelCustomerOrder(Long chatId, Long orderId, UserState userState) {
+        try {
+
+            Orders orderToCancel = null;
+            for (Orders order : userState.currentOrders) {
+                if (order.getId().longValue() == orderId.longValue()) {
+                    orderToCancel = order;
+                    break;
+                }
+            }
+
+            if (orderToCancel == null) {
+                sendMessage(chatId, "❌ Заказ не найден.");
+                return;
+            }
+
+
+            if (orderToCancel.getCustomerID() == null ||
+                    orderToCancel.getCustomerID().getId() == null ||
+                    orderToCancel.getCustomerID().getId().longValue() != userState.userId.longValue()) {
+                sendMessage(chatId, "❌ Вы не можете отменить этот заказ.");
+                return;
+            }
+
+
+            if (!canCancelOrder(orderToCancel)) {
+                sendMessage(chatId, "❌ Этот заказ нельзя отменить. Текущий статус: " +
+                        (orderToCancel.getStatus() != null ? orderToCancel.getStatus() : "Неизвестен"));
+                return;
+            }
+
+
+            showCancelConfirmation(chatId, orderToCancel, userState);
+
+        } catch (Exception e) {
+            System.err.println("Error in cancelCustomerOrder: " + e.getMessage());
+            sendMessage(chatId, "❌ Ошибка при отмене заказа. Попробуйте позже.");
+        }
+    }
+
+
+    private void showCancelConfirmation(Long chatId, Orders order, UserState userState) {
+        String text = "❓ Вы уверены, что хотите отменить заказ №" + order.getId() + "?\n\n" +
+                "Эта операция необратима!";
+
+        InlineKeyboardMarkup keyboard = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+
+
+        List<InlineKeyboardButton> confirmRow = new ArrayList<>();
+        InlineKeyboardButton confirmButton = new InlineKeyboardButton();
+        confirmButton.setText("✅ Да, отменить заказ");
+        confirmButton.setCallbackData("confirm_cancel_order_" + order.getId());
+        confirmRow.add(confirmButton);
+
+
+        List<InlineKeyboardButton> cancelRow = new ArrayList<>();
+        InlineKeyboardButton cancelButton = new InlineKeyboardButton();
+        cancelButton.setText("❌ Нет, вернуться");
+        cancelButton.setCallbackData("back_to_orders");
+        cancelRow.add(cancelButton);
+
+        rows.add(confirmRow);
+        rows.add(cancelRow);
+
+        keyboard.setKeyboard(rows);
+        sendMessageWithInlineKeyboard(chatId, text, keyboard);
     }
 
     private InlineKeyboardMarkup createBackKeyboard() {
@@ -3464,6 +4109,64 @@ public class MyTelegramBot extends TelegramLongPollingBot {
         return keyboard;
     }
 
+    private void confirmOrderCancellation(Long chatId, Long orderId, UserState userState) {
+        try {
+
+            Orders orderToCancel = null;
+            for (Orders order : userState.currentOrders) {
+                if (order.getId().longValue() == orderId.longValue()) {
+                    orderToCancel = order;
+                    break;
+                }
+            }
+
+            if (orderToCancel == null) {
+                sendMessage(chatId, "❌ Заказ не найден.");
+                return;
+            }
+
+
+            mainController.changeOrderStatus(orderId.intValue(), "Отменен");
+
+            sendMessage(chatId, "✅ Заказ №" + orderId + " успешно отменен!");
+
+
+            showMyOrdersWithNavigation(chatId, userState);
+
+
+            if (orderToCancel.getProductionMasterID() != null) {
+                notifyMasterAboutOrderCancellation(orderToCancel);
+            }
+
+        } catch (Exception e) {
+            System.err.println("Error in confirmOrderCancellation: " + e.getMessage());
+            sendMessage(chatId, "❌ Ошибка при отмене заказа. Попробуйте позже.");
+        }
+    }
+
+
+    private void notifyMasterAboutOrderCancellation(Orders cancelledOrder) {
+        try {
+            if (cancelledOrder.getProductionMasterID() == null ||
+                    cancelledOrder.getProductionMasterID().getIdUser() == null) {
+                return;
+            }
+
+            Long masterUserId = cancelledOrder.getProductionMasterID().getIdUser().getId().longValue();
+            Long masterChatId = findChatIdByUserId(masterUserId);
+
+            if (masterChatId != null) {
+                String notification = "⚠️ *ЗАКАЗ ОТМЕНЕН!*\n\n" +
+                        "Заказ №" + cancelledOrder.getId() + " был отменен покупателем.\n" +
+                        "Статус изменен на: Отменен";
+
+                sendMessage(masterChatId, notification);
+            }
+        } catch (Exception e) {
+            System.err.println("Error notifying master about order cancellation: " + e.getMessage());
+        }
+    }
+
     private void sendOrderListForStatusChange(Long chatId, UserState userState) {
         try {
             Long masterId = userState.userId;
@@ -3471,7 +4174,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
 
             List<Orders> masterOrders = new ArrayList<>();
             for (Orders order : allOrders) {
-                // Добавляем проверку на null для ProductionMasterID и getIdUser()
+
                 if (order.getProductionMasterID() != null &&
                         order.getProductionMasterID().getIdUser() != null &&
                         order.getProductionMasterID().getIdUser().getId().longValue() == masterId) {
@@ -3541,17 +4244,17 @@ public class MyTelegramBot extends TelegramLongPollingBot {
 
     private void changeOrderStatus(Long chatId, Long orderId, String newStatus, UserState userState) {
         try {
-            // Заменяем подчеркивания обратно на пробелы
+
             String statusWithSpaces = newStatus.replace("_", " ");
 
-            // Если статус меняется на "Готов", запрашиваем фактическое количество материала
+
             if ("Готов".equals(statusWithSpaces)) {
                 userState.selectedOrderId = orderId;
                 userState.state = "WAITING_ACTUAL_MATERIAL";
                 sendMessage(chatId, "📏 Для завершения заказа №" + orderId + " введите фактически израсходованное количество материала (в метрах):\n\n" +
                         "Введите число, например: 2.3");
             } else {
-                // Для других статусов просто меняем статус
+
                 mainController.changeOrderStatus(orderId.intValue(), statusWithSpaces);
                 userState.selectedOrderId = null;
                 sendMessage(chatId, "✅ Статус заказа №" + orderId + " изменен на: " + statusWithSpaces);
@@ -3568,7 +4271,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
             Iterable<CustomFrameOrder> customFrameOrders = mainController.allCustomFrameOrder();
             for (CustomFrameOrder customOrder : customFrameOrders) {
                 if (customOrder.getOrderID() != null && customOrder.getOrderID().getId().longValue() == orderId.longValue()) {
-                    // Устанавливаем фактическое количество материала как BigDecimal
+
                     if (actualMaterial != null) {
                         customOrder.setActualMaterialUsage(BigDecimal.valueOf(actualMaterial));
                     }
@@ -3597,7 +4300,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                 return;
             }
 
-            // Сохраняем фактическое количество материала и меняем статус
+
             updateCustomFrameOrderWithActual(userState.selectedOrderId, actualMaterial);
             mainController.changeOrderStatus(userState.selectedOrderId.intValue(), "Готов");
 
@@ -3605,7 +4308,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                     "📏 Фактически израсходовано материала: " + actualMaterial + " м.\n" +
                     "📊 Статус изменен на: Готов");
 
-            // Сбрасываем состояние
+
             userState.selectedOrderId = null;
             userState.state = "AUTHENTICATED";
             userState.currentMaterialActual = null;
@@ -3730,10 +4433,12 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                 "Добро пожаловать в систему мастерской вышивки!\n\n" +
                 "Для начала работы выберите действие:";
 
+        UserState userState = getUserState(chatId);
+        userState.lastMessageText = welcome;
+
         InlineKeyboardMarkup keyboard = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
 
-        // Строка с авторизацией и регистрацией
         List<InlineKeyboardButton> authRow = new ArrayList<>();
         InlineKeyboardButton authButton = new InlineKeyboardButton();
         authButton.setText("🔐 Авторизация");
@@ -3745,7 +4450,6 @@ public class MyTelegramBot extends TelegramLongPollingBot {
         registerButton.setCallbackData("register");
         authRow.add(registerButton);
 
-        // Строка с помощью
         List<InlineKeyboardButton> helpRow = new ArrayList<>();
         InlineKeyboardButton helpButton = new InlineKeyboardButton();
         helpButton.setText("❓ Помощь");
@@ -3766,6 +4470,8 @@ public class MyTelegramBot extends TelegramLongPollingBot {
     }
 
     private void editMessageWithInlineKeyboard(Long chatId, Integer messageId, String text, InlineKeyboardMarkup keyboard) {
+        UserState userState = getUserState(chatId);
+
         EditMessageText editMessage = new EditMessageText();
         editMessage.setChatId(chatId.toString());
         editMessage.setMessageId(messageId);
@@ -3774,9 +4480,14 @@ public class MyTelegramBot extends TelegramLongPollingBot {
 
         try {
             execute(editMessage);
+            userState.lastMessageId = messageId;
+            userState.lastMessageText = text;
             System.out.println("Message edited in chat: " + chatId);
         } catch (TelegramApiException e) {
             System.err.println("Failed to edit message in " + chatId + ": " + e.getMessage());
+
+
+            sendMessageWithInlineKeyboard(chatId, text, keyboard);
         }
     }
 
@@ -3786,7 +4497,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
             userState.state = "START";
             return;
         } else if ("МАСТЕР ПРОИЗВОДСТВА".equals(userState.userRole)) {
-            // Проверяем наличие свободных заказов при авторизации
+
             checkAndNotifyAboutFreeOrders(chatId);
         }
 
@@ -3903,6 +4614,25 @@ public class MyTelegramBot extends TelegramLongPollingBot {
     }
 
     private void sendMessageWithInlineKeyboard(Long chatId, String text, InlineKeyboardMarkup keyboard) {
+        clearPreviousMenu(chatId);
+        UserState userState = getUserState(chatId);
+
+
+        if (userState.lastMessageId != null && userState.lastMessageText != null &&
+                userState.lastMessageText.contains("Добро пожаловать")) {
+
+            try {
+                EditMessageText editMessage = new EditMessageText();
+                editMessage.setChatId(chatId.toString());
+                editMessage.setMessageId(userState.lastMessageId);
+                editMessage.setText("⌛ Сессия завершена");
+                execute(editMessage);
+            } catch (Exception e) {
+                System.err.println("Failed to clear previous menu: " + e.getMessage());
+            }
+        }
+
+
         SendMessage message = new SendMessage();
         message.setChatId(chatId.toString());
         message.setText(text);
@@ -3910,12 +4640,607 @@ public class MyTelegramBot extends TelegramLongPollingBot {
 
         try {
             Message sentMessage = execute(message);
-            // Сохраняем ID отправленного сообщения
-            UserState userState = getUserState(chatId);
             userState.lastMessageId = sentMessage.getMessageId();
+            userState.lastMessageText = text;
             System.out.println("Message with inline keyboard sent to chat: " + chatId + ", messageId: " + sentMessage.getMessageId());
         } catch (TelegramApiException e) {
             System.err.println("Failed to send message with keyboard to " + chatId + ": " + e.getMessage());
         }
     }
+
+    private void clearPreviousMenu(Long chatId) {
+        UserState userState = getUserState(chatId);
+
+        if (userState.lastMessageId != null) {
+            try {
+                EditMessageText editMessage = new EditMessageText();
+                editMessage.setChatId(chatId.toString());
+                editMessage.setMessageId(userState.lastMessageId);
+                editMessage.setText("⌛ Переход...");
+                execute(editMessage);
+
+                userState.lastMessageId = null;
+                userState.lastMessageText = null;
+
+                System.out.println("Previous menu cleared for chat: " + chatId);
+
+            } catch (Exception e) {
+                System.err.println("Failed to clear previous menu: " + e.getMessage());
+                
+                userState.lastMessageId = null;
+                userState.lastMessageText = null;
+            }
+        }
+    }
+
+    private boolean isMenuMessage(String messageText) {
+        if (messageText == null) return false;
+
+        String[] menuIndicators = {
+                "Добро пожаловать", "Выберите действие", "Личные данные",
+                "Мои заказы", "Ассортимент", "Заказ рамки", "Управление",
+                "Что хотите посмотреть", "Ваш отзыв", "Регистрация",
+                "Управление материалами", "Управление фурнитурами",
+                "Свободные заказы", "Поменять статус", "Подтверждение",
+                "Проверьте введенные данные", "Напишите ваш отзыв",
+                "Выберите оценку", "Проверьте ваш отзыв", "Заказ рамки по предпочтениям",
+                "Набор для вышивки", "Материал для вышивки", "Каркас", "Материал для каркаса",
+                "Заказ", "Свободный заказ", "Фурнитура", "Материал",
+                "Отчеты по продажам", "Выберите тип отчета"
+        };
+
+        String lowerText = messageText.toLowerCase();
+
+        for (String indicator : menuIndicators) {
+            if (lowerText.contains(indicator.toLowerCase())) {
+                return true;
+            }
+        }
+
+        return lowerText.contains("⬅️") ||
+                lowerText.contains("➡️") ||
+                lowerText.contains("⏹️") ||
+                lowerText.contains("🔙") ||
+                (lowerText.contains("из") && lowerText.contains("из"));
+    }
+
+    private void showAllOrdersReport(Long chatId, UserState userState) {
+        clearPreviousMenu(chatId);
+        try {
+            List<Orders> allOrders = (List<Orders>) mainController.allOrders();
+
+            if (allOrders.isEmpty()) {
+                sendMessage(chatId, "📊 Заказы отсутствуют.");
+                return;
+            }
+
+            userState.allOrdersReport = allOrders;
+            userState.currentOrderReportIndex = 0;
+
+            showCurrentOrderReport(chatId, userState);
+
+        } catch (Exception e) {
+            System.err.println("Error showing all orders report: " + e.getMessage());
+            sendMessage(chatId, "❌ Ошибка при загрузке отчета по заказам.");
+        }
+    }
+
+    private void showCurrentOrderReport(Long chatId, UserState userState) {
+        if (userState.allOrdersReport == null || userState.allOrdersReport.isEmpty()) {
+            sendMessage(chatId, "❌ Нет заказов для отображения.");
+            return;
+        }
+
+        Orders currentOrder = userState.allOrdersReport.get(userState.currentOrderReportIndex);
+        String orderText = formatOrderReportDetails(currentOrder,
+                userState.currentOrderReportIndex + 1,
+                userState.allOrdersReport.size());
+
+        InlineKeyboardMarkup keyboard = createOrderReportKeyboard(userState);
+        sendMessageWithInlineKeyboard(chatId, orderText, keyboard);
+    }
+
+    private String formatOrderReportDetails(Orders order, int currentNumber, int totalOrders) {
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm");
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("📊 Заказ директора ").append(currentNumber).append(" из ").append(totalOrders).append("\n\n");
+        sb.append("🆔 Номер: ").append(order.getId()).append("\n");
+        sb.append("📅 Дата заказа: ").append(order.getOrderDate() != null ? dateFormat.format(order.getOrderDate()) : "Не указана").append("\n");
+        sb.append("💰 Сумма: ").append(order.getTotalAmount() != null ? order.getTotalAmount() : 0).append(" руб.\n");
+        sb.append("📊 Статус: ").append(order.getStatus() != null ? order.getStatus() : "Не указан").append("\n");
+        sb.append("⏰ Срок выполнения: ").append(order.getDueDate() != null ? dateFormat.format(order.getDueDate()) : "Не указан").append("\n");
+
+        if (order.getCompletionDate() != null) {
+            sb.append("✅ Дата завершения: ").append(dateFormat.format(order.getCompletionDate())).append("\n");
+        }
+
+        
+        if (order.getCustomerID() != null) {
+            Customer customer = order.getCustomerID();
+            String customerName = (customer.getLastName() != null ? customer.getLastName() : "") + " " +
+                    (customer.getFirstName() != null ? customer.getFirstName() : "") + " " +
+                    (customer.getMiddleName() != null ? customer.getMiddleName() : "");
+            customerName = customerName.trim();
+            if (!customerName.isEmpty()) {
+                sb.append("👤 Покупатель: ").append(customerName).append("\n");
+            }
+            if (customer.getPhone() != null) {
+                sb.append("📞 Телефон: ").append(customer.getPhone()).append("\n");
+            }
+        }
+
+        
+        if (order.getProductionMasterID() != null && order.getProductionMasterID().getIdUser() != null) {
+            User masterUser = order.getProductionMasterID().getIdUser();
+            String masterName = (masterUser.getLastName() != null ? masterUser.getLastName() : "") + " " +
+                    (masterUser.getFirstName() != null ? masterUser.getFirstName() : "");
+            masterName = masterName.trim();
+            if (!masterName.isEmpty()) {
+                sb.append("👨‍🔧 Мастер: ").append(masterName).append("\n");
+            }
+        }
+
+        
+        if (order.getSellerID() != null) {
+            User seller = order.getSellerID();
+            String sellerName = (seller.getLastName() != null ? seller.getLastName() : "") + " " +
+                    (seller.getFirstName() != null ? seller.getFirstName() : "");
+            sellerName = sellerName.trim();
+            if (!sellerName.isEmpty()) {
+                sb.append("👨‍💼 Продавец: ").append(sellerName).append("\n");
+            }
+        }
+
+        if (order.getNotes() != null && !order.getNotes().isEmpty()) {
+            sb.append("📝 Примечания: ").append(order.getNotes()).append("\n");
+        }
+
+        return sb.toString();
+    }
+
+    private InlineKeyboardMarkup createOrderReportKeyboard(UserState userState) {
+        InlineKeyboardMarkup keyboard = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+
+        
+        List<InlineKeyboardButton> navRow = new ArrayList<>();
+
+        InlineKeyboardButton prevButton = new InlineKeyboardButton();
+        prevButton.setText("⬅️ Предыдущий");
+        prevButton.setCallbackData("prev_order_report");
+        if (userState.currentOrderReportIndex > 0) {
+            navRow.add(prevButton);
+        } else {
+            InlineKeyboardButton disabledPrev = new InlineKeyboardButton();
+            disabledPrev.setText("⏹️ Предыдущий");
+            disabledPrev.setCallbackData("no_action_order_report");
+            navRow.add(disabledPrev);
+        }
+
+        InlineKeyboardButton nextButton = new InlineKeyboardButton();
+        nextButton.setText("Следующий ➡️");
+        nextButton.setCallbackData("next_order_report");
+        if (userState.currentOrderReportIndex < userState.allOrdersReport.size() - 1) {
+            navRow.add(nextButton);
+        } else {
+            InlineKeyboardButton disabledNext = new InlineKeyboardButton();
+            disabledNext.setText("⏹️ Следующий");
+            disabledNext.setCallbackData("no_action_order_report");
+            navRow.add(disabledNext);
+        }
+
+        rows.add(navRow);
+
+        
+        List<InlineKeyboardButton> backRow = new ArrayList<>();
+        InlineKeyboardButton backButton = new InlineKeyboardButton();
+        backButton.setText("🔙 В меню отчетов");
+        backButton.setCallbackData("back_to_menu");
+        backRow.add(backButton);
+        rows.add(backRow);
+
+        keyboard.setKeyboard(rows);
+        return keyboard;
+    }
+
+    private void handleOrderReportNavigation(Long chatId, String action, UserState userState) {
+        if (action.equals("no_action_order_report")) {
+            return;
+        }
+
+        if (action.equals("prev_order_report")) {
+            if (userState.currentOrderReportIndex > 0) {
+                userState.currentOrderReportIndex--;
+                editCurrentOrderReport(chatId, userState);
+            }
+        } else if (action.equals("next_order_report")) {
+            if (userState.currentOrderReportIndex < userState.allOrdersReport.size() - 1) {
+                userState.currentOrderReportIndex++;
+                editCurrentOrderReport(chatId, userState);
+            }
+        }
+    }
+
+    private void editCurrentOrderReport(Long chatId, UserState userState) {
+        if (userState.allOrdersReport == null || userState.allOrdersReport.isEmpty()) {
+            return;
+        }
+
+        Orders currentOrder = userState.allOrdersReport.get(userState.currentOrderReportIndex);
+        String orderText = formatOrderReportDetails(currentOrder,
+                userState.currentOrderReportIndex + 1,
+                userState.allOrdersReport.size());
+
+        InlineKeyboardMarkup keyboard = createOrderReportKeyboard(userState);
+
+        if (userState.lastMessageId != null) {
+            editMessageWithInlineKeyboard(chatId, userState.lastMessageId, orderText, keyboard);
+        } else {
+            sendMessageWithInlineKeyboard(chatId, orderText, keyboard);
+        }
+    }
+
+    private void showAllReviewsReport(Long chatId, UserState userState) {
+        clearPreviousMenu(chatId);
+        try {
+            Iterable<Reviews> allReviews = mainController.allReviews();
+            List<Reviews> reviewsList = new ArrayList<>();
+
+            for (Reviews review : allReviews) {
+                reviewsList.add(review);
+            }
+
+            if (reviewsList.isEmpty()) {
+                sendMessage(chatId, "⭐ Отзывы отсутствуют.");
+                return;
+            }
+
+            userState.allReviewsReport = reviewsList;
+            userState.currentReviewReportIndex = 0;
+
+            showCurrentReviewReport(chatId, userState);
+
+        } catch (Exception e) {
+            System.err.println("Error showing all reviews report: " + e.getMessage());
+            sendMessage(chatId, "❌ Ошибка при загрузке отчета по отзывам.");
+        }
+    }
+
+    private void showCurrentReviewReport(Long chatId, UserState userState) {
+        if (userState.allReviewsReport == null || userState.allReviewsReport.isEmpty()) {
+            sendMessage(chatId, "❌ Нет отзывов для отображения.");
+            return;
+        }
+
+        Reviews currentReview = userState.allReviewsReport.get(userState.currentReviewReportIndex);
+        String reviewText = formatReviewReportDetails(currentReview,
+                userState.currentReviewReportIndex + 1,
+                userState.allReviewsReport.size());
+
+        InlineKeyboardMarkup keyboard = createReviewReportKeyboard(userState, currentReview);
+        sendMessageWithInlineKeyboard(chatId, reviewText, keyboard);
+    }
+
+    private String formatReviewReportDetails(Reviews review, int currentNumber, int totalReviews) {
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm");
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("⭐ Отзыв ").append(currentNumber).append(" из ").append(totalReviews).append("\n\n");
+        sb.append("📅 Дата: ").append(review.getDatereview() != null ? dateFormat.format(review.getDatereview()) : "Не указана").append("\n");
+        sb.append("⭐ Оценка: ").append("⭐".repeat(review.getEstimation())).append(" (").append(review.getEstimation()).append("/5)\n\n");
+        sb.append("📝 Текст отзыва:\n").append(review.getName()).append("\n\n");
+
+        
+        if (review.getIdCustomer() != null) {
+            Customer customer = review.getIdCustomer();
+            String customerName = (customer.getLastName() != null ? customer.getLastName() : "") + " " +
+                    (customer.getFirstName() != null ? customer.getFirstName() : "") + " " +
+                    (customer.getMiddleName() != null ? customer.getMiddleName() : "");
+            customerName = customerName.trim();
+            if (!customerName.isEmpty()) {
+                sb.append("👤 Автор: ").append(customerName).append("\n");
+            }
+            if (customer.getPhone() != null) {
+                sb.append("📞 Телефон: ").append(customer.getPhone()).append("\n");
+            }
+        }
+
+        return sb.toString();
+    }
+
+    private InlineKeyboardMarkup createReviewReportKeyboard(UserState userState, Reviews currentReview) {
+        InlineKeyboardMarkup keyboard = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+
+        
+        List<InlineKeyboardButton> navRow = new ArrayList<>();
+
+        InlineKeyboardButton prevButton = new InlineKeyboardButton();
+        prevButton.setText("⬅️ Предыдущий");
+        prevButton.setCallbackData("prev_review_report");
+        if (userState.currentReviewReportIndex > 0) {
+            navRow.add(prevButton);
+        } else {
+            InlineKeyboardButton disabledPrev = new InlineKeyboardButton();
+            disabledPrev.setText("⏹️ Предыдущий");
+            disabledPrev.setCallbackData("no_action_review_report");
+            navRow.add(disabledPrev);
+        }
+
+        InlineKeyboardButton nextButton = new InlineKeyboardButton();
+        nextButton.setText("Следующий ➡️");
+        nextButton.setCallbackData("next_review_report");
+        if (userState.currentReviewReportIndex < userState.allReviewsReport.size() - 1) {
+            navRow.add(nextButton);
+        } else {
+            InlineKeyboardButton disabledNext = new InlineKeyboardButton();
+            disabledNext.setText("⏹️ Следующий");
+            disabledNext.setCallbackData("no_action_review_report");
+            navRow.add(disabledNext);
+        }
+
+        rows.add(navRow);
+
+        
+        List<InlineKeyboardButton> deleteRow = new ArrayList<>();
+        InlineKeyboardButton deleteButton = new InlineKeyboardButton();
+        deleteButton.setText("🗑️ Удалить отзыв");
+        deleteButton.setCallbackData("delete_review_" + currentReview.getId());
+        deleteRow.add(deleteButton);
+        rows.add(deleteRow);
+
+        
+        List<InlineKeyboardButton> backRow = new ArrayList<>();
+        InlineKeyboardButton backButton = new InlineKeyboardButton();
+        backButton.setText("🔙 В меню отчетов");
+        backButton.setCallbackData("back_to_menu");
+        backRow.add(backButton);
+        rows.add(backRow);
+
+        keyboard.setKeyboard(rows);
+        return keyboard;
+    }
+
+    private void handleReviewReportNavigation(Long chatId, String action, UserState userState) {
+        if (action.equals("no_action_review_report")) {
+            return;
+        }
+
+        if (action.equals("prev_review_report")) {
+            if (userState.currentReviewReportIndex > 0) {
+                userState.currentReviewReportIndex--;
+                editCurrentReviewReport(chatId, userState);
+            }
+        } else if (action.equals("next_review_report")) {
+            if (userState.currentReviewReportIndex < userState.allReviewsReport.size() - 1) {
+                userState.currentReviewReportIndex++;
+                editCurrentReviewReport(chatId, userState);
+            }
+        }
+    }
+
+    private void editCurrentReviewReport(Long chatId, UserState userState) {
+        if (userState.allReviewsReport == null || userState.allReviewsReport.isEmpty()) {
+            return;
+        }
+
+        Reviews currentReview = userState.allReviewsReport.get(userState.currentReviewReportIndex);
+        String reviewText = formatReviewReportDetails(currentReview,
+                userState.currentReviewReportIndex + 1,
+                userState.allReviewsReport.size());
+
+        InlineKeyboardMarkup keyboard = createReviewReportKeyboard(userState, currentReview);
+
+        if (userState.lastMessageId != null) {
+            editMessageWithInlineKeyboard(chatId, userState.lastMessageId, reviewText, keyboard);
+        } else {
+            sendMessageWithInlineKeyboard(chatId, reviewText, keyboard);
+        }
+    }
+
+    private void deleteReviewAsDirector(Long chatId, Long reviewId, UserState userState) {
+        clearPreviousMenu(chatId);
+
+        String text = "🗑️ Вы уверены, что хотите удалить этот отзыв?\n\n" +
+                "Эта операция необратима!";
+
+        InlineKeyboardMarkup keyboard = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+
+        List<InlineKeyboardButton> confirmRow = new ArrayList<>();
+        InlineKeyboardButton confirmButton = new InlineKeyboardButton();
+        confirmButton.setText("✅ Да, удалить");
+        confirmButton.setCallbackData("confirm_delete_review_" + reviewId);
+        confirmRow.add(confirmButton);
+
+        List<InlineKeyboardButton> cancelRow = new ArrayList<>();
+        InlineKeyboardButton cancelButton = new InlineKeyboardButton();
+        cancelButton.setText("❌ Отмена");
+        cancelButton.setCallbackData("director_reviews");
+        cancelRow.add(cancelButton);
+
+        rows.add(confirmRow);
+        rows.add(cancelRow);
+
+        keyboard.setKeyboard(rows);
+        sendMessageWithInlineKeyboard(chatId, text, keyboard);
+    }
+
+    private void confirmDeleteReviewAsDirector(Long chatId, Long reviewId, UserState userState) {
+        try {
+            mainController.delReview(reviewId.intValue());
+
+            
+            Iterable<Reviews> allReviews = mainController.allReviews();
+            List<Reviews> reviewsList = new ArrayList<>();
+
+            for (Reviews review : allReviews) {
+                reviewsList.add(review);
+            }
+
+            userState.allReviewsReport = reviewsList;
+
+            
+            if (userState.currentReviewReportIndex >= reviewsList.size()) {
+                userState.currentReviewReportIndex = Math.max(0, reviewsList.size() - 1);
+            }
+
+            sendMessage(chatId, "✅ Отзыв успешно удален!");
+
+            if (!reviewsList.isEmpty()) {
+                showCurrentReviewReport(chatId, userState);
+            } else {
+                sendMessage(chatId, "⭐ Больше нет отзывов для отображения.");
+                sendMainMenu(chatId, userState);
+            }
+
+        } catch (Exception e) {
+            System.err.println("Error deleting review as director: " + e.getMessage());
+            sendMessage(chatId, "❌ Ошибка при удалении отзыва. Попробуйте позже.");
+            showCurrentReviewReport(chatId, userState);
+        }
+    }
+
+    private void showSalesReportMenu(Long chatId, UserState userState) {
+        clearPreviousMenu(chatId);
+
+        String text = "💰 Отчеты по продажам\n\nВыберите тип отчета:";
+
+        InlineKeyboardMarkup keyboard = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+
+        List<InlineKeyboardButton> row1 = new ArrayList<>();
+        InlineKeyboardButton totalSalesButton = new InlineKeyboardButton();
+        totalSalesButton.setText("📈 Общие продажи");
+        totalSalesButton.setCallbackData("sales_total");
+        row1.add(totalSalesButton);
+
+        List<InlineKeyboardButton> row2 = new ArrayList<>();
+        InlineKeyboardButton monthlySalesButton = new InlineKeyboardButton();
+        monthlySalesButton.setText("📅 Продажи за месяц");
+        monthlySalesButton.setCallbackData("sales_monthly");
+        row2.add(monthlySalesButton);
+
+        List<InlineKeyboardButton> backRow = new ArrayList<>();
+        InlineKeyboardButton backButton = new InlineKeyboardButton();
+        backButton.setText("🔙 Назад");
+        backButton.setCallbackData("back_to_menu");
+        backRow.add(backButton);
+
+        rows.add(row1);
+        rows.add(row2);
+        rows.add(backRow);
+
+        keyboard.setKeyboard(rows);
+        sendMessageWithInlineKeyboard(chatId, text, keyboard);
+    }
+
+    private void generateSalesReport(Long chatId, String reportType, UserState userState) {
+        clearPreviousMenu(chatId);
+        try {
+            String reportText = "";
+
+            switch (reportType) {
+                case "sales_total":
+                    reportText = generateTotalSalesReport();
+                    break;
+                case "sales_monthly":
+                    reportText = generateMonthlySalesReport();
+                    break;
+            }
+
+            InlineKeyboardMarkup keyboard = new InlineKeyboardMarkup();
+            List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+
+            List<InlineKeyboardButton> backRow = new ArrayList<>();
+            InlineKeyboardButton backButton = new InlineKeyboardButton();
+            backButton.setText("🔙 К отчетам по продажам");
+            backButton.setCallbackData("director_sales");
+            backRow.add(backButton);
+
+            rows.add(backRow);
+            keyboard.setKeyboard(rows);
+
+            sendMessageWithInlineKeyboard(chatId, reportText, keyboard);
+
+        } catch (Exception e) {
+            System.err.println("Error generating sales report: " + e.getMessage());
+            sendMessage(chatId, "❌ Ошибка при генерации отчета.");
+        }
+    }
+
+    private String generateTotalSalesReport() {
+
+        try {
+            List<Orders> allOrders = (List<Orders>) mainController.allOrders();
+
+            double totalRevenue = 0;
+            int completedOrders = 0;
+            int totalOrders = allOrders.size();
+
+            for (Orders order : allOrders) {
+                if (order.getTotalAmount() != null) {
+                    totalRevenue += order.getTotalAmount();
+                }
+                if ("Забран".equals(order.getStatus())) {
+                    completedOrders++;
+                }
+            }
+
+            return String.format("📈 Общий отчет по продажам\n\n" +
+                            "💰 Общая выручка: %.2f руб.\n" +
+                            "📦 Всего заказов: %d\n" +
+                            "✅ Завершенных заказов: %d\n" +
+                            "📊 Конверсия: %.1f%%",
+                    totalRevenue, totalOrders, completedOrders,
+                    totalOrders > 0 ? (completedOrders * 100.0 / totalOrders) : 0);
+
+        } catch (Exception e) {
+            System.err.println("Error in generateTotalSalesReport: " + e.getMessage());
+            return "❌ Ошибка при формировании отчета по продажам.";
+        }
+    }
+
+    private String generateMonthlySalesReport() {
+        try {
+            List<Orders> allOrders = (List<Orders>) mainController.allOrders();
+
+            Calendar cal = Calendar.getInstance();
+            int currentMonth = cal.get(Calendar.MONTH);
+            int currentYear = cal.get(Calendar.YEAR);
+
+            double monthlyRevenue = 0;
+            int monthlyOrders = 0;
+
+            for (Orders order : allOrders) {
+                if (order.getOrderDate() != null) {
+                    cal.setTime(order.getOrderDate());
+                    int orderMonth = cal.get(Calendar.MONTH);
+                    int orderYear = cal.get(Calendar.YEAR);
+
+                    if (orderMonth == currentMonth && orderYear == currentYear) {
+                        monthlyOrders++;
+                        if (order.getTotalAmount() != null) {
+                            monthlyRevenue += order.getTotalAmount();
+                        }
+                    }
+                }
+            }
+
+            String monthName = new SimpleDateFormat("MMMM yyyy", new Locale("ru")).format(new Date());
+
+            return String.format("📅 Продажи за %s\n\n" +
+                            "💰 Выручка: %.2f руб.\n" +
+                            "📦 Количество заказов: %d\n" +
+                            "📊 Средний чек: %.2f руб.",
+                    monthName, monthlyRevenue, monthlyOrders,
+                    monthlyOrders > 0 ? monthlyRevenue / monthlyOrders : 0);
+
+        } catch (Exception e) {
+            System.err.println("Error in generateMonthlySalesReport: " + e.getMessage());
+            return "❌ Ошибка при формировании месячного отчета.";
+        }
+    }
+
 }

@@ -16,6 +16,7 @@ import jakarta.persistence.Table;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import jakarta.xml.bind.annotation.XmlTransient;
 
+
 @Entity
 @Table(name = "customer")
 @XmlRootElement
@@ -59,8 +60,8 @@ public class Customer implements Serializable {
     private String discount;
     @Column(name = "TotalPurchases")
     private String totalPurchases;
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "customerID")
-    private Collection<Orders> ordersCollection;
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "idCustomer")
+    private Collection<Reviews> reviewsCollection;
 
     public Customer() {
     }
@@ -156,12 +157,12 @@ public class Customer implements Serializable {
     }
 
     @XmlTransient
-    public Collection<Orders> getOrdersCollection() {
-        return ordersCollection;
+    public Collection<Reviews> getReviewsCollection() {
+        return reviewsCollection;
     }
 
-    public void setOrdersCollection(Collection<Orders> ordersCollection) {
-        this.ordersCollection = ordersCollection;
+    public void setReviewsCollection(Collection<Reviews> reviewsCollection) {
+        this.reviewsCollection = reviewsCollection;
     }
 
     @Override

@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Отзывы - Багетная мастерская</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link th:href="@{/css/styleassortiment.css}" rel="stylesheet">
+    <style>
+        .user-name {
+            font-weight: bold;
+            color: #333;
+            margin-right: 10px;
+        }
+        .logout-btn {
+            background: none;
+            border: none;
+            color: #d9534f;
+            cursor: pointer;
+            text-decoration: underline;
+            font-size: 16px;
+        }
+        .logout-btn:hover {
+            color: #c9302c;
+        }
+        .reviews-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .reviews-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+        .review-card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border-left: 4px solid #8B4513;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            height: fit-content;
+        }
+        .review-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+        .review-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        .author-info {
+            flex: 1;
+        }
+        .author-name {
+            font-weight: bold;
+            color: #333;
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+        .author-initials {
+            color: #666;
+            font-size: 14px;
+        }
+        .review-rating {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 5px;
+        }
+        .stars {
+            display: flex;
+            gap: 2px;
+        }
+        .star {
+            font-size: 18px;
+            color: #ddd;
+        }
+        .star.filled {
+            color: #ffc107;
+        }
+        .rating-value {
+            font-weight: bold;
+            color: #666;
+            font-size: 14px;
+        }
+        .review-content {
+            margin-bottom: 15px;
+        }
+        .review-content p {
+            line-height: 1.6;
+            color: #555;
+            margin: 0;
+            font-size: 15px;
+        }
+        .review-date {
+            text-align: right;
+            border-top: 1px solid #f0f0f0;
+            padding-top: 10px;
+        }
+        .review-date small {
+            color: #888;
+            font-size: 12px;
+        }
+        .no-reviews {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+            font-style: italic;
+            grid-column: 1 / -1;
+        }
+        .reviews-title {
+            text-align: center;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .reviews-subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+<header class="header">
+    <div class="contactcontainer">
+        <div class="header-content">
+            <div class="logo">
+                <i class="fas fa-palette logo-icon"></i>
+                <div class="logo-text">
+                    <h1>Багетная мастерская</h1>
+                    <p>Оформление картин и фотографий с 2005 года</p>
+                </div>
+            </div>
+            <nav class="navigation">
+                <ul>
+                    <li><a href="http://localhost:9090/api/formindex" class="nav-link">Главная</a></li>
+                    <li><a href="http://localhost:9090/api/formsvedeniy" class="nav-link">О нас</a></li>
+                    <li><a href="http://localhost:9090/api/formassortiment" class="nav-link">Ассортимент</a></li>
+                    <li><a href="http://localhost:9090/api/formyslygs" class="nav-link">Услуги</a></li>
+                    <li><a href="http://localhost:9090/api/formotziv" class="nav-link active">Отзывы</a></li>
+                    <li><a href="http://localhost:9090/api/formcontact" class="nav-link">Информация</a></li>
+                    <li th:if="${user != null}">
+                        <span class="nav-link user-name" th:text="${userDisplayName}" onclick="redirectToPersonal()">Иванов И.И.</span>
+                        <form th:action="@{/api/logout}" method="post" style="display: inline;">
+                            <button type="submit" class="nav-link logout-btn">Выйти</button>
+                        </form>
+                    </li>
+                    <li th:if="${user == null}">
+                        <a href="http://localhost:9090/api/formauto" class="nav-link">Войти</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+</header>
+
+<main class="main-content">
+    <div class="reviews-container">
+        <h2 class="reviews-title">Отзывы наших клиентов</h2>
+        <p class="reviews-subtitle">Мнения людей, которые уже воспользовались нашими услугами</p>
+
+        <div class="reviews-grid">
+            <div th:each="review : ${reviews}" class="review-card">
+                <div class="review-header">
+                    <div class="author-info">
+                        <!-- Выводим ФИО клиента -->
+                        <div class="author-name"
+                             th:text="${review.idCustomer.lastName} + ' ' + ${review.idCustomer.firstName} + ' ' + ${review.idCustomer.middleName != null ? review.idCustomer.middleName : ''}">
+                            Иванов Иван Иванович
+                        </div>
+                        <div class="author-initials"
+                             th:if="${review.idCustomer.email != null}"
+                             th:text="${review.idCustomer.email}">
+                            ivanov@example.com
+                        </div>
+                    </div>
+                    <div class="review-rating">
+                        <div class="stars">
+                            <span th:each="i : ${#numbers.sequence(1, 5)}"
+                                  th:class="${i <= review.estimation} ? 'star filled' : 'star'">★</span>
+                        </div>
+                        <span class="rating-value" th:text="${review.estimation} + '/5'">5/5</span>
+                    </div>
+                </div>
+                <div class="review-content">
+                    <p th:text="${review.name}">Текст отзыва...</p>
+                </div>
+                <div class="review-date" th:if="${review.datereview != null}">
+                    <small th:text="${#dates.format(review.datereview, 'dd.MM.yyyy')}">01.01.2025</small>
+                </div>
+            </div>
+
+            <div th:if="${#lists.isEmpty(reviews)}" class="no-reviews">
+                <p>Пока нет отзывов от наших клиентов.</p>
+                <p>Будьте первым, кто поделится своим мнением!</p>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer class="footer">
+    <div class="contactcontainer">
+        <p>&copy; 2025 Багетная мастерская. Все права защищены.</p>
+    </div>
+</footer>
+
+<script>
+    function redirectToPersonal() {
+        window.location.href = 'http://localhost:9090/api/formspecial';
+    }
+</script>
+</body>
+</html>

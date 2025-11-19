@@ -23,7 +23,9 @@
                     <li><a href="http://localhost:9090/api/formindex" class="nav-link">Главная</a></li>
                     <li><a href="http://localhost:9090/api/formsvedeniy" class="nav-link">О нас</a></li>
                     <li><a href="http://localhost:9090/api/formassortiment" class="nav-link">Ассортимент</a></li>
-                    <li><a href="http://localhost:9090/api/formcontact" class="nav-link">Контакты</a></li>
+                    <li><a href="http://localhost:9090/api/formyslygs" class="nav-link">Услуги</a></li>
+                    <li><a href="http://localhost:9090/api/formotziv" class="nav-link">Отзывы</a></li>
+                    <li><a href="http://localhost:9090/api/formcontact" class="nav-link">Информация</a></li>
                     <li th:if="${user != null}">
                         <span class="nav-link user-name" th:text="${userDisplayName}" onclick="redirectToPersonal()">Иванов И.И.</span>
                         <form th:action="@{/api/logout}" method="post" style="display: inline;">

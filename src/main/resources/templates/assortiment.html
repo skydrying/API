@@ -15,13 +15,83 @@
         .logout-btn {
             background: none;
             border: none;
-            color: #d9534f; /* Красный для выхода */
+            color: #d9534f;
             cursor: pointer;
             text-decoration: underline;
             font-size: 16px;
         }
         .logout-btn:hover {
             color: #c9302c;
+        }
+
+        /* Стили для сворачиваемых блоков */
+        .collapsible {
+            background-color: #f8f9fa;
+            color: #333;
+            cursor: pointer;
+            padding: 18px;
+            width: 100%;
+            border: none;
+            text-align: left;
+            outline: none;
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 20px;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        .active, .collapsible:hover {
+            background-color: #e9ecef;
+        }
+
+        .collapsible:after {
+            content: '\002B';
+            color: #777;
+            font-weight: bold;
+            float: right;
+            margin-left: 5px;
+        }
+
+        .active:after {
+            content: "\2212";
+        }
+
+        .content {
+            padding: 0 18px;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.2s ease-out;
+            background-color: white;
+        }
+
+        .stock-available {
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .stock-low {
+            color: #ffc107;
+            font-weight: bold;
+        }
+
+        .stock-out {
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+        .category-image {
+            height: 200px;
+            background-size: cover;
+            background-position: center;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .kit-image {
+            height: 200px;
+            background-size: cover;
+            background-position: center;
+            border-radius: 8px 8px 0 0;
         }
     </style>
 </head>
@@ -41,7 +111,9 @@
                     <li><a href="http://localhost:9090/api/formindex" class="nav-link">Главная</a></li>
                     <li><a href="http://localhost:9090/api/formsvedeniy" class="nav-link">О нас</a></li>
                     <li><a href="http://localhost:9090/api/formassortiment" class="nav-link active">Ассортимент</a></li>
-                    <li><a href="http://localhost:9090/api/formcontact" class="nav-link">Контакты</a></li>
+                    <li><a href="http://localhost:9090/api/formyslygs" class="nav-link">Услуги</a></li>
+                    <li><a href="http://localhost:9090/api/formotziv" class="nav-link">Отзывы</a></li>
+                    <li><a href="http://localhost:9090/api/formcontact" class="nav-link">Информация</a></li>
                     <li th:if="${user != null}">
                         <span class="nav-link user-name" th:text="${userDisplayName}" onclick="redirectToPersonal()">Иванов И.И.</span>
                         <form th:action="@{/api/logout}" method="post" style="display: inline;">
@@ -61,89 +133,152 @@
     <div class="contactcontainer assortment-section">
         <h2 class="section-title">Наш ассортимент</h2>
 
-        <!-- Виды багета -->
-        <div class="category-grid">
-            <div class="category-card">
-                <div class="category-image" style="background-image: url('https://avatars.mds.yandex.net/i?id=2a000001991b21d4d2d964347e50d1a7a2a4-16134031-yarec&n=13')"></div>
-                <div class="category-content">
-                    <h3>Деревянный багет</h3>
-                    <p>Классические рамы из натурального дерева с резьбой и позолотой</p>
-                    <div class="price-range">от 1 500 ₽/п.м.</div>
-                    <ul class="materials-list">
-                        <li>Дуб, ясень, орех</li>
-                        <li>Позолота 24 карата</li>
-                        <li>Ручная резьба</li>
-                        <li>Антикварная патина</li>
-                    </ul>
-                    <button class="btn">Выбрать</button>
-                </div>
-            </div>
-
-            <div class="category-card">
-                <div class="category-image" style="background-image: url('https://i9.photo.2gis.com/images/branch/72/10133099190304916_0329.jpg')"></div>
-                <div class="category-content">
-                    <h3>Пластиковый багет</h3>
-                    <p>Современные легкие рамы с широкой палитрой цветов</p>
-                    <div class="price-range">от 800 ₽/п.м.</div>
-                    <ul class="materials-list">
-                        <li>Водостойкий пластик</li>
-                        <li>200+ цветов</li>
-                        <li>Имитация дерева</li>
-                        <li>Металлические эффекты</li>
-                    </ul>
-                    <button class="btn">Выбрать</button>
-                </div>
-            </div>
-
-            <div class="category-card">
-                <div class="category-image" style="background-image: url('https://amiel.club/uploads/posts/2022-10/1665001341_25-amiel-club-p-dekorativnii-baget-dlya-sten-vkontakte-26.jpg')"></div>
-                <div class="category-content">
-                    <h3>Алюминиевый багет</h3>
-                    <p>Стильные рамы для современного интерьера и фотографий</p>
-                    <div class="price-range">от 1 200 ₽/п.м.</div>
-                    <ul class="materials-list">
-                        <li>Анодированный алюминий</li>
-                        <li>Хромированные поверхности</li>
-                        <li>Матовые и глянцевые</li>
-                        <li>Угловые соединения</li>
-                    </ul>
-                    <button class="btn">Выбрать</button>
+        <button type="button" class="collapsible">Расходные материалы</button>
+        <div class="content">
+            <div class="category-grid">
+                <div class="category-card" th:each="consumable : ${consumables}">
+                    <div class="category-image" th:style="'background-image: url(https://via.placeholder.com/300x200/4A6572/FFFFFF?text=' + ${#strings.replace(consumable.name, ' ', '+')} + ');'"></div>
+                    <div class="category-content">
+                        <h3 th:text="${consumable.name}">Название материала</h3>
+                        <p th:text="${consumable.description}">Описание материала</p>
+                        <div class="price-range" th:text="'от ' + ${#numbers.formatDecimal(consumable.price, 1, 2, 'COMMA')} + ' ₽/' + ${consumable.unit}">от 0 ₽/шт</div>
+                        <ul class="materials-list">
+                            <li th:with="stockInt=${T(java.lang.Integer).valueOf(consumable.stockQuantity)}">
+                                Наличие:
+                                <span th:class="${stockInt > 10} ? 'stock-available' : (${stockInt} > 0 ? 'stock-low' : 'stock-out')"
+                                      th:text="${stockInt > 0} ? (${stockInt} + ' шт.') : 'Нет в наличии'">
+                                    В наличии
+                                </span>
+                            </li>
+                            <li>Качественные материалы</li>
+                            <li>Гарантия качества</li>
+                            <li>Быстрая доставка</li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Дополнительные услуги -->
-        <div class="services-section">
-            <h2 class="section-title">Дополнительные услуги</h2>
-            <div class="services-grid">
-                <div class="service-item">
-                    <i class="fas fa-cut"></i>
-                    <h4>Паспарту</h4>
-                    <p>Изготовление паспарту любых размеров и цветов</p>
-                    <div class="price-range">от 500 ₽</div>
-                </div>
-                <div class="service-item">
-                    <i class="fas fa-shield-alt"></i>
-                    <h4>Защитное стекло</h4>
-                    <p>Антибликовое, музейное, ударопрочное стекло</p>
-                    <div class="price-range">от 300 ₽</div>
-                </div>
-                <div class="service-item">
-                    <i class="fas fa-hammer"></i>
-                    <h4>Реставрация рам</h4>
-                    <p>Восстановление старинных и антикварных рам</p>
-                    <div class="price-range">от 2 000 ₽</div>
-                </div>
-                <div class="service-item">
-                    <i class="fas fa-truck"></i>
-                    <h4>Доставка и монтаж</h4>
-                    <p>Профессиональный монтаж в любом месте города</p>
-                    <div class="price-range">от 1 000 ₽</div>
+        <button type="button" class="collapsible">Наборы для вышивания</button>
+        <div class="content">
+            <div class="category-grid">
+                <div class="category-card" th:each="kit : ${embroideryKits}">
+                    <div class="kit-image" th:if="${kit.image}" th:style="'background-image: url(' + ${kit.image} + ')'"></div>
+                    <div class="category-image"
+                         th:unless="${kit.image}"
+                         th:style="'background-image: url(https://img.joomcdn.net/7510efa49361c2d2d680877db51a4981d6a1298a_original.jpeg)'">
+                    </div>
+                    <div class="category-content">
+                        <h3 th:text="${kit.name}">Название набора</h3>
+                        <p th:text="${kit.description}">Описание набора</p>
+                        <div class="price-range" th:text="'от ' + ${#numbers.formatDecimal(kit.price, 1, 2, 'COMMA')} + ' ₽'">от 0 ₽</div>
+                        <ul class="materials-list">
+                            <li th:with="stockInt=${T(java.lang.Integer).valueOf(kit.stockQuantity)}">
+                                Наличие:
+                                <span th:class="${stockInt > 5} ? 'stock-available' : (${stockInt} > 0 ? 'stock-low' : 'stock-out')"
+                                      th:text="${stockInt > 0} ? (${stockInt} + ' шт.') : 'Нет в наличии'">
+                                    В наличии
+                                </span>
+                            </li>
+                            <li>Полный комплект</li>
+                            <li>Инструкция включена</li>
+                            <li>Высокое качество</li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Контакты -->
+        <button type="button" class="collapsible">Виды багета</button>
+        <div class="content">
+            <div class="category-grid">
+                <div class="category-card">
+                    <div class="category-image" style="background-image: url('https://avatars.mds.yandex.net/i?id=2a000001991b21d4d2d964347e50d1a7a2a4-16134031-yarec&n=13')"></div>
+                    <div class="category-content">
+                        <h3>Деревянный багет</h3>
+                        <p>Классические рамы из натурального дерева с резьбой и позолотой</p>
+                        <div class="price-range">от 1 500 ₽/п.м.</div>
+                        <ul class="materials-list">
+                            <li>Дуб, ясень, орех</li>
+                            <li>Позолота 24 карата</li>
+                            <li>Ручная резьба</li>
+                            <li>Антикварная патина</li>
+                        </ul>
+                        <button class="btn">Выбрать</button>
+                    </div>
+                </div>
+
+                <div class="category-card">
+                    <div class="category-image" style="background-image: url('https://i9.photo.2gis.com/images/branch/72/10133099190304916_0329.jpg')"></div>
+                    <div class="category-content">
+                        <h3>Пластиковый багет</h3>
+                        <p>Современные легкие рамы с широкой палитрой цветов</p>
+                        <div class="price-range">от 800 ₽/п.м.</div>
+                        <ul class="materials-list">
+                            <li>Водостойкий пластик</li>
+                            <li>200+ цветов</li>
+                            <li>Имитация дерева</li>
+                            <li>Металлические эффекты</li>
+                        </ul>
+                        <button class="btn">Выбрать</button>
+                    </div>
+                </div>
+
+                <div class="category-card">
+                    <div class="category-image" style="background-image: url('https://amiel.club/uploads/posts/2022-10/1665001341_25-amiel-club-p-dekorativnii-baget-dlya-sten-vkontakte-26.jpg')"></div>
+                    <div class="category-content">
+                        <h3>Алюминиевый багет</h3>
+                        <p>Стильные рамы для современного интерьера и фотографий</p>
+                        <div class="price-range">от 1 200 ₽/п.м.</div>
+                        <ul class="materials-list">
+                            <li>Анодированный алюминий</li>
+                            <li>Хромированные поверхности</li>
+                            <li>Матовые и глянцевые</li>
+                            <li>Угловые соединения</li>
+                        </ul>
+                        <button class="btn">Выбрать</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <button type="button" class="collapsible">Дополнительные услуги</button>
+        <div class="content">
+            <div class="services-section">
+                <h2 class="section-title">Дополнительные услуги</h2>
+                <div class="services-grid">
+                    <div class="service-item">
+                        <i class="fas fa-cut"></i>
+                        <h4>Паспарту</h4>
+                        <p>Изготовление паспарту любых размеров и цветов</p>
+                        <div class="price-range">от 500 ₽</div>
+                    </div>
+                    <div class="service-item">
+                        <i class="fas fa-shield-alt"></i>
+                        <h4>Защитное стекло</h4>
+                        <p>Антибликовое, музейное, ударопрочное стекло</p>
+                        <div class="price-range">от 300 ₽</div>
+                    </div>
+                    <div class="service-item">
+                        <i class="fas fa-hammer"></i>
+                        <h4>Реставрация рам</h4>
+                        <p>Восстановление старинных и антикварных рам</p>
+                        <div class="price-range">от 2 000 ₽</div>
+                    </div>
+                    <div class="service-item">
+                        <i class="fas fa-truck"></i>
+                        <h4>Доставка и монтаж</h4>
+                        <p>Профессиональный монтаж в любом месте города</p>
+                        <div class="price-range">от 1 000 ₽</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <br>
+        <br>
+        <br>
+
         <div class="contact-info">
             <h2>Консультация по ассортименту</h2>
             <div class="contact-cards">
@@ -168,7 +303,6 @@
                     <p>Пн-Пт: 10:00-20:00<br>Сб-Вс: 11:00-18:00</p>
                 </div>
             </div>
-            <button class="btn">Получить консультацию</button>
         </div>
     </div>
 </main>
@@ -183,6 +317,27 @@
     function redirectToPersonal() {
         window.location.href = 'http://localhost:9090/api/formspecial';
     }
+
+    // JavaScript для сворачиваемых блоков
+    document.addEventListener('DOMContentLoaded', function() {
+        var coll = document.getElementsByClassName("collapsible");
+        for (var i = 0; i < coll.length; i++) {
+            coll[i].addEventListener("click", function() {
+                this.classList.toggle("active");
+                var content = this.nextElementSibling;
+                if (content.style.maxHeight) {
+                    content.style.maxHeight = null;
+                } else {
+                    content.style.maxHeight = content.scrollHeight + "px";
+                }
+            });
+        }
+
+        // Автоматически открываем первый блок
+        if (coll.length > 0) {
+            coll[0].click();
+        }
+    });
 </script>
 </body>
 </html>

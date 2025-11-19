@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Отчет о продажах - Багетная мастерская</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 0;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .autocontainer {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo-icon {
+            font-size: 2.5rem;
+            color: #667eea;
+        }
+
+        .logo-text h1 {
+            font-size: 1.8rem;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .logo-text p {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .navigation ul {
+            display: flex;
+            list-style: none;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .nav-link {
+            text-decoration: none;
+            color: #333;
+            font-weight: 500;
+            padding: 10px 15px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-link:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .nav-link.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .user-name {
+            cursor: pointer;
+            background: #4CAF50 !important;
+            color: white !important;
+        }
+
+        .logout-btn {
+            background: #f44336 !important;
+            color: white !important;
+            border: none;
+            cursor: pointer;
+        }
+
+        .main-container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 20px;
+        }
+
+        .dashboard-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .dashboard-header h1 {
+            color: white;
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .dashboard-header p {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1.1rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 1.5rem;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-card h3 {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .stat-card.revenue .stat-value {
+            color: #4CAF50;
+        }
+
+        .stat-card.orders .stat-value {
+            color: #2196F3;
+        }
+
+        .stat-card.conversion .stat-value {
+            color: #FF9800;
+        }
+
+        .charts-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .chart-card {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 1.5rem;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .chart-card h2 {
+            text-align: center;
+            margin-bottom: 1rem;
+            color: #333;
+            font-size: 1.3rem;
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .status-card {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 1rem;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .status-card h4 {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 0.5rem;
+        }
+
+        .status-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .status-new { color: #2196F3; }
+        .status-progress { color: #FF9800; }
+        .status-ready { color: #4CAF50; }
+        .status-completed { color: #673AB7; }
+        .status-cancelled { color: #f44336; }
+
+        .footer {
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            text-align: center;
+            padding: 1.5rem 0;
+            margin-top: 3rem;
+        }
+
+        @media (max-width: 768px) {
+            .charts-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .navigation ul {
+                justify-content: center;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            }
+        }
+    </style>
+</head>
+<body>
+<header class="header">
+    <div class="autocontainer">
+        <div class="header-content">
+            <div class="logo">
+                <i class="fas fa-chart-line logo-icon"></i>
+                <div class="logo-text">
+                    <h1>Багетная мастерская</h1>
+                    <p>Панель управления директора</p>
+                </div>
+            </div>
+            <nav class="navigation">
+                <ul>
+                    <li><a th:href="@{/api/formindex}" class="nav-link">Главная</a></li>
+                    <li><a th:href="@{/api/formsvedeniy}" class="nav-link">О нас</a></li>
+                    <li><a th:href="@{/api/formassortiment}" class="nav-link">Ассортимент</a></li>
+                    <li><a th:href="@{/api/formyslygs}" class="nav-link">Услуги</a></li>
+                    <li><a th:href="@{/api/formotziv}" class="nav-link">Отзывы</a></li>
+                    <li><a th:href="@{/api/formcontact}" class="nav-link">Информация</a></li>
+                    <li th:if="${user != null}">
+                        <span class="nav-link user-name" th:text="${userDisplayName}" onclick="redirectToPersonal()">Директор</span>
+                        <form th:action="@{/api/logout}" method="post" style="display: inline;">
+                            <button type="submit" class="nav-link logout-btn">Выйти</button>
+                        </form>
+                    </li>
+                    <li th:if="${user == null}">
+                        <a th:href="@{/api/formauto}" class="nav-link">Войти</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+</header>
+
+<main class="main-container">
+    <div class="dashboard-header">
+        <h1><i class="fas fa-chart-bar"></i> Отчет о продажах</h1>
+        <p>Аналитика эффективности работы мастерской</p>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card revenue">
+            <h3>Общая выручка</h3>
+            <div class="stat-value" th:text="'₽' + ${#numbers.formatDecimal(totalRevenue, 1, 2)}">₽0.00</div>
+            <p><i class="fas fa-wallet"></i> Сумма всех заказов</p>
+        </div>
+
+
+        <div class="stat-card conversion">
+            <h3>Конверсия</h3>
+            <div class="stat-value" th:text="${#numbers.formatDecimal(conversionRate, 1, 2) + '%'}">0%</div>
+            <p><i class="fas fa-percentage"></i> Успешные заказы</p>
+        </div>
+    </div>
+
+
+    <div class="charts-container">
+        <div class="chart-card">
+            <h2><i class="fas fa-chart-line"></i> Выручка по месяцам</h2>
+            <canvas id="revenueChart"></canvas>
+        </div>
+
+        <div class="chart-card">
+            <h2><i class="fas fa-chart-bar"></i> Количество заказов по месяцам</h2>
+            <canvas id="ordersChart"></canvas>
+        </div>
+    </div>
+</main>
+
+<footer class="footer">
+    <div class="autocontainer">
+        <p>&copy; 2025 Багетная мастерская. Панель управления директора.</p>
+    </div>
+</footer>
+
+<script>
+    // Получаем данные из Thymeleaf
+    const months = [[${months}]];
+    const monthlyRevenues = [[${monthlyRevenues}]];
+    const monthlyOrderCounts = [[${monthlyOrderCounts}]];
+
+    // Форматируем названия месяцев
+    const formattedMonths = months.map(month => {
+        const [year, monthNum] = month.split('-');
+        const monthNames = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'];
+        return `${monthNames[parseInt(monthNum) - 1]} ${year}`;
+    });
+
+    // График выручки
+    const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+    new Chart(revenueCtx, {
+        type: 'line',
+        data: {
+            labels: formattedMonths,
+            datasets: [{
+                label: 'Выручка (₽)',
+                data: monthlyRevenues,
+                borderColor: '#4CAF50',
+                backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `Выручка: ₽${context.raw.toFixed(2)}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '₽' + value;
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    const ordersCtx = document.getElementById('ordersChart').getContext('2d');
+    new Chart(ordersCtx, {
+        type: 'bar',
+        data: {
+            labels: formattedMonths,
+            datasets: [{
+                label: 'Количество заказов',
+                data: monthlyOrderCounts,
+                backgroundColor: 'rgba(33, 150, 243, 0.7)',
+                borderColor: 'rgba(33, 150, 243, 1)',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            }
+        }
+    });
+
+    function redirectToPersonal() {
+        window.location.href = '/api/formspecial';
+    }
+</script>
+</body>
+</html>

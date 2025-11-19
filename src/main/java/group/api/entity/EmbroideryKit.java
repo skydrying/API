@@ -1,7 +1,3 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package group.api.entity;
 
 import jakarta.persistence.Basic;
@@ -16,10 +12,6 @@ import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 import java.io.Serializable;
 
-/**
- *
- * @author oneju
- */
 @Entity
 @Table(name = "embroidery_kit")
 @NamedQueries({

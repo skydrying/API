@@ -42,7 +42,9 @@
                         <li><a href="http://localhost:9090/api/formindex" class="nav-link active">Главная</a></li>
                         <li><a href="http://localhost:9090/api/formsvedeniy" class="nav-link">О нас</a></li>
                         <li><a href="http://localhost:9090/api/formassortiment" class="nav-link">Ассортимент</a></li>
-                        <li><a href="http://localhost:9090/api/formcontact" class="nav-link">Контакты</a></li>
+                        <li><a href="http://localhost:9090/api/formyslygs" class="nav-link">Услуги</a></li>
+                        <li><a href="http://localhost:9090/api/formotziv" class="nav-link">Отзывы</a></li>
+                        <li><a href="http://localhost:9090/api/formcontact" class="nav-link">Информация</a></li>
                         <li th:if="${user != null}">
                             <span class="nav-link user-name" th:text="${userDisplayName}" onclick="redirectToPersonal()">Иванов И.И.</span>
                             <form th:action="@{/api/logout}" method="post" style="display: inline;">
@@ -63,14 +65,12 @@
             <div class="hero-content">
                 <h2>Искусство в достойном обрамлении</h2>
                 <p>Профессиональное оформление картин, фотографий и вышивок в багетные рамы. Более 15 лет создаём эстетику для вашего интерьера</p>
-                <a href="http://localhost:9090/api/formspecial" class="cta-button">Посмотреть ассортимент</a>
+                <a href="http://localhost:9090/api/formassortiment" class="cta-button">Посмотреть ассортимент</a>
             </div>
         </div>
     </section>
 
-    <!-- Основной контент -->
     <main class="main-content">
-        <!-- Блок преимуществ -->
         <section class="advantages-section">
             <div class="autocontainer">
                 <h2 class="section-title">Почему выбирают нас</h2>
@@ -94,55 +94,6 @@
             </div>
         </section>
 
-        <!-- Блок услуг -->
-        <section class="services-section">
-            <div class="autocontainer">
-                <h2 class="section-title">Наши услуги</h2>
-                <div class="services-grid">
-                    <div class="service-card">
-                        <div class="service-image" style="background-image: url('https://i.pinimg.com/736x/74/f4/28/74f42804b4bf131a3fd30dabd95a718e.jpg')"></div>
-                        <h3>Оформление картин</h3>
-                        <p>Профессиональное оформление картин маслом, акварелью, графики в деревянные и пластиковые рамы</p>
-                        <a href="#" class="read-more">Подробнее <i class="fas fa-arrow-right"></i></a>
-                    </div>
-                    <div class="service-card">
-                        <div class="service-image" style="background-image: url('https://images.unsplash.com/photo-1542038784456-1ea8e935640e?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80')"></div>
-                        <h3>Оформление фотографий</h3>
-                        <p>Создание элегантного обрамления для фотографий любого формата с использованием защитного стекла</p>
-                        <a href="#" class="read-more">Подробнее <i class="fas fa-arrow-right"></i></a>
-                    </div>
-                    <div class="service-card">
-                        <div class="service-image" style="background-image: url('https://i.pinimg.com/originals/56/92/04/5692048ea5d7047c9bb2b3d9140117c7.jpg')"></div>
-                        <h3>Оформление вышивки</h3>
-                        <p>Специальные техники оформления вышитых работ с использованием паспарту и стекла</p>
-                        <a href="#" class="read-more">Подробнее <i class="fas fa-arrow-right"></i></a>
-                    </div>
-                    <div class="service-card">
-                        <div class="service-image" style="background-image: url('https://images.unsplash.com/photo-1584820927498-cfe5211fd8bf?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80')"></div>
-                        <h3>Реставрация рам</h3>
-                        <p>Восстановление старинных рам, золочение, покраска и ремонт повреждённых элементов</p>
-                        <a href="#" class="read-more">Подробнее <i class="fas fa-arrow-right"></i></a>
-                    </div>
-                    <div class="service-card">
-                        <div class="service-image" style="background-image: url('https://avatars.mds.yandex.net/get-mpic/3912211/2a0000018ad2cde1a69f079bfa08d02af412/orig')"></div>
-                        <h3>Изготовление паспарту</h3>
-                        <p>Создание паспарту разных цветов и фактур для гармоничного оформления ваших работ</p>
-                        <a href="#" class="read-more">Подробнее <i class="fas fa-arrow-right"></i></a>
-                    </div>
-                    <div class="service-card">
-                        <div class="service-image" style="background-image: url('https://avatars.mds.yandex.net/i?id=90c2db6dd43f94e1eda7e2f14ae8ccb2_l-4439530-images-thumbs&n=13')"></div>
-                        <h3>Консультация дизайнера</h3>
-                        <p>Помощь в выборе багета и паспарту с учётом стиля интерьера и особенностей работы</p>
-                        <a href="#" class="read-more">Подробнее <i class="fas fa-arrow-right"></i></a>
-                    </div>
-                </div>
-                <div class="services-actions">
-                    <a href="#" class="view-all-services">Все услуги</a>
-                </div>
-            </div>
-        </section>
-
-        <!-- Блок обратной связи -->
         <section class="contact-section">
             <div class="autocontainer">
                 <div class="contact-content">
@@ -182,7 +133,6 @@
         </section>
     </main>
 
-    <!-- Подвал сайта -->
     <footer class="footer">
         <div class="autocontainer">
             <div class="footer-content">
@@ -203,28 +153,26 @@
                 <div class="footer-section">
                     <h4>Услуги</h4>
                     <ul>
-                        <li><a href="#">Оформление картин</a></li>
-                        <li><a href="#">Оформление фотографий</a></li>
-                        <li><a href="#">Оформление вышивки</a></li>
-                        <li><a href="#">Реставрация рам</a></li>
+                        <li><a href="http://localhost:9090/api/formyslygs">Оформление картин</a></li>
+                        <li><a href="http://localhost:9090/api/formyslygs">Оформление фотографий</a></li>
+                        <li><a href="http://localhost:9090/api/formyslygs">Оформление вышивки</a></li>
+                        <li><a href="http://localhost:9090/api/formyslygs">Реставрация рам</a></li>
                     </ul>
                 </div>
                 <div class="footer-section">
                     <h4>Мастерская</h4>
                     <ul>
-                        <li><a href="#">О нас</a></li>
-                        <li><a href="#">Наши работы</a></li>
-                        <li><a href="#">Отзывы</a></li>
-                        <li><a href="#">Вакансии</a></li>
+                        <li><a href="http://localhost:9090/api/formsvedeniy">О нас</a></li>
+                        <li><a href="http://localhost:9090/api/formsvedeniy">Наши работы</a></li>
+                        <li><a href="http://localhost:9090/api/formotziv">Отзывы</a></li>
                     </ul>
                 </div>
                 <div class="footer-section">
                     <h4>Помощь</h4>
                     <ul>
-                        <li><a href="#">Как выбрать багет</a></li>
-                        <li><a href="#">Доставка и оплата</a></li>
-                        <li><a href="#">Вопросы и ответы</a></li>
-                        <li><a href="#">Контакты</a></li>
+                        <li><a href="http://localhost:9090/api/formcontact">Как выбрать багет</a></li>
+                        <li><a href="http://localhost:9090/api/formcontact">Доставка и оплата</a></li>
+                        <li><a href="http://localhost:9090/api/formcontact">Контакты</a></li>
                     </ul>
                 </div>
             </div>

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Оставить отзыв - Багетная мастерская</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link th:href="@{/css/styleauto.css}" rel="stylesheet">
+    <style>
+        .user-name {
+            font-weight: bold;
+            color: #333;
+            margin-right: 10px;
+        }
+        .logout-btn {
+            background: none;
+            border: none;
+            color: #d9534f;
+            cursor: pointer;
+            text-decoration: underline;
+            font-size: 16px;
+        }
+        .logout-btn:hover {
+            color: #c9302c;
+        }
+        .form-container {
+            max-width: 600px;
+        }
+        .star-rating {
+            display: flex;
+            flex-direction: row-reverse;
+            justify-content: flex-end;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .star-rating input {
+            display: none;
+        }
+        .star-rating label {
+            font-size: 40px;
+            color: #ddd;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .star-rating input:checked ~ label,
+        .star-rating label:hover,
+        .star-rating label:hover ~ label {
+            color: #ffc107;
+        }
+        .star-rating input:checked + label {
+            color: #ffc107;
+        }
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            resize: vertical;
+            font-family: inherit;
+            min-height: 120px;
+            margin-bottom: 15px;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        .btn-secondary:hover {
+            background-color: #545b62;
+        }
+    </style>
+</head>
+<body>
+<header class="header">
+    <div class="autocontainer">
+        <div class="header-content">
+            <div class="logo">
+                <i class="fas fa-palette logo-icon"></i>
+                <div class="logo-text">
+                    <h1>Багетная мастерская</h1>
+                    <p>Оформление картин и фотографий с 2005 года</p>
+                </div>
+            </div>
+            <nav class="navigation">
+                <ul>
+                    <li><a href="http://localhost:9090/api/formindex" class="nav-link">Главная</a></li>
+                    <li><a href="http://localhost:9090/api/formsvedeniy" class="nav-link">О нас</a></li>
+                    <li><a href="http://localhost:9090/api/formassortiment" class="nav-link">Ассортимент</a></li>
+                    <li><a href="http://localhost:9090/api/formyslygs" class="nav-link">Услуги</a></li>
+                    <li><a href="http://localhost:9090/api/formotziv" class="nav-link">Отзывы</a></li>
+                    <li><a href="http://localhost:9090/api/formcontact" class="nav-link">Информация</a></li>
+                    <li th:if="${user != null}">
+                        <span class="nav-link user-name" th:text="${userDisplayName}" onclick="redirectToPersonal()">Иванов И.И.</span>
+                        <form th:action="@{/api/logout}" method="post" style="display: inline;">
+                            <button type="submit" class="nav-link logout-btn">Выйти</button>
+                        </form>
+                    </li>
+                    <li th:if="${user == null}">
+                        <a href="http://localhost:9090/api/formauto" class="nav-link active">Войти</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+</header>
+
+<main class="container">
+    <div class="form-container">
+        <h2>Оставить отзыв</h2>
+
+        <div th:if="${successMessage}" class="alert alert-success" role="alert">
+            <span th:text="${successMessage}"></span>
+        </div>
+        <div th:if="${errorMessage}" class="alert alert-danger" role="alert">
+            <span th:text="${errorMessage}"></span>
+        </div>
+
+        <form th:action="@{/api/addReview}" method="post">
+            <div class="form-group">
+                <label for="reviewText"><b>Ваш отзыв:</b></label>
+                <textarea id="reviewText" name="reviewText" required
+                          placeholder="Поделитесь вашими впечатлениями о нашей работе..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label><b>Оценка:</b></label>
+                <div class="star-rating">
+                    <input type="radio" id="star5" name="estimation" value="5" required>
+                    <label for="star5">★</label>
+                    <input type="radio" id="star4" name="estimation" value="4">
+                    <label for="star4">★</label>
+                    <input type="radio" id="star3" name="estimation" value="3">
+                    <label for="star3">★</label>
+                    <input type="radio" id="star2" name="estimation" value="2">
+                    <label for="star2">★</label>
+                    <input type="radio" id="star1" name="estimation" value="1">
+                    <label for="star1">★</label>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-primary"><b>Отправить отзыв</b></button>
+        </form>
+
+        <a href="http://localhost:9090/api/formspecial" class="btn-secondary">
+            <b>Вернуться в личный кабинет</b>
+        </a>
+    </div>
+</main>
+
+<footer class="footer">
+    <div class="autocontainer">
+        <p>&copy; 2025 Багетная мастерская. Все права защищены.</p>
+    </div>
+</footer>
+
+<script>
+    function redirectToPersonal() {
+        window.location.href = 'http://localhost:9090/api/formspecial';
+    }
+</script>
+</body>
+</html>

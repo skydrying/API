@@ -14,8 +14,9 @@
     <class>group.api.entity.User</class>
     <class>group.api.entity.Orders</class>
     <class>group.api.entity.Director</class>
-    <class>group.api.entity.Customer</class>
     <class>group.api.entity.Productionmaster</class>
+    <class>group.api.entity.Reviews</class>
+    <class>group.api.entity.Customer</class>
     <properties>
       <property name="jakarta.persistence.jdbc.url" value="jdbc:mysql://localhost:3306/proekt"/>
       <property name="jakarta.persistence.jdbc.user" value="root"/>

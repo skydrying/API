@@ -26,7 +26,6 @@
     </style>
 </head>
 <body>
-    <!-- Шапка сайта -->
     <header class="header">
         <div class="autocontainer">
             <div class="header-content">
@@ -42,7 +41,9 @@
                         <li><a href="http://localhost:9090/api/formindex" class="nav-link">Главная</a></li>
                         <li><a href="http://localhost:9090/api/formsvedeniy" class="nav-link active">О нас</a></li>
                         <li><a href="http://localhost:9090/api/formassortiment" class="nav-link">Ассортимент</a></li>
-                        <li><a href="http://localhost:9090/api/formcontact" class="nav-link">Контакты</a></li>
+                        <li><a href="http://localhost:9090/api/formyslygs" class="nav-link">Услуги</a></li>
+                        <li><a href="http://localhost:9090/api/formotziv" class="nav-link">Отзывы</a></li>
+                        <li><a href="http://localhost:9090/api/formcontact" class="nav-link">Информация</a></li>
                         <li th:if="${user != null}">
                             <span class="nav-link user-name" th:text="${userDisplayName}" onclick="redirectToPersonal()">Иванов И.И.</span>
                             <form th:action="@{/api/logout}" method="post" style="display: inline;">
@@ -60,7 +61,6 @@
 
     <main class="main-content">
         <div class="autocontainer about-section">
-            <!-- Основная информация -->
             <h2 class="section-title">О нашей мастерской</h2>
             
             <div class="info-grid">
@@ -81,7 +81,6 @@
                 </div>
             </div>
 
-            <!-- История -->
             <div class="history-section">
                 <h2 class="section-title">Наша история</h2>
                 <div class="history-item">
@@ -106,7 +105,6 @@
                 </div>
             </div>
 
-            <!-- Команда -->
             <div class="team-section">
                 <h2 class="section-title">Наша команда</h2>
                 <div class="team-grid">
@@ -137,7 +135,6 @@
                 </div>
             </div>
 
-            <!-- Преимущества -->
             <div class="advantages-section">
                 <h2 class="section-title" style="color: white;">Наши преимущества</h2>
                 <div class="advantages-grid">

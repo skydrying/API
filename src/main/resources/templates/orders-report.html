@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Отчет по заказам - Багетная мастерская</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 0;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .autocontainer {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo-icon {
+            font-size: 2.5rem;
+            color: #667eea;
+        }
+
+        .logo-text h1 {
+            font-size: 1.8rem;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .logo-text p {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .navigation ul {
+            display: flex;
+            list-style: none;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .nav-link {
+            text-decoration: none;
+            color: #333;
+            font-weight: 500;
+            padding: 10px 15px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-link:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .nav-link.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .user-name {
+            cursor: pointer;
+            background: #4CAF50 !important;
+            color: white !important;
+        }
+
+        .logout-btn {
+            background: #f44336 !important;
+            color: white !important;
+            border: none;
+            cursor: pointer;
+        }
+
+        .main-container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 20px;
+        }
+
+        .dashboard-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .dashboard-header h1 {
+            color: white;
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .dashboard-header p {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1.1rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 1.5rem;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-card h3 {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .stat-card.total .stat-value {
+            color: #2196F3;
+        }
+
+        .stat-card.masters .stat-value {
+            color: #FF9800;
+        }
+
+        .stat-card.statuses .stat-value {
+            color: #4CAF50;
+        }
+
+        .charts-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .chart-card {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 1.5rem;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .chart-card h2 {
+            text-align: center;
+            margin-bottom: 1rem;
+            color: #333;
+            font-size: 1.3rem;
+        }
+
+        .chart-wrapper {
+            height: 300px;
+            position: relative;
+        }
+
+        .details-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .details-card {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 1.5rem;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .details-card h2 {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            color: #333;
+            font-size: 1.3rem;
+        }
+
+        .status-list, .master-list {
+            list-style: none;
+        }
+
+        .status-item, .master-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .status-name, .master-name {
+            font-weight: 500;
+            color: #333;
+        }
+
+        .status-count, .master-count {
+            background: #667eea;
+            color: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .status-new { border-left-color: #2196F3; }
+        .status-progress { border-left-color: #FF9800; }
+        .status-ready { border-left-color: #4CAF50; }
+        .status-completed { border-left-color: #673AB7; }
+        .status-cancelled { border-left-color: #f44336; }
+
+        .footer {
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            text-align: center;
+            padding: 1.5rem 0;
+            margin-top: 3rem;
+        }
+
+        .report-actions {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            margin: 0 10px;
+        }
+
+        .btn:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        @media (max-width: 768px) {
+            .charts-container, .details-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .navigation ul {
+                justify-content: center;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            }
+
+            .details-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+<header class="header">
+    <div class="autocontainer">
+        <div class="header-content">
+            <div class="logo">
+                <i class="fas fa-clipboard-list logo-icon"></i>
+                <div class="logo-text">
+                    <h1>Багетная мастерская</h1>
+                    <p>Панель управления директора</p>
+                </div>
+            </div>
+            <nav class="navigation">
+                <ul>
+                    <li><a th:href="@{/api/formindex}" class="nav-link">Главная</a></li>
+                    <li><a th:href="@{/api/formsvedeniy}" class="nav-link">О нас</a></li>
+                    <li><a th:href="@{/api/formassortiment}" class="nav-link">Ассортимент</a></li>
+                    <li><a th:href="@{/api/formyslygs}" class="nav-link">Услуги</a></li>
+                    <li><a th:href="@{/api/formotziv}" class="nav-link">Отзывы</a></li>
+                    <li><a th:href="@{/api/formcontact}" class="nav-link">Информация</a></li>
+                    <li th:if="${user != null}">
+                        <span class="nav-link user-name" th:text="${userDisplayName}" onclick="redirectToPersonal()">Директор</span>
+                        <form th:action="@{/api/logout}" method="post" style="display: inline;">
+                            <button type="submit" class="nav-link logout-btn">Выйти</button>
+                        </form>
+                    </li>
+                    <li th:if="${user == null}">
+                        <a th:href="@{/api/formauto}" class="nav-link">Войти</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+</header>
+
+<main class="main-container">
+    <div class="dashboard-header">
+        <h1><i class="fas fa-clipboard-check"></i> Отчет по заказам</h1>
+        <p>Статистика заказов и распределение по мастерам</p>
+    </div>
+
+
+    <div class="stats-grid">
+        <div class="stat-card total">
+            <h3>Всего заказов</h3>
+            <div class="stat-value" th:text="${allOrders.size()}">0</div>
+            <p><i class="fas fa-shopping-cart"></i> Общее количество</p>
+        </div>
+
+        <div class="stat-card masters">
+            <h3>Мастеров работает</h3>
+            <div class="stat-value" th:text="${masterNames.size()}">0</div>
+            <p><i class="fas fa-users"></i> Активные мастера</p>
+        </div>
+
+    </div>
+
+    <div class="charts-container">
+        <div class="chart-card">
+            <h2><i class="fas fa-chart-pie"></i> Распределение по статусам</h2>
+            <div class="chart-wrapper">
+                <canvas id="statusChart"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-card">
+            <h2><i class="fas fa-chart-bar"></i> Заказы по мастерам</h2>
+            <div class="chart-wrapper">
+                <canvas id="mastersChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="details-grid">
+        <div class="details-card">
+            <h2><i class="fas fa-list-alt"></i> Детали по статусам</h2>
+            <ul class="status-list">
+                <li th:each="status, iter : ${statusNames}" class="status-item" th:classappend="'status-' + ${status.toLowerCase().replace(' ', '-')}">
+                    <span class="status-name" th:text="${status}">Статус</span>
+                    <span class="status-count" th:text="${statusCounts[iter.index]}">0</span>
+                </li>
+            </ul>
+        </div>
+
+        <div class="details-card">
+            <h2><i class="fas fa-user-tie"></i> Заказы по мастерам</h2>
+            <ul class="master-list">
+                <li th:each="master, iter : ${masterNames}" class="master-item">
+                    <span class="master-name" th:text="${master}">Мастер</span>
+                    <span class="master-count" th:text="${masterOrderCounts[iter.index]}">0</span>
+                </li>
+                <li th:if="${masterNames.isEmpty()}" class="master-item">
+                    <span class="master-name">Нет данных о мастерах</span>
+                    <span class="master-count">0</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+</main>
+
+<footer class="footer">
+    <div class="autocontainer">
+        <p>&copy; 2025 Багетная мастерская. Панель управления директора.</p>
+    </div>
+</footer>
+
+<script>
+    // Получаем данные из Thymeleaf
+    const statusNames = [[${statusNames}]];
+    const statusCounts = [[${statusCounts}]];
+    const masterNames = [[${masterNames}]];
+    const masterOrderCounts = [[${masterOrderCounts}]];
+
+    // Цвета для статусов
+    const statusColors = {
+        'Новый': '#2196F3',
+        'Выполняется': '#FF9800',
+        'Готов': '#4CAF50',
+        'Забран': '#673AB7',
+        'Отменен': '#f44336',
+        'Неизвестно': '#9E9E9E'
+    };
+
+    // График статусов (круговая диаграмма)
+    const statusCtx = document.getElementById('statusChart').getContext('2d');
+    new Chart(statusCtx, {
+        type: 'doughnut',
+        data: {
+            labels: statusNames,
+            datasets: [{
+                data: statusCounts,
+                backgroundColor: statusNames.map(name => statusColors[name] || '#9E9E9E'),
+                borderWidth: 2,
+                borderColor: 'white'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: {
+                        padding: 20,
+                        usePointStyle: true
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.raw || 0;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = Math.round((value / total) * 100);
+                            return `${label}: ${value} (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // График мастеров (горизонтальные столбцы)
+    const mastersCtx = document.getElementById('mastersChart').getContext('2d');
+    new Chart(mastersCtx, {
+        type: 'bar',
+        data: {
+            labels: masterNames.length > 0 ? masterNames : ['Нет данных'],
+            datasets: [{
+                label: 'Количество заказов',
+                data: masterNames.length > 0 ? masterOrderCounts : [0],
+                backgroundColor: 'rgba(102, 126, 234, 0.7)',
+                borderColor: 'rgba(102, 126, 234, 1)',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            }
+        }
+    });
+
+    function redirectToPersonal() {
+        window.location.href = '/api/formspecial';
+    }
+</script>
+</body>
+</html>

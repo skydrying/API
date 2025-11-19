@@ -2,27 +2,14 @@ package group.api.controller;
 
 import group.api.entity.*;
 import group.api.forms.ProductionMaster;
-import group.api.repository.EmbroideryKitRepository;
-import group.api.repository.SellerRepository;
-import group.api.repository.UserRepository;
-import group.api.repository.CustomerRepository;
-import group.api.repository.DirectorRepository;
-import group.api.repository.ConsumableRepository;
-import group.api.repository.SaleItemRepository;
-import group.api.repository.SaleRepository;
-import group.api.repository.ProductionmasterRepository;
-import group.api.repository.OrderItemRepository;
-import group.api.repository.FrameMaterialRepository;
-import group.api.repository.FrameComponentRepository;
-import group.api.repository.CustomFrameOrderRepository;
+import group.api.repository.*;
+
 import java.io.File;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -36,7 +23,6 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
-import group.api.repository.OrdersRepository;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
@@ -71,6 +57,8 @@ public class MainController {
     private CustomFrameOrderRepository customFrameOrderRepository;
     @Autowired
     private ConsumableRepository consumableRepository;
+    @Autowired
+    private ReviewsRepository reviewsRepository;
 
     @GetMapping("/getUsers")
     public @ResponseBody
@@ -82,6 +70,22 @@ public class MainController {
     public @ResponseBody
     Iterable<Customer> allCustomers() {
         return customerRepository.findAll();
+    }
+
+    @GetMapping("/getReviews")
+    public @ResponseBody
+    Iterable<Reviews> allReviews() {
+        return reviewsRepository.findAll();
+    }
+
+    @PostMapping("/addReviewTG")
+    public Reviews addReviewTG(@RequestBody Reviews review) {
+        return reviewsRepository.save(review);
+    }
+
+    @DeleteMapping("/reviews/{id}")
+    public void delReview(@PathVariable Integer id) {
+        reviewsRepository.deleteById(id);
     }
 
     @GetMapping("/getEmbroiderykit")
@@ -152,25 +156,21 @@ public class MainController {
         frameMaterialRepository.deleteById(id);
     }
 
-    // GET - Получение всех компонентов рамок
     @GetMapping("/frameComponents")
     public Iterable<FrameComponent> allFC() {
         return frameComponentRepository.findAll();
     }
 
-    // POST - Создание нового компонента рамки
     @PostMapping("/frameComponents")
     public FrameComponent createFrameComponent(@RequestBody FrameComponent frameComponent) {
         return frameComponentRepository.save(frameComponent);
     }
 
-    // PUT - Обновление компонента рамки
     @PutMapping("/frameComponents")
     public FrameComponent updateFrameComponent(@RequestBody FrameComponent frameComponent) {
         return frameComponentRepository.save(frameComponent);
     }
 
-    // DELETE - Удаление компонента рамки
     @DeleteMapping("/frameComponents/{id}")
     public void deleteFrameComponent(@PathVariable Integer id) {
         frameComponentRepository.deleteById(id);
@@ -217,6 +217,77 @@ public class MainController {
             System.err.println("Ошибка при изменении статуса заказа: " + e.getMessage());
             throw e;
         }
+    }
+
+    @PostMapping("/changeOrderStatusSite")
+    public String changeOrderStatus(@RequestParam("orderId") Integer orderId,
+                                    @RequestParam("newStatus") String newStatus,
+                                    HttpSession session) {
+        Object user = session.getAttribute("user");
+        String role = (String) session.getAttribute("role");
+
+        if (user == null) {
+            return "redirect:/api/formauto";
+        }
+
+        try {
+            Orders order = ordersRepository.findById(orderId).orElse(null);
+
+            if (order != null) {
+                
+                boolean canChangeStatus = false;
+
+                
+                if ("director".equals(role)) {
+                    canChangeStatus = true;
+                }
+                
+                else if ("customer".equals(role) && user instanceof Customer) {
+                    Customer customer = (Customer) user;
+                    if (order.getCustomerID() != null &&
+                            order.getCustomerID().getId().equals(customer.getId()) &&
+                            "Отменен".equals(newStatus)) { 
+                        canChangeStatus = true;
+                    }
+                }
+                
+                else if ("productionmaster".equals(role) && user instanceof User) {
+                    User currentUser = (User) user;
+                    if (order.getProductionMasterID() != null &&
+                            order.getProductionMasterID().getIdUser().getId().equals(currentUser.getId())) {
+                        canChangeStatus = true;
+                    }
+                }
+                
+                else if ("seller".equals(role) && user instanceof User) {
+                    User currentUser = (User) user;
+                    if (order.getSellerID() != null &&
+                            order.getSellerID().getId().equals(currentUser.getId())) {
+                        canChangeStatus = true;
+                    }
+                }
+
+                if (canChangeStatus) {
+                    order.setStatus(newStatus);
+
+                    
+                    if ("Забран".equals(newStatus)) {
+                        order.setCompletionDate(new Date());
+                    }
+
+                    ordersRepository.save(order);
+                    System.out.println("Статус заказа №" + orderId + " изменен на: " + newStatus);
+                } else {
+                    System.err.println("Доступ запрещен: пользователь " + user + " не может изменить статус заказа " + orderId);
+                }
+            } else {
+                System.err.println("Заказ с ID " + orderId + " не найден.");
+            }
+        } catch (Exception e) {
+            System.err.println("Ошибка при изменении статуса заказа: " + e.getMessage());
+        }
+
+        return "redirect:/api/formspecial";
     }
 
     @GetMapping("/getSales")
@@ -604,7 +675,6 @@ public class MainController {
             return "redirect:/api/formreg";
         }
 
-        // Добавленные проверки для логина и пароля
         if (logins == null || logins.trim().isEmpty()) {
             redirectAttributes.addFlashAttribute("errorMessage", "Поле 'Логин' не может быть пустым");
             return "redirect:/api/formreg";
@@ -802,7 +872,7 @@ public class MainController {
     List<Productionmaster> allPM2() {
         List<Productionmaster> list = new ArrayList<>();
         for (Productionmaster pm : productionmasterRepository.findAll()) {
-            list.add(pm); // возвращаем сам Productionmaster, а не его пользователя
+            list.add(pm);
         }
         return list;
     }
@@ -1069,6 +1139,24 @@ public class MainController {
                     orders.add(order);
                 }
             }
+
+            boolean hasCompletedOrder = orders.stream()
+                    .anyMatch(order -> "Забран".equals(order.getStatus()));
+            model.addAttribute("hasCompletedOrder", hasCompletedOrder);
+
+            boolean hasReview = false;
+            Reviews userReview = null;
+            List<Reviews> allReviews = toList(reviewsRepository.findAll());
+            for (Reviews review : allReviews) {
+                if (review.getIdCustomer() != null && review.getIdCustomer().getId().equals(customer.getId())) {
+                    hasReview = true;
+                    userReview = review;
+                    break;
+                }
+            }
+            model.addAttribute("hasReview", hasReview);
+            model.addAttribute("userReview", userReview);
+
         } else if (user instanceof User) {
             User userObj = (User) user;
             model.addAttribute("customerId", userObj.getId());
@@ -1083,27 +1171,39 @@ public class MainController {
                     userObj.getLastName();
             model.addAttribute("customerName", fullName);
 
-            for (Orders order : allOrders) {
-                if (order.getSellerID() != null && order.getSellerID().getId().equals(userObj.getId())) {
-                    orders.add(order);
+            
+            if ("director".equals(role)) {
+                orders = allOrders;
+
+                
+                List<Reviews> allReviews = toList(reviewsRepository.findAll());
+                model.addAttribute("allReviews", allReviews);
+                model.addAttribute("hasReviews", !allReviews.isEmpty());
+            } else {
+                
+                for (Orders order : allOrders) {
+                    if (order.getSellerID() != null && order.getSellerID().getId().equals(userObj.getId())) {
+                        orders.add(order);
+                    }
                 }
             }
         }
 
         model.addAttribute("orders", orders);
+
         List<Orders> currentOrders = new ArrayList<>();
+        List<Orders> historyOrders = new ArrayList<>();
+
         for (Orders order : orders) {
-            if (!"Готово".equals(order.getStatus())) {
+            String status = order.getStatus();
+            if ("Забран".equals(status) || "Отменен".equals(status)) {
+                historyOrders.add(order);
+            } else {
                 currentOrders.add(order);
             }
         }
+
         model.addAttribute("currentOrders", currentOrders);
-        List<Orders> historyOrders = new ArrayList<>();
-        for (Orders order : orders) {
-            if ("Готово".equals(order.getStatus())) {
-                historyOrders.add(order);
-            }
-        }
         model.addAttribute("historyOrders", historyOrders);
 
         String lastName = "";
@@ -1155,7 +1255,22 @@ public class MainController {
             model.addAttribute("userDisplayName", lastName + " " + initials);
         }
 
+        List<Consumable> consumables = convertIterableToList(consumableRepository.findAll());
+        List<EmbroideryKit> embroideryKits = convertIterableToList(embroideryKitRepository.findAll());
+
+        System.out.println("Loaded consumables: " + consumables.size());
+        System.out.println("Loaded embroidery kits: " + embroideryKits.size());
+
+        model.addAttribute("consumables", consumables);
+        model.addAttribute("embroideryKits", embroideryKits);
+
         return "assortiment";
+    }
+
+    private <T> List<T> convertIterableToList(Iterable<T> iterable) {
+        List<T> list = new ArrayList<>();
+        iterable.forEach(list::add);
+        return list;
     }
 
     @GetMapping("/formcontact")
@@ -1184,6 +1299,578 @@ public class MainController {
         }
 
         return "contact";
+    }
+
+    @GetMapping("/formyslygs")
+    public String formyslygs(HttpSession session, Model model) {
+        Object user = session.getAttribute("user");
+        String role = (String) session.getAttribute("role");
+
+        model.addAttribute("user", user);
+        model.addAttribute("role", role);
+
+
+        if (user != null) {
+            String lastName = "";
+            String initials = "";
+            if (user instanceof Customer) {
+                Customer customer = (Customer) user;
+                lastName = customer.getLastName();
+                initials = customer.getFirstName().substring(0, 1) + "." +
+                        (customer.getMiddleName() != null ? customer.getMiddleName().substring(0, 1) + "." : "");
+            } else if (user instanceof User) {
+                User userObj = (User) user;
+                lastName = userObj.getLastName();
+                initials = userObj.getFirstName().substring(0, 1) + "." +
+                        (userObj.getMiddleName() != null ? userObj.getMiddleName().substring(0, 1) + "." : "");
+            }
+            model.addAttribute("userDisplayName", lastName + " " + initials);
+        }
+
+        return "yslygs";
+    }
+
+    @GetMapping("/formotziv")
+    public String formotziv(HttpSession session, Model model) {
+        Object user = session.getAttribute("user");
+        String role = (String) session.getAttribute("role");
+
+        model.addAttribute("user", user);
+        model.addAttribute("role", role);
+
+        if (user != null) {
+            String lastName = "";
+            String initials = "";
+            if (user instanceof Customer) {
+                Customer customer = (Customer) user;
+                lastName = customer.getLastName();
+                initials = customer.getFirstName().substring(0, 1) + "." +
+                        (customer.getMiddleName() != null ? customer.getMiddleName().substring(0, 1) + "." : "");
+            } else if (user instanceof User) {
+                User userObj = (User) user;
+                lastName = userObj.getLastName();
+                initials = userObj.getFirstName().substring(0, 1) + "." +
+                        (userObj.getMiddleName() != null ? userObj.getMiddleName().substring(0, 1) + "." : "");
+            }
+            model.addAttribute("userDisplayName", lastName + " " + initials);
+        }
+
+        List<Reviews> reviews = toList(reviewsRepository.findAll());
+        model.addAttribute("reviews", reviews);
+
+        return "otziv";
+    }
+
+    @GetMapping("/formreview")
+    public String formReview(HttpSession session, Model model) {
+        Object user = session.getAttribute("user");
+        String role = (String) session.getAttribute("role");
+
+        if (user == null || !(user instanceof Customer)) {
+            return "redirect:/api/formauto";
+        }
+
+        Customer customer = (Customer) user;
+
+        boolean hasReview = false;
+        List<Reviews> allReviews = toList(reviewsRepository.findAll());
+        for (Reviews review : allReviews) {
+            if (review.getIdCustomer() != null && review.getIdCustomer().getId().equals(customer.getId())) {
+                hasReview = true;
+                break;
+            }
+        }
+
+        if (hasReview) {
+            return "redirect:/api/formspecial";
+        }
+
+        model.addAttribute("user", user);
+        model.addAttribute("role", role);
+
+        if (user != null) {
+            String lastName = "";
+            String initials = "";
+            if (user instanceof Customer) {
+                Customer customerUser = (Customer) user;
+                lastName = customerUser.getLastName();
+                initials = customerUser.getFirstName().substring(0, 1) + "." +
+                        (customerUser.getMiddleName() != null ? customerUser.getMiddleName().substring(0, 1) + "." : "");
+            } else if (user instanceof User) {
+                User userObj = (User) user;
+                lastName = userObj.getLastName();
+                initials = userObj.getFirstName().substring(0, 1) + "." +
+                        (userObj.getMiddleName() != null ? userObj.getMiddleName().substring(0, 1) + "." : "");
+            }
+            model.addAttribute("userDisplayName", lastName + " " + initials);
+        }
+
+        return "review";
+    }
+
+    @PostMapping("/addReview")
+    public String addReview(@RequestParam String reviewText,
+                            @RequestParam int estimation,
+                            HttpSession session,
+                            Model model) {
+
+        Object user = session.getAttribute("user");
+
+        if (user == null || !(user instanceof Customer)) {
+            return "redirect:/api/formauto";
+        }
+
+        Customer customer = (Customer) user;
+
+
+        boolean hasReview = false;
+        List<Reviews> allReviews = toList(reviewsRepository.findAll());
+        for (Reviews review : allReviews) {
+            if (review.getIdCustomer() != null && review.getIdCustomer().getId().equals(customer.getId())) {
+                hasReview = true;
+                break;
+            }
+        }
+
+        if (hasReview) {
+            model.addAttribute("errorMessage", "Вы уже оставили отзыв");
+            return "redirect:/api/formspecial";
+        }
+
+        try {
+            Reviews review = new Reviews();
+            review.setName(reviewText);
+            review.setEstimation(estimation);
+            review.setDatereview(new Date());
+            review.setIdCustomer(customer);
+
+            reviewsRepository.save(review);
+
+            model.addAttribute("successMessage", "Спасибо за ваш отзыв!");
+
+        } catch (Exception e) {
+            model.addAttribute("errorMessage", "Ошибка при сохранении отзыва: " + e.getMessage());
+        }
+
+        return "redirect:/api/formspecial";
+    }
+
+    @GetMapping("/sales-report")
+    public String salesReport(Model model, HttpSession session) {
+        Object user = session.getAttribute("user");
+        String role = (String) session.getAttribute("role");
+
+        if (user == null || !"director".equals(role)) {
+            return "redirect:/api/formauto";
+        }
+
+        List<Orders> allOrders = toList(ordersRepository.findAll());
+
+        double totalRevenue = 0;
+        int totalOrders = allOrders.size();
+        int completedOrders = 0;
+        int cancelledOrders = 0;
+        int newOrders = 0;
+        int inProgressOrders = 0;
+        int readyOrders = 0;
+
+        
+        List<String> months = new ArrayList<>();
+        List<Double> monthlyRevenues = new ArrayList<>();
+        List<Integer> monthlyOrderCounts = new ArrayList<>();
+
+        for (Orders order : allOrders) {
+            
+            if (order.getTotalAmount() != null) {
+                totalRevenue += order.getTotalAmount();
+            }
+
+            
+            String status = order.getStatus();
+            if ("Забран".equals(status)) {
+                completedOrders++;
+            } else if ("Отменен".equals(status)) {
+                cancelledOrders++;
+            } else if ("Новый".equals(status)) {
+                newOrders++;
+            } else if ("Выполняется".equals(status)) {
+                inProgressOrders++;
+            } else if ("Готов".equals(status)) {
+                readyOrders++;
+            }
+
+            
+            if (order.getOrderDate() != null) {
+                String monthKey = new SimpleDateFormat("yyyy-MM").format(order.getOrderDate());
+
+                
+                boolean monthExists = false;
+                for (int i = 0; i < months.size(); i++) {
+                    if (months.get(i).equals(monthKey)) {
+                        
+                        double currentRevenue = monthlyRevenues.get(i);
+                        int currentCount = monthlyOrderCounts.get(i);
+
+                        monthlyRevenues.set(i, currentRevenue + (order.getTotalAmount() != null ? order.getTotalAmount() : 0.0));
+                        monthlyOrderCounts.set(i, currentCount + 1);
+                        monthExists = true;
+                        break;
+                    }
+                }
+
+                
+                if (!monthExists) {
+                    months.add(monthKey);
+                    monthlyRevenues.add(order.getTotalAmount() != null ? order.getTotalAmount() : 0.0);
+                    monthlyOrderCounts.add(1);
+                }
+            }
+        }
+
+        
+        for (int i = 0; i < months.size() - 1; i++) {
+            for (int j = i + 1; j < months.size(); j++) {
+                if (months.get(i).compareTo(months.get(j)) > 0) {
+                    
+                    String tempMonth = months.get(i);
+                    months.set(i, months.get(j));
+                    months.set(j, tempMonth);
+
+                    Double tempRevenue = monthlyRevenues.get(i);
+                    monthlyRevenues.set(i, monthlyRevenues.get(j));
+                    monthlyRevenues.set(j, tempRevenue);
+
+                    Integer tempCount = monthlyOrderCounts.get(i);
+                    monthlyOrderCounts.set(i, monthlyOrderCounts.get(j));
+                    monthlyOrderCounts.set(j, tempCount);
+                }
+            }
+        }
+
+        model.addAttribute("totalRevenue", totalRevenue);
+        model.addAttribute("totalOrders", totalOrders);
+        model.addAttribute("completedOrders", completedOrders);
+        model.addAttribute("cancelledOrders", cancelledOrders);
+        model.addAttribute("newOrders", newOrders);
+        model.addAttribute("inProgressOrders", inProgressOrders);
+        model.addAttribute("readyOrders", readyOrders);
+        model.addAttribute("months", months);
+        model.addAttribute("monthlyRevenues", monthlyRevenues);
+        model.addAttribute("monthlyOrderCounts", monthlyOrderCounts);
+        model.addAttribute("conversionRate", totalOrders > 0 ? (completedOrders * 100.0 / totalOrders) : 0);
+
+        return "sales-report";
+    }
+
+
+    @GetMapping("/orders-report")
+    public String ordersReport(Model model, HttpSession session) {
+        Object user = session.getAttribute("user");
+        String role = (String) session.getAttribute("role");
+
+        if (user == null || !"director".equals(role)) {
+            return "redirect:/api/formauto";
+        }
+
+        List<Orders> allOrders = toList(ordersRepository.findAll());
+        
+        List<String> statusNames = new ArrayList<>();
+        List<Integer> statusCounts = new ArrayList<>();
+        
+        List<String> masterNames = new ArrayList<>();
+        List<Integer> masterOrderCounts = new ArrayList<>();
+
+        for (Orders order : allOrders) {
+            String status = order.getStatus() != null ? order.getStatus() : "Неизвестно";
+
+            boolean statusExists = false;
+            for (int i = 0; i < statusNames.size(); i++) {
+                if (statusNames.get(i).equals(status)) {
+                    statusCounts.set(i, statusCounts.get(i) + 1);
+                    statusExists = true;
+                    break;
+                }
+            }
+
+            if (!statusExists) {
+                statusNames.add(status);
+                statusCounts.add(1);
+            }
+            
+            if (order.getProductionMasterID() != null) {
+                User master = order.getProductionMasterID().getIdUser();
+                String masterName = master.getLastName() + " " + master.getFirstName().charAt(0) + ".";
+
+                boolean masterExists = false;
+                for (int i = 0; i < masterNames.size(); i++) {
+                    if (masterNames.get(i).equals(masterName)) {
+                        masterOrderCounts.set(i, masterOrderCounts.get(i) + 1);
+                        masterExists = true;
+                        break;
+                    }
+                }
+
+                if (!masterExists) {
+                    masterNames.add(masterName);
+                    masterOrderCounts.add(1);
+                }
+            }
+        }
+        
+        for (int i = 0; i < statusCounts.size() - 1; i++) {
+            for (int j = i + 1; j < statusCounts.size(); j++) {
+                if (statusCounts.get(i) < statusCounts.get(j)) {
+                    String tempStatus = statusNames.get(i);
+                    statusNames.set(i, statusNames.get(j));
+                    statusNames.set(j, tempStatus);
+
+                    Integer tempCount = statusCounts.get(i);
+                    statusCounts.set(i, statusCounts.get(j));
+                    statusCounts.set(j, tempCount);
+                }
+            }
+        }
+        
+        for (int i = 0; i < masterOrderCounts.size() - 1; i++) {
+            for (int j = i + 1; j < masterOrderCounts.size(); j++) {
+                if (masterOrderCounts.get(i) < masterOrderCounts.get(j)) {
+                    String tempMaster = masterNames.get(i);
+                    masterNames.set(i, masterNames.get(j));
+                    masterNames.set(j, tempMaster);
+
+                    Integer tempCount = masterOrderCounts.get(i);
+                    masterOrderCounts.set(i, masterOrderCounts.get(j));
+                    masterOrderCounts.set(j, tempCount);
+                }
+            }
+        }
+
+        model.addAttribute("allOrders", allOrders);
+        model.addAttribute("statusNames", statusNames);
+        model.addAttribute("statusCounts", statusCounts);
+        model.addAttribute("masterNames", masterNames);
+        model.addAttribute("masterOrderCounts", masterOrderCounts);
+
+        return "orders-report";
+    }
+
+    
+    @GetMapping("/reviews-management")
+    public String reviewsManagement(Model model, HttpSession session) {
+        Object user = session.getAttribute("user");
+        String role = (String) session.getAttribute("role");
+
+        if (user == null || !"director".equals(role)) {
+            return "redirect:/api/formauto";
+        }
+
+        List<Reviews> allReviews = toList(reviewsRepository.findAll());
+        model.addAttribute("allReviews", allReviews);
+
+        return "reviews-management"; 
+    }
+
+    
+    @PostMapping("/deleteAnyReview")
+    public String deleteAnyReview(@RequestParam("reviewId") Integer reviewId, HttpSession session) {
+        Object user = session.getAttribute("user");
+        String role = (String) session.getAttribute("role");
+
+        if (user == null || !"director".equals(role)) {
+            return "redirect:/api/formauto";
+        }
+
+        try {
+            reviewsRepository.deleteById(reviewId);
+            
+        } catch (Exception e) {
+            
+        }
+
+        return "redirect:/api/formspecial";
+    }
+
+    @PostMapping("/deleteReview")
+    public String deleteReview(HttpSession session, Model model) {
+        Object user = session.getAttribute("user");
+
+        if (user == null || !(user instanceof Customer)) {
+            return "redirect:/api/formauto";
+        }
+
+        Customer customer = (Customer) user;
+
+        try {
+            List<Reviews> allReviews = toList(reviewsRepository.findAll());
+            for (Reviews review : allReviews) {
+                if (review.getIdCustomer() != null && review.getIdCustomer().getId().equals(customer.getId())) {
+                    reviewsRepository.delete(review);
+                    model.addAttribute("successMessage", "Ваш отзыв удален");
+                    break;
+                }
+            }
+        } catch (Exception e) {
+            model.addAttribute("errorMessage", "Ошибка при удалении отзыва: " + e.getMessage());
+        }
+
+        return "redirect:/api/formspecial";
+    }
+
+    private <T> List<T> toList(Iterable<T> iterable) {
+        List<T> list = new ArrayList<>();
+        iterable.forEach(list::add);
+        return list;
+    }
+
+
+    @GetMapping("/formorderspeople")
+    public String formorderspeople(HttpSession session, Model model) {
+        Object user = session.getAttribute("user");
+        String role = (String) session.getAttribute("role");
+
+        if (user == null) {
+            return "redirect:/api/formauto";
+        }
+
+        model.addAttribute("user", user);
+        model.addAttribute("role", role);
+
+        if (user != null) {
+            String lastName = "";
+            String initials = "";
+            if (user instanceof Customer) {
+                Customer customer = (Customer) user;
+                lastName = customer.getLastName();
+                initials = customer.getFirstName().substring(0, 1) + "." +
+                        (customer.getMiddleName() != null ? customer.getMiddleName().substring(0, 1) + "." : "");
+            } else if (user instanceof User) {
+                User userObj = (User) user;
+                lastName = userObj.getLastName();
+                initials = userObj.getFirstName().substring(0, 1) + "." +
+                        (userObj.getMiddleName() != null ? userObj.getMiddleName().substring(0, 1) + "." : "");
+            }
+            model.addAttribute("userDisplayName", lastName + " " + initials);
+        }
+
+        List<FrameMaterial> frameMaterials = new ArrayList<>();
+        for (FrameMaterial material : frameMaterialRepository.findAll()) {
+            frameMaterials.add(material);
+        }
+        model.addAttribute("frameMaterials", frameMaterials);
+
+        return "orderspeople";
+    }
+
+    @PostMapping("/createFrameOrder")
+    public String createFrameOrder(
+            @RequestParam Integer width,
+            @RequestParam Integer height,
+            @RequestParam Integer frameMaterialId,
+            @RequestParam(required = false) String color,
+            @RequestParam(required = false) String style,
+            @RequestParam(required = false) String mountType,
+            @RequestParam(required = false) String glassType,
+            @RequestParam(required = false) String notes,
+            HttpSession session,
+            Model model) {
+
+        Object user = session.getAttribute("user");
+
+        if (user == null || !(user instanceof Customer)) {
+            model.addAttribute("errorMessage", "Для оформления заказа необходимо авторизоваться как покупатель");
+            return "redirect:/api/formauto";
+        }
+
+        Customer customer = (Customer) user;
+
+        try {
+            Orders order = new Orders();
+            order.setCustomerID(customer);
+            order.setOrderDate(new Date());
+
+            Calendar calendar = Calendar.getInstance();
+            calendar.add(Calendar.DAY_OF_YEAR, 14);
+            order.setDueDate(calendar.getTime());
+
+            order.setStatus("Новый");
+
+            User seller = new User();
+            seller.setId(2);
+            order.setSellerID(seller);
+
+            FrameMaterial material = frameMaterialRepository.findById(frameMaterialId).orElse(null);
+            double basePrice = material != null ? material.getPricePerMeter() : 1000;
+            double perimeter = (width + height) * 2 / 1000.0;
+            double estimatedAmount = perimeter * basePrice * 1.2;
+
+            order.setTotalAmount((int) estimatedAmount);
+            order.setNotes("Заказ рамки: " + (notes != null ? notes : "Индивидуальный заказ"));
+
+            Orders savedOrder = ordersRepository.save(order);
+
+            CustomFrameOrder customFrameOrder = new CustomFrameOrder();
+            customFrameOrder.setOrderID(savedOrder);
+            customFrameOrder.setWidth(width);
+            customFrameOrder.setHeight(height);
+
+            FrameMaterial frameMaterial = new FrameMaterial();
+            frameMaterial.setId(frameMaterialId);
+
+            customFrameOrder.setFrameMaterialID(frameMaterial);
+
+            customFrameOrder.setColor(color);
+            customFrameOrder.setStyle(style);
+            customFrameOrder.setMountType(mountType);
+            customFrameOrder.setGlassType(glassType);
+            customFrameOrder.setNotes(notes);
+
+
+            customFrameOrderRepository.save(customFrameOrder);
+
+            model.addAttribute("successMessage", "Заказ успешно оформлен! Номер вашего заказа: " + savedOrder.getId());
+
+        } catch (Exception e) {
+            model.addAttribute("errorMessage", "Ошибка при оформлении заказа: " + e.getMessage());
+            e.printStackTrace(); 
+        }
+
+        return "redirect:/api/formorderspeople";
+    }
+
+    @PostMapping("/cancelOrder")
+    public String cancelOrder(@RequestParam Integer orderId, HttpSession session, Model model) {
+        Object user = session.getAttribute("user");
+
+        if (user == null) {
+            return "redirect:/api/formauto";
+        }
+
+        try {
+            Optional<Orders> orderOptional = ordersRepository.findById(orderId);
+            if (orderOptional.isPresent()) {
+                Orders order = orderOptional.get();
+
+                if (user instanceof Customer) {
+                    Customer customer = (Customer) user;
+                    if (order.getCustomerID() != null && order.getCustomerID().getId().equals(customer.getId())) {
+                        order.setStatus("Отменен");
+                        ordersRepository.save(order);
+                        model.addAttribute("successMessage", "Заказ #" + orderId + " успешно отменен");
+                    }
+                } else if (user instanceof User) {
+                    User userObj = (User) user;
+                    if (order.getSellerID() != null && order.getSellerID().getId().equals(userObj.getId())) {
+                        order.setStatus("Отменен");
+                        ordersRepository.save(order);
+                        model.addAttribute("successMessage", "Заказ #" + orderId + " успешно отменен");
+                    }
+                }
+            }
+        } catch (Exception e) {
+            model.addAttribute("errorMessage", "Ошибка при отмене заказа: " + e.getMessage());
+        }
+
+        return "redirect:/api/formspecial";
     }
 
     @GetMapping(path="/formauto")
