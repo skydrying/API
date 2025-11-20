@@ -42,6 +42,7 @@
             border-left: 4px solid #8B4513;
             transition: transform 0.3s ease, box-shadow 0.3s ease;
             height: fit-content;
+            position: relative;
         }
         .review-card:hover {
             transform: translateY(-5px);
@@ -103,6 +104,7 @@
             text-align: right;
             border-top: 1px solid #f0f0f0;
             padding-top: 10px;
+            margin-bottom: 10px;
         }
         .review-date small {
             color: #888;
@@ -126,6 +128,46 @@
             margin-bottom: 30px;
             font-size: 16px;
         }
+        .delete-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s ease;
+            width: 100%;
+            margin-top: 10px;
+        }
+        .delete-btn:hover {
+            background: #c82333;
+        }
+        .review-actions {
+            text-align: center;
+        }
+        .admin-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #28a745;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: bold;
+        }
+        .admin-header-badge {
+            background: #28a745;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 20px;
+            display: inline-block;
+        }
     </style>
 </head>
 <body>
@@ -141,12 +183,12 @@
             </div>
             <nav class="navigation">
                 <ul>
-                    <li><a href="http://localhost:9090/api/formindex" class="nav-link">Главная</a></li>
-                    <li><a href="http://localhost:9090/api/formsvedeniy" class="nav-link">О нас</a></li>
-                    <li><a href="http://localhost:9090/api/formassortiment" class="nav-link">Ассортимент</a></li>
-                    <li><a href="http://localhost:9090/api/formyslygs" class="nav-link">Услуги</a></li>
-                    <li><a href="http://localhost:9090/api/formotziv" class="nav-link active">Отзывы</a></li>
-                    <li><a href="http://localhost:9090/api/formcontact" class="nav-link">Информация</a></li>
+                    <li><a th:href="@{/api/formindex}" class="nav-link">Главная</a></li>
+                    <li><a th:href="@{/api/formsvedeniy}" class="nav-link">О нас</a></li>
+                    <li><a th:href="@{/api/formassortiment}" class="nav-link">Ассортимент</a></li>
+                    <li><a th:href="@{/api/formyslygs}" class="nav-link">Услуги</a></li>
+                    <li><a th:href="@{/api/formotziv}" class="nav-link active">Отзывы</a></li>
+                    <li><a th:href="@{/api/formcontact}" class="nav-link">Информация</a></li>
                     <li th:if="${user != null}">
                         <span class="nav-link user-name" th:text="${userDisplayName}" onclick="redirectToPersonal()">Иванов И.И.</span>
                         <form th:action="@{/api/logout}" method="post" style="display: inline;">
@@ -154,7 +196,7 @@
                         </form>
                     </li>
                     <li th:if="${user == null}">
-                        <a href="http://localhost:9090/api/formauto" class="nav-link">Войти</a>
+                        <a th:href="@{/api/formauto}" class="nav-link">Войти</a>
                     </li>
                 </ul>
             </nav>
@@ -167,8 +209,20 @@
         <h2 class="reviews-title">Отзывы наших клиентов</h2>
         <p class="reviews-subtitle">Мнения людей, которые уже воспользовались нашими услугами</p>
 
+        <!-- Бейдж для директора -->
+        <div th:if="${'director'.equals(role)}" style="text-align: center; margin-bottom: 20px;">
+            <span class="admin-header-badge">
+                <i class="fas fa-shield-alt"></i> Режим администратора
+            </span>
+        </div>
+
         <div class="reviews-grid">
             <div th:each="review : ${reviews}" class="review-card">
+                <!-- Бейдж администратора на карточке отзыва -->
+                <div th:if="${'director'.equals(role)}" class="admin-badge">
+                    АДМИН
+                </div>
+
                 <div class="review-header">
                     <div class="author-info">
                         <!-- Выводим ФИО клиента -->
@@ -196,6 +250,16 @@
                 <div class="review-date" th:if="${review.datereview != null}">
                     <small th:text="${#dates.format(review.datereview, 'dd.MM.yyyy')}">01.01.2025</small>
                 </div>
+
+                <!-- Кнопка удаления для директора -->
+                <div th:if="${'director'.equals(role)}" class="review-actions">
+                    <form th:action="@{/api/delete-review/{id}(id=${review.id})}" method="post"
+                          th:onsubmit="return confirmDelete()">
+                        <button type="submit" class="delete-btn">
+                            <i class="fas fa-trash"></i> Удалить отзыв
+                        </button>
+                    </form>
+                </div>
             </div>
 
             <div th:if="${#lists.isEmpty(reviews)}" class="no-reviews">
@@ -214,7 +278,11 @@
 
 <script>
     function redirectToPersonal() {
-        window.location.href = 'http://localhost:9090/api/formspecial';
+        window.location.href = '/api/formspecial';
+    }
+
+    function confirmDelete() {
+        return confirm('Вы уверены, что хотите удалить этот отзыв? Это действие нельзя отменить.');
     }
 </script>
 </body>

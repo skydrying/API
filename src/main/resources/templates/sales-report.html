@@ -126,7 +126,7 @@
 
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 1.5rem;
             margin-bottom: 2rem;
         }
@@ -195,38 +195,6 @@
             font-size: 1.3rem;
         }
 
-        .status-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
-
-        .status-card {
-            background: rgba(255, 255, 255, 0.95);
-            padding: 1rem;
-            border-radius: 10px;
-            text-align: center;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        }
-
-        .status-card h4 {
-            font-size: 0.9rem;
-            color: #666;
-            margin-bottom: 0.5rem;
-        }
-
-        .status-value {
-            font-size: 1.5rem;
-            font-weight: bold;
-        }
-
-        .status-new { color: #2196F3; }
-        .status-progress { color: #FF9800; }
-        .status-ready { color: #4CAF50; }
-        .status-completed { color: #673AB7; }
-        .status-cancelled { color: #f44336; }
-
         .footer {
             background: rgba(0, 0, 0, 0.8);
             color: white;
@@ -235,22 +203,30 @@
             margin-top: 3rem;
         }
 
+        .data-source-info {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.9rem;
+            margin-bottom: 2rem;
+            font-style: italic;
+        }
+
         @media (max-width: 768px) {
             .charts-container {
                 grid-template-columns: 1fr;
             }
-            
+
             .header-content {
                 flex-direction: column;
                 gap: 1rem;
             }
-            
+
             .navigation ul {
                 justify-content: center;
             }
-            
+
             .stats-grid {
-                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             }
         }
     </style>
@@ -295,13 +271,24 @@
         <p>Аналитика эффективности работы мастерской</p>
     </div>
 
+    <!-- Информация об источниках данных -->
+    <div class="data-source-info">
+        <i class="fas fa-info-circle"></i> Данные основаны на фактических продажах из системы учета
+    </div>
+
+    <!-- Основная статистика -->
     <div class="stats-grid">
         <div class="stat-card revenue">
             <h3>Общая выручка</h3>
             <div class="stat-value" th:text="'₽' + ${#numbers.formatDecimal(totalRevenue, 1, 2)}">₽0.00</div>
-            <p><i class="fas fa-wallet"></i> Сумма всех заказов</p>
+            <p><i class="fas fa-wallet"></i> Сумма всех продаж</p>
         </div>
 
+        <div class="stat-card orders">
+            <h3>Всего заказов</h3>
+            <div class="stat-value" th:text="${totalOrders}">0</div>
+            <p><i class="fas fa-shopping-cart"></i> Обработано заказов</p>
+        </div>
 
         <div class="stat-card conversion">
             <h3>Конверсия</h3>
@@ -310,7 +297,7 @@
         </div>
     </div>
 
-
+    <!-- Графики -->
     <div class="charts-container">
         <div class="chart-card">
             <h2><i class="fas fa-chart-line"></i> Выручка по месяцам</h2>
@@ -318,7 +305,7 @@
         </div>
 
         <div class="chart-card">
-            <h2><i class="fas fa-chart-bar"></i> Количество заказов по месяцам</h2>
+            <h2><i class="fas fa-chart-bar"></i> Продажи по месяцам</h2>
             <canvas id="ordersChart"></canvas>
         </div>
     </div>
@@ -386,13 +373,14 @@
         }
     });
 
+    // График количества продаж
     const ordersCtx = document.getElementById('ordersChart').getContext('2d');
     new Chart(ordersCtx, {
         type: 'bar',
         data: {
             labels: formattedMonths,
             datasets: [{
-                label: 'Количество заказов',
+                label: 'Количество продаж',
                 data: monthlyOrderCounts,
                 backgroundColor: 'rgba(33, 150, 243, 0.7)',
                 borderColor: 'rgba(33, 150, 243, 1)',

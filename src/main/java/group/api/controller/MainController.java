@@ -234,31 +234,60 @@ public class MainController {
             Orders order = ordersRepository.findById(orderId).orElse(null);
 
             if (order != null) {
-                
                 boolean canChangeStatus = false;
 
-                
                 if ("director".equals(role)) {
                     canChangeStatus = true;
                 }
-                
                 else if ("customer".equals(role) && user instanceof Customer) {
                     Customer customer = (Customer) user;
                     if (order.getCustomerID() != null &&
                             order.getCustomerID().getId().equals(customer.getId()) &&
-                            "Отменен".equals(newStatus)) { 
+                            "Отменен".equals(newStatus)) {
                         canChangeStatus = true;
                     }
                 }
-                
                 else if ("productionmaster".equals(role) && user instanceof User) {
                     User currentUser = (User) user;
-                    if (order.getProductionMasterID() != null &&
-                            order.getProductionMasterID().getIdUser().getId().equals(currentUser.getId())) {
-                        canChangeStatus = true;
+
+                    // Находим productionmaster запись для текущего пользователя
+                    Productionmaster currentMaster = null;
+                    List<Productionmaster> allMasters = new ArrayList<>();
+                    for (Productionmaster master : productionmasterRepository.findAll()) {
+                        allMasters.add(master);
+                    }
+                    for (Productionmaster master : allMasters) {
+                        if (master.getIdUser() != null && master.getIdUser().getId().equals(currentUser.getId())) {
+                            currentMaster = master;
+                            break;
+                        }
+                    }
+
+                    if (currentMaster != null) {
+                        // Проверяем основную таблицу orders
+                        if (order.getProductionMasterID() != null &&
+                                order.getProductionMasterID().getId().equals(currentMaster.getId())) {
+                            canChangeStatus = true;
+                        }
+                        // Проверяем таблицу custom_frame_order
+                        else {
+                            List<CustomFrameOrder> allCustomOrders = new ArrayList<>();
+                            for (CustomFrameOrder customOrder : customFrameOrderRepository.findAll()) {
+                                allCustomOrders.add(customOrder);
+                            }
+
+                            for (CustomFrameOrder customOrder : allCustomOrders) {
+                                if (customOrder.getOrderID() != null &&
+                                        customOrder.getOrderID().getId().equals(order.getId()) &&
+                                        customOrder.getProductionMasterID() != null &&
+                                        customOrder.getProductionMasterID().getId().equals(currentMaster.getId())) {
+                                    canChangeStatus = true;
+                                    break;
+                                }
+                            }
+                        }
                     }
                 }
-                
                 else if ("seller".equals(role) && user instanceof User) {
                     User currentUser = (User) user;
                     if (order.getSellerID() != null &&
@@ -270,7 +299,6 @@ public class MainController {
                 if (canChangeStatus) {
                     order.setStatus(newStatus);
 
-                    
                     if ("Забран".equals(newStatus)) {
                         order.setCompletionDate(new Date());
                     }
@@ -1120,6 +1148,18 @@ public class MainController {
             allOrders.add(order);
         }
 
+        // Получаем все custom_frame_order записи
+        List<CustomFrameOrder> allCustomFrameOrders = new ArrayList<>();
+        for (CustomFrameOrder customOrder : customFrameOrderRepository.findAll()) {
+            allCustomFrameOrders.add(customOrder);
+        }
+
+        // Получаем все productionmaster записи
+        List<Productionmaster> allProductionMasters = new ArrayList<>();
+        for (Productionmaster master : productionmasterRepository.findAll()) {
+            allProductionMasters.add(master);
+        }
+
         List<Orders> orders = new ArrayList<>();
 
         if ("customer".equals(role) && user instanceof Customer) {
@@ -1171,16 +1211,53 @@ public class MainController {
                     userObj.getLastName();
             model.addAttribute("customerName", fullName);
 
-            
             if ("director".equals(role)) {
                 orders = allOrders;
 
-                
                 List<Reviews> allReviews = toList(reviewsRepository.findAll());
                 model.addAttribute("allReviews", allReviews);
                 model.addAttribute("hasReviews", !allReviews.isEmpty());
-            } else {
-                
+            }
+            else if ("productionmaster".equals(role)) {
+                // Находим productionmaster запись для текущего пользователя
+                Productionmaster currentMaster = null;
+                for (Productionmaster master : allProductionMasters) {
+                    if (master.getIdUser() != null && master.getIdUser().getId().equals(userObj.getId())) {
+                        currentMaster = master;
+                        break;
+                    }
+                }
+
+                if (currentMaster != null) {
+                    for (Orders order : allOrders) {
+                        boolean isMasterOrder = false;
+
+                        // Проверяем ProductionMasterID в основной таблице заказов
+                        if (order.getProductionMasterID() != null &&
+                                order.getProductionMasterID().getId().equals(currentMaster.getId())) {
+                            isMasterOrder = true;
+                        }
+                        // Также проверяем custom_frame_order
+                        else {
+                            for (CustomFrameOrder customOrder : allCustomFrameOrders) {
+                                if (customOrder.getOrderID() != null &&
+                                        customOrder.getOrderID().getId().equals(order.getId()) &&
+                                        customOrder.getProductionMasterID() != null &&
+                                        customOrder.getProductionMasterID().getId().equals(currentMaster.getId())) {
+                                    isMasterOrder = true;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (isMasterOrder) {
+                            orders.add(order);
+                        }
+                    }
+                }
+            }
+            // Для продавца - его заказы
+            else if ("seller".equals(role)) {
                 for (Orders order : allOrders) {
                     if (order.getSellerID() != null && order.getSellerID().getId().equals(userObj.getId())) {
                         orders.add(order);
@@ -1361,6 +1438,20 @@ public class MainController {
         return "otziv";
     }
 
+    @PostMapping("/delete-review/{id}")
+    public String deleteReview(@PathVariable("id") Integer id, HttpSession session) {
+        Object user = session.getAttribute("user");
+        String role = (String) session.getAttribute("role");
+
+        if (user == null || !"director".equals(role)) {
+            return "redirect:/api/formauto";
+        }
+
+        reviewsRepository.deleteById(id);
+
+        return "redirect:/api/formotziv";
+    }
+
     @GetMapping("/formreview")
     public String formReview(HttpSession session, Model model) {
         Object user = session.getAttribute("user");
@@ -1456,15 +1547,38 @@ public class MainController {
     }
 
     @GetMapping("/sales-report")
-    public String salesReport(Model model, HttpSession session) {
+    public String salesReport(HttpSession session, Model model) {
         Object user = session.getAttribute("user");
         String role = (String) session.getAttribute("role");
 
+        
+        model.addAttribute("user", user);
+        model.addAttribute("role", role);
+
+        if (user != null) {
+            String lastName = "";
+            String initials = "";
+            if (user instanceof Customer) {
+                Customer customer = (Customer) user;
+                lastName = customer.getLastName();
+                initials = customer.getFirstName().substring(0, 1) + "." +
+                        (customer.getMiddleName() != null ? customer.getMiddleName().substring(0, 1) + "." : "");
+            } else if (user instanceof User) {
+                User userObj = (User) user;
+                lastName = userObj.getLastName();
+                initials = userObj.getFirstName().substring(0, 1) + "." +
+                        (userObj.getMiddleName() != null ? userObj.getMiddleName().substring(0, 1) + "." : "");
+            }
+            model.addAttribute("userDisplayName", lastName + " " + initials);
+        }
+
+        
         if (user == null || !"director".equals(role)) {
             return "redirect:/api/formauto";
         }
 
         List<Orders> allOrders = toList(ordersRepository.findAll());
+        List<Sale> allSales = toList(saleRepository.findAll()); 
 
         double totalRevenue = 0;
         int totalOrders = allOrders.size();
@@ -1474,18 +1588,52 @@ public class MainController {
         int inProgressOrders = 0;
         int readyOrders = 0;
 
-        
         List<String> months = new ArrayList<>();
         List<Double> monthlyRevenues = new ArrayList<>();
         List<Integer> monthlyOrderCounts = new ArrayList<>();
 
-        for (Orders order : allOrders) {
-            
-            if (order.getTotalAmount() != null) {
-                totalRevenue += order.getTotalAmount();
+        
+        for (Sale sale : allSales) {
+            if (sale.getFinalAmount() != null) {
+                totalRevenue += sale.getFinalAmount();
+            } else if (sale.getTotalAmount() != null) {
+                
+                totalRevenue += sale.getTotalAmount();
             }
 
             
+            if (sale.getSaleDate() != null) {
+                String monthKey = new SimpleDateFormat("yyyy-MM").format(sale.getSaleDate());
+
+                boolean monthExists = false;
+                for (int i = 0; i < months.size(); i++) {
+                    if (months.get(i).equals(monthKey)) {
+                        double currentRevenue = monthlyRevenues.get(i);
+                        int currentCount = monthlyOrderCounts.get(i);
+
+                        
+                        double saleAmount = sale.getFinalAmount() != null ? sale.getFinalAmount() :
+                                (sale.getTotalAmount() != null ? sale.getTotalAmount() : 0.0);
+
+                        monthlyRevenues.set(i, currentRevenue + saleAmount);
+                        monthlyOrderCounts.set(i, currentCount + 1);
+                        monthExists = true;
+                        break;
+                    }
+                }
+
+                if (!monthExists) {
+                    months.add(monthKey);
+                    double saleAmount = sale.getFinalAmount() != null ? sale.getFinalAmount() :
+                            (sale.getTotalAmount() != null ? sale.getTotalAmount() : 0.0);
+                    monthlyRevenues.add(saleAmount);
+                    monthlyOrderCounts.add(1);
+                }
+            }
+        }
+
+        
+        for (Orders order : allOrders) {
             String status = order.getStatus();
             if ("Забран".equals(status)) {
                 completedOrders++;
@@ -1498,40 +1646,12 @@ public class MainController {
             } else if ("Готов".equals(status)) {
                 readyOrders++;
             }
-
-            
-            if (order.getOrderDate() != null) {
-                String monthKey = new SimpleDateFormat("yyyy-MM").format(order.getOrderDate());
-
-                
-                boolean monthExists = false;
-                for (int i = 0; i < months.size(); i++) {
-                    if (months.get(i).equals(monthKey)) {
-                        
-                        double currentRevenue = monthlyRevenues.get(i);
-                        int currentCount = monthlyOrderCounts.get(i);
-
-                        monthlyRevenues.set(i, currentRevenue + (order.getTotalAmount() != null ? order.getTotalAmount() : 0.0));
-                        monthlyOrderCounts.set(i, currentCount + 1);
-                        monthExists = true;
-                        break;
-                    }
-                }
-
-                
-                if (!monthExists) {
-                    months.add(monthKey);
-                    monthlyRevenues.add(order.getTotalAmount() != null ? order.getTotalAmount() : 0.0);
-                    monthlyOrderCounts.add(1);
-                }
-            }
         }
 
         
         for (int i = 0; i < months.size() - 1; i++) {
             for (int j = i + 1; j < months.size(); j++) {
                 if (months.get(i).compareTo(months.get(j)) > 0) {
-                    
                     String tempMonth = months.get(i);
                     months.set(i, months.get(j));
                     months.set(j, tempMonth);
@@ -1562,21 +1682,42 @@ public class MainController {
         return "sales-report";
     }
 
-
     @GetMapping("/orders-report")
-    public String ordersReport(Model model, HttpSession session) {
+    public String ordersReport(HttpSession session, Model model) {
         Object user = session.getAttribute("user");
         String role = (String) session.getAttribute("role");
 
+        
+        model.addAttribute("user", user);
+        model.addAttribute("role", role);
+
+        if (user != null) {
+            String lastName = "";
+            String initials = "";
+            if (user instanceof Customer) {
+                Customer customer = (Customer) user;
+                lastName = customer.getLastName();
+                initials = customer.getFirstName().substring(0, 1) + "." +
+                        (customer.getMiddleName() != null ? customer.getMiddleName().substring(0, 1) + "." : "");
+            } else if (user instanceof User) {
+                User userObj = (User) user;
+                lastName = userObj.getLastName();
+                initials = userObj.getFirstName().substring(0, 1) + "." +
+                        (userObj.getMiddleName() != null ? userObj.getMiddleName().substring(0, 1) + "." : "");
+            }
+            model.addAttribute("userDisplayName", lastName + " " + initials);
+        }
+
+        
         if (user == null || !"director".equals(role)) {
             return "redirect:/api/formauto";
         }
 
         List<Orders> allOrders = toList(ordersRepository.findAll());
-        
+
         List<String> statusNames = new ArrayList<>();
         List<Integer> statusCounts = new ArrayList<>();
-        
+
         List<String> masterNames = new ArrayList<>();
         List<Integer> masterOrderCounts = new ArrayList<>();
 
@@ -1596,7 +1737,7 @@ public class MainController {
                 statusNames.add(status);
                 statusCounts.add(1);
             }
-            
+
             if (order.getProductionMasterID() != null) {
                 User master = order.getProductionMasterID().getIdUser();
                 String masterName = master.getLastName() + " " + master.getFirstName().charAt(0) + ".";
@@ -1616,6 +1757,7 @@ public class MainController {
                 }
             }
         }
+
         
         for (int i = 0; i < statusCounts.size() - 1; i++) {
             for (int j = i + 1; j < statusCounts.size(); j++) {
@@ -1630,6 +1772,7 @@ public class MainController {
                 }
             }
         }
+
         
         for (int i = 0; i < masterOrderCounts.size() - 1; i++) {
             for (int j = i + 1; j < masterOrderCounts.size(); j++) {
@@ -1654,41 +1797,6 @@ public class MainController {
         return "orders-report";
     }
 
-    
-    @GetMapping("/reviews-management")
-    public String reviewsManagement(Model model, HttpSession session) {
-        Object user = session.getAttribute("user");
-        String role = (String) session.getAttribute("role");
-
-        if (user == null || !"director".equals(role)) {
-            return "redirect:/api/formauto";
-        }
-
-        List<Reviews> allReviews = toList(reviewsRepository.findAll());
-        model.addAttribute("allReviews", allReviews);
-
-        return "reviews-management"; 
-    }
-
-    
-    @PostMapping("/deleteAnyReview")
-    public String deleteAnyReview(@RequestParam("reviewId") Integer reviewId, HttpSession session) {
-        Object user = session.getAttribute("user");
-        String role = (String) session.getAttribute("role");
-
-        if (user == null || !"director".equals(role)) {
-            return "redirect:/api/formauto";
-        }
-
-        try {
-            reviewsRepository.deleteById(reviewId);
-            
-        } catch (Exception e) {
-            
-        }
-
-        return "redirect:/api/formspecial";
-    }
 
     @PostMapping("/deleteReview")
     public String deleteReview(HttpSession session, Model model) {

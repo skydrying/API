@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Message;
@@ -88,6 +89,9 @@ public class MyTelegramBot extends TelegramLongPollingBot {
         int currentSalesReportIndex;
         String currentReportType;
 
+        boolean rejectingOrder;
+        Long orderToRejectId;
+
         String lastMessageText;
 
         UserState() {
@@ -136,6 +140,9 @@ public class MyTelegramBot extends TelegramLongPollingBot {
             this.salesReport = new ArrayList<>();
             this.currentSalesReportIndex = 0;
             this.currentReportType = "";
+
+            this.rejectingOrder = false;
+            this.orderToRejectId = null;
 
             this.lastMessageText = null;
         }
@@ -782,6 +789,12 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                 Long orderId = Long.parseLong(orderIdStr);
                 confirmOrderCancellation(chatId, orderId, userState);
             }
+            else if (data.startsWith("reject_order_")) {
+                clearPreviousMenu(chatId);
+                String orderIdStr = data.substring("reject_order_".length());
+                Long orderId = Long.parseLong(orderIdStr);
+                rejectOrder(chatId, orderId, userState);
+            }
             else if ("back_to_orders".equals(data)) {
                 if ("ПОКУПАТЕЛЬ".equals(userState.userRole)) {
                     showMyOrdersWithNavigation(chatId, userState);
@@ -949,6 +962,29 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                 } else {
                     sendMessage(chatId, "❌ Доступ запрещен.");
                 }
+            }
+            else if (data.startsWith("reject_notification_")) {
+                clearPreviousMenu(chatId);
+                String orderIdStr = data.substring("reject_notification_".length());
+                Long orderId = Long.parseLong(orderIdStr);
+                handleNotificationRejection(chatId, orderId, userState);
+            }
+            else if (data.startsWith("frame_style_")) {
+                String style = data.substring("frame_style_".length());
+                userState.currentFrameOrder.setStyle(style);
+                handleFrameOrderStep(chatId, userState, "MOUNT_TYPE");
+            }
+            // Обработка выбора типа крепления
+            else if (data.startsWith("frame_mount_")) {
+                String mountType = data.substring("frame_mount_".length());
+                userState.currentFrameOrder.setMountType(mountType);
+                handleFrameOrderStep(chatId, userState, "GLASS_TYPE");
+            }
+            // Обработка выбора типа стекла
+            else if (data.startsWith("frame_glass_")) {
+                String glassType = data.substring("frame_glass_".length());
+                userState.currentFrameOrder.setGlassType(glassType);
+                handleFrameOrderStep(chatId, userState, "NOTES");
             }
 
             else if ("register".equals(data)) {
@@ -2065,9 +2101,11 @@ public class MyTelegramBot extends TelegramLongPollingBot {
 
     private void takeFreeOrder(Long chatId, Long orderId, UserState userState) {
         try {
-
+            
             Orders orderToTake = null;
-            for (Orders order : userState.freeOrders) {
+            List<Orders> allOrders = (List<Orders>) mainController.allOrders();
+
+            for (Orders order : allOrders) {
                 if (order.getId().longValue() == orderId.longValue()) {
                     orderToTake = order;
                     break;
@@ -2075,7 +2113,13 @@ public class MyTelegramBot extends TelegramLongPollingBot {
             }
 
             if (orderToTake == null) {
-                sendMessage(chatId, "❌ Заказ не найден.");
+                sendMessage(chatId, "❌ Заказ не найден или уже взят другим мастером.");
+                return;
+            }
+
+            
+            if (orderToTake.getProductionMasterID() != null) {
+                sendMessage(chatId, "❌ Этот заказ уже взят другим мастером.");
                 return;
             }
 
@@ -2085,19 +2129,26 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                 return;
             }
 
+            
             userState.selectedOrderId = orderId;
 
-
+            
+            if (userState.currentFrameOrder == null) {
+                userState.currentFrameOrder = new CustomFrameOrder();
+            }
             userState.currentFrameOrder.setProductionMasterID(productionMaster);
 
-
             userState.state = "WAITING_MATERIAL_ESTIMATE";
+
             sendMessage(chatId, "📏 Введите примерное количество материала для заказа №" + orderId + " (в метрах):\n\n" +
                     "Введите число, например: 2.5");
 
         } catch (Exception e) {
             System.err.println("Error in takeFreeOrder: " + e.getMessage());
             sendMessage(chatId, "❌ Ошибка при взятии заказа. Попробуйте позже.");
+            
+            userState.state = "AUTHENTICATED";
+            userState.selectedOrderId = null;
         }
     }
 
@@ -2135,8 +2186,9 @@ public class MyTelegramBot extends TelegramLongPollingBot {
             Iterable<CustomFrameOrder> customFrameOrders = mainController.allCustomFrameOrder();
             for (CustomFrameOrder customOrder : customFrameOrders) {
                 if (customOrder.getOrderID() != null && customOrder.getOrderID().getId().longValue() == orderId.longValue()) {
-
+                    
                     customOrder.setProductionMasterID(productionMaster);
+                    
                     if (materialEstimate != null) {
                         customOrder.setEstimatedMaterialUsage(BigDecimal.valueOf(materialEstimate));
                     }
@@ -2148,6 +2200,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
             }
         } catch (Exception e) {
             System.err.println("Error updating custom frame order with estimate: " + e.getMessage());
+            
         }
     }
 
@@ -2165,8 +2218,11 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                 return;
             }
 
+            
             Orders orderToUpdate = null;
-            for (Orders order : userState.freeOrders) {
+            List<Orders> allOrders = (List<Orders>) mainController.allOrders();
+
+            for (Orders order : allOrders) {
                 if (order.getId().longValue() == userState.selectedOrderId.longValue()) {
                     orderToUpdate = order;
                     break;
@@ -2180,6 +2236,14 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                 return;
             }
 
+            
+            if (orderToUpdate.getProductionMasterID() != null) {
+                sendMessage(chatId, "❌ Этот заказ уже взят другим мастером.");
+                userState.state = "AUTHENTICATED";
+                sendMainMenu(chatId, userState);
+                return;
+            }
+
             Productionmaster productionMaster = mainController.findProductionMasterByUserId(userState.userId);
             if (productionMaster == null) {
                 sendMessage(chatId, "❌ Ошибка: не найден мастер производства для вашего пользователя.");
@@ -2188,14 +2252,14 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                 return;
             }
 
-
+            
             orderToUpdate.setProductionMasterID(productionMaster);
             orderToUpdate.setTotalAmount(cost);
 
-
+            
             mainController.updateOrder(orderToUpdate);
 
-
+            
             updateCustomFrameOrderWithEstimate(userState.selectedOrderId, productionMaster, userState.currentMaterialEstimate);
 
             sendMessage(chatId, "✅ Заказ №" + userState.selectedOrderId + " успешно взят!\n" +
@@ -2203,7 +2267,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                     "📏 Примерное количество материала: " + userState.currentMaterialEstimate + " м.\n\n" +
                     "Теперь этот заказ отображается в ваших заказах.");
 
-
+            
             userState.state = "AUTHENTICATED";
             userState.selectedOrderId = null;
             userState.viewingFreeOrders = false;
@@ -2328,19 +2392,13 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                 userState.state = "FRAME_ORDER_COLOR";
                 break;
             case "STYLE":
-                sendMessage(chatId, "🎭 Шаг 5: Укажите стиль рамки:\n\n" +
-                        "Опишите стиль, например: \"классический\", \"модерн\", \"винтаж\", \"минимализм\"");
-                userState.state = "FRAME_ORDER_STYLE";
+                showStyleSelection(chatId, userState);
                 break;
             case "MOUNT_TYPE":
-                sendMessage(chatId, "📋 Шаг 6: Выберите тип крепления:\n\n" +
-                        "Введите тип крепления, например: \"подвесное\", \"настольное\", \"напольное\"");
-                userState.state = "FRAME_ORDER_MOUNT_TYPE";
+                showMountTypeSelection(chatId, userState);
                 break;
             case "GLASS_TYPE":
-                sendMessage(chatId, "🔍 Шаг 7: Укажите тип стекла:\n\n" +
-                        "Введите тип стекла, например: \"стандартное\", \"антибликовое\", \"без стекла\", \"оргстекло\"");
-                userState.state = "FRAME_ORDER_GLASS_TYPE";
+                showGlassTypeSelection(chatId, userState);
                 break;
             case "NOTES":
                 sendMessage(chatId, "📝 Шаг 8: Дополнительные примечания:\n\n" +
@@ -2355,7 +2413,6 @@ public class MyTelegramBot extends TelegramLongPollingBot {
     }
 
     private void handleFrameOrderInput(Long chatId, String messageText, UserState userState) {
-
         if (!"AUTHENTICATED".equals(userState.state) && !userState.state.startsWith("FRAME_ORDER_")) {
             sendMessage(chatId, "❌ Сессия истекла. Пожалуйста, начните заказ заново.");
             sendMainMenu(chatId, userState);
@@ -2393,23 +2450,13 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                     break;
 
                 case "FRAME_ORDER_COLOR":
-                    userState.currentFrameOrder.setColor(messageText.trim());
+                    String color = messageText.trim();
+                    if (color.isEmpty()) {
+                        sendMessage(chatId, "❌ Цвет не может быть пустым. Пожалуйста, введите цвет:");
+                        return;
+                    }
+                    userState.currentFrameOrder.setColor(color);
                     handleFrameOrderStep(chatId, userState, "STYLE");
-                    break;
-
-                case "FRAME_ORDER_STYLE":
-                    userState.currentFrameOrder.setStyle(messageText.trim());
-                    handleFrameOrderStep(chatId, userState, "MOUNT_TYPE");
-                    break;
-
-                case "FRAME_ORDER_MOUNT_TYPE":
-                    userState.currentFrameOrder.setMountType(messageText.trim());
-                    handleFrameOrderStep(chatId, userState, "GLASS_TYPE");
-                    break;
-
-                case "FRAME_ORDER_GLASS_TYPE":
-                    userState.currentFrameOrder.setGlassType(messageText.trim());
-                    handleFrameOrderStep(chatId, userState, "NOTES");
                     break;
 
                 case "FRAME_ORDER_NOTES":
@@ -2427,7 +2474,6 @@ public class MyTelegramBot extends TelegramLongPollingBot {
         } catch (Exception e) {
             System.err.println("Error handling frame order input: " + e.getMessage());
             sendMessage(chatId, "❌ Произошла ошибка. Попробуйте начать заказ заново.");
-
 
             userState.currentFrameOrder = new CustomFrameOrder();
             userState.currentFrameOrderStep = "";
@@ -2605,18 +2651,78 @@ public class MyTelegramBot extends TelegramLongPollingBot {
 
     private void notifyMastersAboutNewOrder(Orders newOrder) {
         try {
-
             Iterable<Productionmaster> productionMasters = mainController.allPM2();
 
             for (Productionmaster master : productionMasters) {
                 if (master.getIdUser() != null && master.getIdUser().getId() != null) {
                     Long masterUserId = master.getIdUser().getId().longValue();
-
-
                     Long masterChatId = findChatIdByUserId(masterUserId);
 
                     if (masterChatId != null) {
-                        sendOrderNotification(masterChatId, newOrder);
+                        String notificationText = "🔔 *НОВЫЙ ЗАКАЗ!*\n\n" +
+                                "🆔 Номер заказа: " + newOrder.getId() + "\n" +
+                                "📅 Дата заказа: " + new SimpleDateFormat("dd.MM.yyyy HH:mm").format(newOrder.getOrderDate()) + "\n" +
+                                "💰 Сумма: " + (newOrder.getTotalAmount() != null ? newOrder.getTotalAmount() : "Не указана") + " руб.\n" +
+                                "📊 Статус: " + (newOrder.getStatus() != null ? newOrder.getStatus() : "Новый") + "\n";
+
+                        if (newOrder.getCustomerID() != null) {
+                            Customer customer = newOrder.getCustomerID();
+                            String customerName = (customer.getLastName() != null ? customer.getLastName() : "") + " " +
+                                    (customer.getFirstName() != null ? customer.getFirstName() : "") + " " +
+                                    (customer.getMiddleName() != null ? customer.getMiddleName() : "");
+                            customerName = customerName.trim();
+                            if (!customerName.isEmpty()) {
+                                notificationText += "👤 Покупатель: " + customerName + "\n";
+                            }
+                        }
+                        try {
+                            Iterable<CustomFrameOrder> customFrameOrders = mainController.allCustomFrameOrder();
+                            for (CustomFrameOrder customOrder : customFrameOrders) {
+                                if (customOrder.getOrderID() != null && customOrder.getOrderID().getId().longValue() == newOrder.getId().longValue()) {
+                                    notificationText += "\n🖼️ *Информация о рамке:*\n";
+                                    notificationText += "• Ширина: " + customOrder.getWidth() + " мм\n";
+                                    notificationText += "• Высота: " + customOrder.getHeight() + " мм\n";
+                                    if (customOrder.getColor() != null) {
+                                        notificationText += "• Цвет: " + customOrder.getColor() + "\n";
+                                    }
+                                    if (customOrder.getStyle() != null) {
+                                        notificationText += "• Стиль: " + customOrder.getStyle() + "\n";
+                                    }
+                                    break;
+                                }
+                            }
+                        } catch (Exception e) {
+                            System.err.println("Error getting custom frame order details: " + e.getMessage());
+                        }
+
+                        InlineKeyboardMarkup keyboard = new InlineKeyboardMarkup();
+                        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+
+                        List<InlineKeyboardButton> viewRow = new ArrayList<>();
+                        InlineKeyboardButton viewButton = new InlineKeyboardButton();
+                        viewButton.setText("📋 Посмотреть заказ");
+                        viewButton.setCallbackData("view_order_" + newOrder.getId());
+                        viewRow.add(viewButton);
+
+                        List<InlineKeyboardButton> takeRow = new ArrayList<>();
+                        InlineKeyboardButton takeButton = new InlineKeyboardButton();
+                        takeButton.setText("✅ Взять заказ");
+                        takeButton.setCallbackData("take_free_order_" + newOrder.getId());
+                        takeRow.add(takeButton);
+
+                        List<InlineKeyboardButton> rejectRow = new ArrayList<>();
+                        InlineKeyboardButton rejectButton = new InlineKeyboardButton();
+                        rejectButton.setText("❌ Отказаться");
+                        rejectButton.setCallbackData("reject_notification_" + newOrder.getId());
+                        rejectRow.add(rejectButton);
+
+                        rows.add(viewRow);
+                        rows.add(takeRow);
+                        rows.add(rejectRow);
+
+                        keyboard.setKeyboard(rows);
+
+                        sendMessageWithInlineKeyboard(masterChatId, notificationText, keyboard);
                     }
                 }
             }
@@ -2643,7 +2749,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                     "💰 Сумма: " + (order.getTotalAmount() != null ? order.getTotalAmount() : "Не указана") + " руб.\n" +
                     "📊 Статус: " + (order.getStatus() != null ? order.getStatus() : "Новый") + "\n";
 
-
+            
             if (order.getCustomerID() != null) {
                 Customer customer = order.getCustomerID();
                 String customerName = (customer.getLastName() != null ? customer.getLastName() : "") + " " +
@@ -2655,7 +2761,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                 }
             }
 
-
+            
             try {
                 Iterable<CustomFrameOrder> customFrameOrders = mainController.allCustomFrameOrder();
                 for (CustomFrameOrder customOrder : customFrameOrders) {
@@ -2676,26 +2782,33 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                 System.err.println("Error getting custom frame order details: " + e.getMessage());
             }
 
-
             InlineKeyboardMarkup keyboard = new InlineKeyboardMarkup();
             List<List<InlineKeyboardButton>> rows = new ArrayList<>();
 
-
+            
             List<InlineKeyboardButton> viewRow = new ArrayList<>();
             InlineKeyboardButton viewButton = new InlineKeyboardButton();
             viewButton.setText("📋 Посмотреть заказ");
             viewButton.setCallbackData("view_order_" + order.getId());
             viewRow.add(viewButton);
 
-
+            
             List<InlineKeyboardButton> takeRow = new ArrayList<>();
             InlineKeyboardButton takeButton = new InlineKeyboardButton();
             takeButton.setText("✅ Взять заказ");
             takeButton.setCallbackData("take_free_order_" + order.getId());
             takeRow.add(takeButton);
 
+            
+            List<InlineKeyboardButton> rejectRow = new ArrayList<>();
+            InlineKeyboardButton rejectButton = new InlineKeyboardButton();
+            rejectButton.setText("❌ Отказаться");
+            rejectButton.setCallbackData("reject_notification_" + order.getId());
+            rejectRow.add(rejectButton);
+
             rows.add(viewRow);
             rows.add(takeRow);
+            rows.add(rejectRow);
 
             keyboard.setKeyboard(rows);
 
@@ -3991,6 +4104,16 @@ public class MyTelegramBot extends TelegramLongPollingBot {
             changeStatusButton.setText("🔄 Изменить статус");
             changeStatusButton.setCallbackData("change_current_order_status");
             actionRow.add(changeStatusButton);
+
+            if (!userState.currentOrders.isEmpty()) {
+                Orders currentOrder = userState.currentOrders.get(userState.currentOrderIndex);
+                if (canRejectOrder(currentOrder)) {
+                    InlineKeyboardButton rejectButton = new InlineKeyboardButton();
+                    rejectButton.setText("🚫 Отказаться от заказа");
+                    rejectButton.setCallbackData("reject_order_" + currentOrder.getId());
+                    actionRow.add(rejectButton);
+                }
+            }
         } else if ("ПОКУПАТЕЛЬ".equals(userState.userRole)) {
             Orders currentOrder = userState.currentOrders.get(userState.currentOrderIndex);
 
@@ -5241,6 +5364,263 @@ public class MyTelegramBot extends TelegramLongPollingBot {
             System.err.println("Error in generateMonthlySalesReport: " + e.getMessage());
             return "❌ Ошибка при формировании месячного отчета.";
         }
+    }
+
+    private boolean canRejectOrder(Orders order) {
+        if (order.getStatus() == null || order.getProductionMasterID() == null) {
+            return false;
+        }
+
+        String status = order.getStatus();
+        
+        return "Новый".equals(status) || "Выполняется".equals(status);
+    }
+
+    private void rejectOrder(Long chatId, Long orderId, UserState userState) {
+        try {
+            
+            Orders orderToReject = null;
+            List<Orders> allOrders = (List<Orders>) mainController.allOrders();
+
+            for (Orders order : allOrders) {
+                if (order.getId().longValue() == orderId.longValue()) {
+                    orderToReject = order;
+                    break;
+                }
+            }
+
+            if (orderToReject == null) {
+                sendMessage(chatId, "❌ Заказ не найден.");
+                return;
+            }
+
+            
+            if (orderToReject.getProductionMasterID() == null ||
+                    orderToReject.getProductionMasterID().getIdUser() == null ||
+                    orderToReject.getProductionMasterID().getIdUser().getId().longValue() != userState.userId.longValue()) {
+                sendMessage(chatId, "❌ Вы не можете отказаться от этого заказа.");
+                return;
+            }
+
+            if (!canRejectOrder(orderToReject)) {
+                sendMessage(chatId, "❌ Нельзя отказаться от заказа в текущем статусе: " +
+                        (orderToReject.getStatus() != null ? orderToReject.getStatus() : "Неизвестен"));
+                return;
+            }
+
+            String orderInfo = "Заказ №" + orderToReject.getId() + " (Сумма: " +
+                    (orderToReject.getTotalAmount() != null ? orderToReject.getTotalAmount() : "0") + " руб.)";
+
+            
+            orderToReject.setProductionMasterID(null);
+            orderToReject.setStatus("Новый");
+
+            
+            mainController.updateOrder(orderToReject);
+            updateCustomFrameOrderAfterRejection(orderId);
+
+            sendMessage(chatId, "✅ Вы отказались от заказа\n" + orderInfo +
+                    "\n\nЗаказ теперь доступен другим мастерам.");
+
+            
+            notifyMastersAboutFreedOrder(orderToReject, userState.userId);
+
+            
+            showProductionMasterOrdersWithNavigation(chatId, userState);
+
+        } catch (Exception e) {
+            System.err.println("Error rejecting order: " + e.getMessage());
+            sendMessage(chatId, "❌ Ошибка при отказе от заказа. Попробуйте позже.");
+        }
+    }
+
+    private void updateCustomFrameOrderAfterRejection(Long orderId) {
+        try {
+            Iterable<CustomFrameOrder> customFrameOrders = mainController.allCustomFrameOrder();
+            for (CustomFrameOrder customOrder : customFrameOrders) {
+                if (customOrder.getOrderID() != null && customOrder.getOrderID().getId().longValue() == orderId.longValue()) {
+                    
+                    customOrder.setProductionMasterID(null);
+                    
+                    customOrder.setEstimatedMaterialUsage(null);
+                    customOrder.setActualMaterialUsage(null);
+
+                    mainController.updateCustomFrameOrder(customOrder);
+                    System.out.println("Updated custom frame order after rejection: " + customOrder.getId());
+                    break;
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error updating custom frame order after rejection: " + e.getMessage());
+        }
+    }
+
+    private void notifyMastersAboutFreedOrder(Orders freedOrder, Long currentMasterUserId) {
+        try {
+            Iterable<Productionmaster> productionMasters = mainController.allPM2();
+
+            for (Productionmaster master : productionMasters) {
+                if (master.getIdUser() != null && master.getIdUser().getId() != null) {
+                    Long masterUserId = master.getIdUser().getId().longValue();
+
+                    
+                    if (masterUserId.equals(currentMasterUserId)) {
+                        continue;
+                    }
+
+                    Long masterChatId = findChatIdByUserId(masterUserId);
+
+                    if (masterChatId != null) {
+                        String notification = "🆓 *СВОБОДНЫЙ ЗАКАЗ!*\n\n" +
+                                "Доступен заказ №" + freedOrder.getId() + "\n" +
+                                "Сумма: " + (freedOrder.getTotalAmount() != null ? freedOrder.getTotalAmount() : "0") + " руб.\n" +
+                                "Статус: Новый";
+
+                        InlineKeyboardMarkup keyboard = new InlineKeyboardMarkup();
+                        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+
+                        List<InlineKeyboardButton> takeRow = new ArrayList<>();
+                        InlineKeyboardButton takeButton = new InlineKeyboardButton();
+                        takeButton.setText("✅ Взять заказ");
+                        takeButton.setCallbackData("take_free_order_" + freedOrder.getId());
+                        takeRow.add(takeButton);
+
+                        List<InlineKeyboardButton> rejectRow = new ArrayList<>();
+                        InlineKeyboardButton rejectButton = new InlineKeyboardButton();
+                        rejectButton.setText("❌ Отказаться");
+                        rejectButton.setCallbackData("reject_notification_" + freedOrder.getId());
+                        rejectRow.add(rejectButton);
+
+                        rows.add(takeRow);
+                        rows.add(rejectRow);
+
+                        keyboard.setKeyboard(rows);
+
+                        sendMessageWithInlineKeyboard(masterChatId, notification, keyboard);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error notifying masters about freed order: " + e.getMessage());
+        }
+    }
+
+    private void handleNotificationRejection(Long chatId, Long orderId, UserState userState) {
+        try {
+            
+            if (userState.lastMessageId != null) {
+                DeleteMessage deleteMessage = new DeleteMessage();
+                deleteMessage.setChatId(chatId.toString());
+                deleteMessage.setMessageId(userState.lastMessageId);
+                execute(deleteMessage);
+                userState.lastMessageId = null;
+            }
+
+            sendMessage(chatId, "❌ Вы отказались от уведомления о заказе №" + orderId +
+                    "\n\nЭто уведомление больше не будет вас беспокоить.");
+            sendMainMenu(chatId, userState);
+
+        } catch (Exception e) {
+            System.err.println("Error handling notification rejection: " + e.getMessage());
+            sendMessage(chatId, "❌ Ошибка при обработке отказа от уведомления.");
+            sendMainMenu(chatId, userState);
+        }
+    }
+
+    private void showStyleSelection(Long chatId, UserState userState) {
+        String text = "🎭 Шаг 5: Выберите стиль рамки:";
+
+        InlineKeyboardMarkup keyboard = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+
+        
+        String[] styles = {"классический", "модерн", "винтаж", "минимализм", "кантри"};
+
+        for (String style : styles) {
+            List<InlineKeyboardButton> row = new ArrayList<>();
+            InlineKeyboardButton styleButton = new InlineKeyboardButton();
+            styleButton.setText(style);
+            styleButton.setCallbackData("frame_style_" + style);
+            row.add(styleButton);
+            rows.add(row);
+        }
+
+        
+        List<InlineKeyboardButton> cancelRow = new ArrayList<>();
+        InlineKeyboardButton cancelButton = new InlineKeyboardButton();
+        cancelButton.setText("❌ Отменить заказ");
+        cancelButton.setCallbackData("cancel_frame_order");
+        cancelRow.add(cancelButton);
+        rows.add(cancelRow);
+
+        keyboard.setKeyboard(rows);
+        sendMessageWithInlineKeyboard(chatId, text, keyboard);
+
+        userState.state = "FRAME_ORDER_STYLE";
+    }
+
+    private void showMountTypeSelection(Long chatId, UserState userState) {
+        String text = "📋 Шаг 6: Выберите тип крепления:";
+
+        InlineKeyboardMarkup keyboard = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+
+        
+        String[] mountTypes = {"подвесное", "напольное", "настольное"};
+
+        for (String mountType : mountTypes) {
+            List<InlineKeyboardButton> row = new ArrayList<>();
+            InlineKeyboardButton mountButton = new InlineKeyboardButton();
+            mountButton.setText(mountType);
+            mountButton.setCallbackData("frame_mount_" + mountType);
+            row.add(mountButton);
+            rows.add(row);
+        }
+
+        
+        List<InlineKeyboardButton> cancelRow = new ArrayList<>();
+        InlineKeyboardButton cancelButton = new InlineKeyboardButton();
+        cancelButton.setText("❌ Отменить заказ");
+        cancelButton.setCallbackData("cancel_frame_order");
+        cancelRow.add(cancelButton);
+        rows.add(cancelRow);
+
+        keyboard.setKeyboard(rows);
+        sendMessageWithInlineKeyboard(chatId, text, keyboard);
+
+        userState.state = "FRAME_ORDER_MOUNT_TYPE";
+    }
+
+    private void showGlassTypeSelection(Long chatId, UserState userState) {
+        String text = "🔍 Шаг 7: Выберите тип стекла:";
+
+        InlineKeyboardMarkup keyboard = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+
+        
+        String[] glassTypes = {"стандартное", "антибликовое", "оргстекло", "без стекла"};
+
+        for (String glassType : glassTypes) {
+            List<InlineKeyboardButton> row = new ArrayList<>();
+            InlineKeyboardButton glassButton = new InlineKeyboardButton();
+            glassButton.setText(glassType);
+            glassButton.setCallbackData("frame_glass_" + glassType);
+            row.add(glassButton);
+            rows.add(row);
+        }
+
+        
+        List<InlineKeyboardButton> cancelRow = new ArrayList<>();
+        InlineKeyboardButton cancelButton = new InlineKeyboardButton();
+        cancelButton.setText("❌ Отменить заказ");
+        cancelButton.setCallbackData("cancel_frame_order");
+        cancelRow.add(cancelButton);
+        rows.add(cancelRow);
+
+        keyboard.setKeyboard(rows);
+        sendMessageWithInlineKeyboard(chatId, text, keyboard);
+
+        userState.state = "FRAME_ORDER_GLASS_TYPE";
     }
 
 }

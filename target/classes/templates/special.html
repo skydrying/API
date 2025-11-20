@@ -243,7 +243,6 @@
                 <div class="info-item" th:if="${role != 'customer'}">
                     <strong>Паспортные данные:</strong> <span
                         th:text="${passportData != null ? passportData : 'Не указано'}"></span>
-                    <!-- Скрыть в продакшене -->
                 </div>
                 <div class="info-item" th:if="${role != 'customer'}">
                     <strong>СНИЛС:</strong> <span th:text="${snils != null ? snils : 'Не указано'}"></span>
@@ -264,21 +263,24 @@
                 <div th:each="order : ${currentOrders}" class="order-item">
                     <div class="order-info">
                         <strong th:text="'Заказ #' + ${order.id}"></strong>
+                        <div th:if="${role == 'productionmaster' || role == 'seller'}" class="client-info">
+                            <small th:if="${order.customerID != null}">
+                                Клиент: <span th:text="${order.customerID.lastName} + ' ' + ${order.customerID.firstName}"></span>
+                            </small>
+                        </div>
                         <p th:text="${order.notes != null ? order.notes : 'Не указано'}"></p>
                         <small th:text="'Создан: ' + (${order.orderDate != null ? #dates.format(order.orderDate, 'dd.MM.yyyy') : 'Дата не указана'})"></small>
                     </div>
                     <div class="order-actions">
-    <span th:classappend="'order-status ' + ${order.status == 'Новый' ? 'status-new' :
-                          (order.status == 'Готов' ? 'status-ready' :
-                          (order.status == 'Выполняется' ? 'status-in-work' :
-                          'status-unknown'))}"
-          th:text="${order.status != null ? order.status : 'Неизвестно'}"></span>
+                <span th:classappend="'order-status ' + ${order.status == 'Новый' ? 'status-new' :
+                              (order.status == 'Готов' ? 'status-ready' :
+                              (order.status == 'Выполняется' ? 'status-in-work' :
+                              'status-unknown'))}"
+                      th:text="${order.status != null ? order.status : 'Неизвестно'}"></span>
 
-                        <!-- Единая форма изменения статуса -->
                         <form th:action="@{/api/changeOrderStatusSite}" method="post" class="status-form">
                             <input type="hidden" name="orderId" th:value="${order.id}">
 
-                            <!-- Для покупателя - только кнопка отмены -->
                             <button th:if="${role == 'customer' && order.status != 'Отменен' && order.status != 'Забран'}"
                                     type="submit" name="newStatus" value="Отменен" class="btn-cancel">
                                 <i class="fas fa-times"></i> Отменить
@@ -294,7 +296,7 @@
                                 </select>
                             </div>
 
-                            <div th:if="${role == 'productionmaster' && order.status != 'Забран' && order.status != 'Отменen'}"
+                            <div th:if="${role == 'productionmaster' && order.status != 'Забран' && order.status != 'Отменен'}"
                                  class="master-actions">
                                 <select name="newStatus" onchange="this.form.submit()" class="status-select">
                                     <option value="">Изменить статус</option>
@@ -329,14 +331,6 @@
                 </a>
                 <a th:if="${role == 'director'}" href="http://localhost:9090/api/orders-report" class="action-btn">
                     <i class="fas fa-clipboard-list"></i><br>Отчет по заказам
-                </a>
-                <a th:if="${role == 'director' && hasReviews}" href="http://localhost:9090/api/reviews-management"
-                   class="action-btn">
-                    <i class="fas fa-star-half-alt"></i><br>Выбор отзыва
-                </a>
-                <a th:if="${role == 'director' && hasReviews}" href="#" class="action-btn"
-                   onclick="document.getElementById('deleteAnyReviewForm').submit(); return false;">
-                    <i class="fas fa-trash-alt"></i><br>Удалить отзыв
                 </a>
             </div>
 
