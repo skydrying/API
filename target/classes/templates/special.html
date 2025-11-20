@@ -79,6 +79,25 @@
             color: white;
             text-decoration: none;
         }
+        /* Стили для кнопки взять заказ */
+        .btn-take {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn-take:hover {
+            background-color: #218838;
+            color: white;
+            text-decoration: none;
+        }
         .order-item {
             display: flex;
             justify-content: space-between;
@@ -254,6 +273,42 @@
             </div>
         </div>
 
+        <!-- Свободные заказы (только для мастера производства) -->
+        <div th:if="${role == 'productionmaster'}" class="dashboard-card">
+            <h3><i class="fas fa-clipboard-list"></i> Свободные заказы</h3>
+            <div class="orders-list">
+                <div th:if="${#lists.isEmpty(freeOrders)}" class="no-orders">
+                    <p>Нет свободных заказов</p>
+                </div>
+                <div th:each="order : ${freeOrders}" class="order-item">
+                    <div class="order-info">
+                        <strong th:text="'Заказ #' + ${order.id}"></strong>
+                        <div class="client-info">
+                            <small th:if="${order.customerID != null}">
+                                Клиент: <span th:text="${order.customerID.lastName} + ' ' + ${order.customerID.firstName}"></span>
+                            </small>
+                        </div>
+                        <p th:text="${order.notes != null ? order.notes : 'Не указано'}"></p>
+                        <small th:text="'Создан: ' + (${order.orderDate != null ? #dates.format(order.orderDate, 'dd.MM.yyyy') : 'Дата не указана'})"></small>
+                    </div>
+                    <div class="order-actions">
+                        <span th:classappend="'order-status ' + ${order.status == 'Новый' ? 'status-new' :
+                                      (order.status == 'Готов' ? 'status-ready' :
+                                      (order.status == 'Выполняется' ? 'status-in-work' :
+                                      'status-unknown'))}"
+                              th:text="${order.status != null ? order.status : 'Неизвестно'}"></span>
+
+                        <form th:action="@{/api/takeOrder}" method="post" class="take-order-form">
+                            <input type="hidden" name="orderId" th:value="${order.id}">
+                            <button type="submit" class="btn-take">
+                                <i class="fas fa-hand-paper"></i> Взять заказ
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="dashboard-card">
             <h3><i class="fas fa-list-alt"></i> Текущие заказы</h3>
             <div class="orders-list">
@@ -296,12 +351,14 @@
                                 </select>
                             </div>
 
-                            <div th:if="${role == 'productionmaster' && order.status != 'Забран' && order.status != 'Отменен'}"
+                            <div th:if="${role == 'productionmaster' && order.status != 'Забран' && order.status != 'Отменen'}"
                                  class="master-actions">
                                 <select name="newStatus" onchange="this.form.submit()" class="status-select">
                                     <option value="">Изменить статус</option>
                                     <option value="Готов">Готов</option>
-                                    <option value="Выполняется">В работе</option>
+                                    <option value="Выполняется">Выполняется</option>
+                                    <option value="Новый">Новый</option>
+                                    <option value="Отменен">Отменен</option>
                                 </select>
                             </div>
                         </form>
@@ -310,7 +367,8 @@
             </div>
         </div>
 
-        <div class="dashboard-card">
+        <!-- Быстрые действия (скрыты для мастера производства) -->
+        <div th:if="${role != 'productionmaster'}" class="dashboard-card">
             <h3><i class="fas fa-bolt"></i> Быстрые действия</h3>
             <div class="quick-actions">
                 <a th:if="${role == 'customer'}" href="http://localhost:9090/api/formorderspeople" class="action-btn">
@@ -390,4 +448,3 @@
 </script>
 </body>
 </html>
-

@@ -250,7 +250,7 @@ public class MainController {
                 else if ("productionmaster".equals(role) && user instanceof User) {
                     User currentUser = (User) user;
 
-                    // Находим productionmaster запись для текущего пользователя
+                    
                     Productionmaster currentMaster = null;
                     List<Productionmaster> allMasters = new ArrayList<>();
                     for (Productionmaster master : productionmasterRepository.findAll()) {
@@ -264,12 +264,12 @@ public class MainController {
                     }
 
                     if (currentMaster != null) {
-                        // Проверяем основную таблицу orders
+                        
                         if (order.getProductionMasterID() != null &&
                                 order.getProductionMasterID().getId().equals(currentMaster.getId())) {
                             canChangeStatus = true;
                         }
-                        // Проверяем таблицу custom_frame_order
+                        
                         else {
                             List<CustomFrameOrder> allCustomOrders = new ArrayList<>();
                             for (CustomFrameOrder customOrder : customFrameOrderRepository.findAll()) {
@@ -1148,13 +1148,13 @@ public class MainController {
             allOrders.add(order);
         }
 
-        // Получаем все custom_frame_order записи
+        
         List<CustomFrameOrder> allCustomFrameOrders = new ArrayList<>();
         for (CustomFrameOrder customOrder : customFrameOrderRepository.findAll()) {
             allCustomFrameOrders.add(customOrder);
         }
 
-        // Получаем все productionmaster записи
+        
         List<Productionmaster> allProductionMasters = new ArrayList<>();
         for (Productionmaster master : productionmasterRepository.findAll()) {
             allProductionMasters.add(master);
@@ -1219,7 +1219,7 @@ public class MainController {
                 model.addAttribute("hasReviews", !allReviews.isEmpty());
             }
             else if ("productionmaster".equals(role)) {
-                // Находим productionmaster запись для текущего пользователя
+                
                 Productionmaster currentMaster = null;
                 for (Productionmaster master : allProductionMasters) {
                     if (master.getIdUser() != null && master.getIdUser().getId().equals(userObj.getId())) {
@@ -1229,34 +1229,41 @@ public class MainController {
                 }
 
                 if (currentMaster != null) {
-                    for (Orders order : allOrders) {
-                        boolean isMasterOrder = false;
+                    System.out.println("Found production master with ID: " + currentMaster.getId() + " for user ID: " + userObj.getId());
 
-                        // Проверяем ProductionMasterID в основной таблице заказов
+                    
+                    for (Orders order : allOrders) {
                         if (order.getProductionMasterID() != null &&
                                 order.getProductionMasterID().getId().equals(currentMaster.getId())) {
-                            isMasterOrder = true;
+                            orders.add(order);
+                            System.out.println("Found order in orders table: " + order.getId());
                         }
-                        // Также проверяем custom_frame_order
-                        else {
-                            for (CustomFrameOrder customOrder : allCustomFrameOrders) {
+                    }
+
+                    
+                    for (CustomFrameOrder customOrder : allCustomFrameOrders) {
+                        if (customOrder.getProductionMasterID() != null &&
+                                customOrder.getProductionMasterID().getId().equals(currentMaster.getId())) {
+
+                            
+                            for (Orders order : allOrders) {
                                 if (customOrder.getOrderID() != null &&
                                         customOrder.getOrderID().getId().equals(order.getId()) &&
-                                        customOrder.getProductionMasterID() != null &&
-                                        customOrder.getProductionMasterID().getId().equals(currentMaster.getId())) {
-                                    isMasterOrder = true;
+                                        !orders.contains(order)) {
+                                    orders.add(order);
+                                    System.out.println("Found order in custom_frame_order: " + order.getId());
                                     break;
                                 }
                             }
                         }
-
-                        if (isMasterOrder) {
-                            orders.add(order);
-                        }
                     }
+                } else {
+                    System.out.println("No production master found for user ID: " + userObj.getId());
                 }
+
+                System.out.println("Total orders found for master: " + orders.size());
             }
-            // Для продавца - его заказы
+            
             else if ("seller".equals(role)) {
                 for (Orders order : allOrders) {
                     if (order.getSellerID() != null && order.getSellerID().getId().equals(userObj.getId())) {
