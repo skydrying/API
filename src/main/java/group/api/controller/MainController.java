@@ -1231,7 +1231,7 @@ public class MainController {
                 if (currentMaster != null) {
                     System.out.println("Found production master with ID: " + currentMaster.getId() + " for user ID: " + userObj.getId());
 
-                    // Собираем текущие заказы мастера
+                    
                     for (Orders order : allOrders) {
                         if (order.getProductionMasterID() != null &&
                                 order.getProductionMasterID().getId().equals(currentMaster.getId())) {
@@ -1256,7 +1256,7 @@ public class MainController {
                         }
                     }
 
-                    // Собираем свободные заказы (без ProductionMasterID)
+                    
                     for (Orders order : allOrders) {
                         if (order.getProductionMasterID() == null &&
                                 !"Забран".equals(order.getStatus()) &&
@@ -1265,10 +1265,10 @@ public class MainController {
                         }
                     }
 
-                    // Также добавляем custom_frame_orders без ProductionMasterID
+                    
                     for (CustomFrameOrder customOrder : allCustomFrameOrders) {
                         if (customOrder.getProductionMasterID() == null) {
-                            // Находим соответствующий заказ
+                            
                             for (Orders order : allOrders) {
                                 if (customOrder.getOrderID() != null &&
                                         customOrder.getOrderID().getId().equals(order.getId()) &&
@@ -1352,7 +1352,7 @@ public class MainController {
             if (order != null) {
                 User userObj = (User) user;
 
-                // Находим production master для этого пользователя
+                
                 Productionmaster currentMaster = null;
                 List<Productionmaster> allMasters = new ArrayList<>();
                 for (Productionmaster master : productionmasterRepository.findAll()) {
@@ -1366,12 +1366,12 @@ public class MainController {
                 }
 
                 if (currentMaster != null) {
-                    // Устанавливаем стоимость и назначаем мастера в orders
+                    
                     order.setTotalAmount(totalAmount);
                     order.setProductionMasterID(currentMaster);
                     ordersRepository.save(order);
 
-                    // Также назначаем в custom_frame_order если есть
+                    
                     List<CustomFrameOrder> allCustomOrders = new ArrayList<>();
                     for (CustomFrameOrder customOrder : customFrameOrderRepository.findAll()) {
                         allCustomOrders.add(customOrder);
@@ -1415,7 +1415,7 @@ public class MainController {
             if (order != null) {
                 User currentUser = (User) user;
 
-                // Находим мастера
+                
                 Productionmaster currentMaster = null;
                 List<Productionmaster> allMasters = new ArrayList<>();
                 for (Productionmaster master : productionmasterRepository.findAll()) {
@@ -1429,16 +1429,16 @@ public class MainController {
                 }
 
                 if (currentMaster != null) {
-                    // Проверяем, принадлежит ли заказ этому мастеру
+                    
                     boolean isOrderAssignedToMaster = false;
 
-                    // Проверяем в orders
+                    
                     if (order.getProductionMasterID() != null &&
                             order.getProductionMasterID().getId().equals(currentMaster.getId())) {
                         isOrderAssignedToMaster = true;
                     }
 
-                    // Проверяем в custom_frame_order
+                    
                     if (!isOrderAssignedToMaster) {
                         List<CustomFrameOrder> allCustomOrders = new ArrayList<>();
                         for (CustomFrameOrder customOrder : customFrameOrderRepository.findAll()) {
@@ -1457,12 +1457,12 @@ public class MainController {
                     }
 
                     if (isOrderAssignedToMaster) {
-                        // Очищаем ProductionMasterID, стоимость и ставим статус "Новый"
+                        
                         order.setProductionMasterID(null);
-                        order.setTotalAmount(null); // Очищаем стоимость
+                        order.setTotalAmount(null); 
                         order.setStatus("Новый");
 
-                        // Очищаем ProductionMasterID и EstimatedMaterialUsage в custom_frame_order
+                        
                         List<CustomFrameOrder> allCustomOrders = new ArrayList<>();
                         for (CustomFrameOrder customOrder : customFrameOrderRepository.findAll()) {
                             allCustomOrders.add(customOrder);
@@ -1472,8 +1472,8 @@ public class MainController {
                             if (customOrder.getOrderID() != null &&
                                     customOrder.getOrderID().getId().equals(order.getId())) {
                                 customOrder.setProductionMasterID(null);
-                                customOrder.setEstimatedMaterialUsage(null); // Очищаем расчетный расход
-                                customOrder.setActualMaterialUsage(null); // Очищаем фактический расход
+                                customOrder.setEstimatedMaterialUsage(null); 
+                                customOrder.setActualMaterialUsage(null); 
                                 customFrameOrderRepository.save(customOrder);
                                 break;
                             }
@@ -1504,12 +1504,9 @@ public class MainController {
         if (!"productionmaster".equals(role) || !(user instanceof User)) {
             return "redirect:/api/formauto";
         }
-
         Orders order = ordersRepository.findById(orderId).orElse(null);
         if (order != null) {
             model.addAttribute("order", order);
-
-            // Ищем custom_frame_order для этого заказа
             CustomFrameOrder customOrder = null;
             List<CustomFrameOrder> allCustomOrders = new ArrayList<>();
             for (CustomFrameOrder co : customFrameOrderRepository.findAll()) {
@@ -1523,7 +1520,6 @@ public class MainController {
             }
             model.addAttribute("customOrder", customOrder);
         }
-
         return "take-order-form";
     }
 
@@ -1531,16 +1527,12 @@ public class MainController {
     public String showCompleteOrderForm(@RequestParam("orderId") Integer orderId, Model model, HttpSession session) {
         Object user = session.getAttribute("user");
         String role = (String) session.getAttribute("role");
-
         if (!"productionmaster".equals(role) || !(user instanceof User)) {
             return "redirect:/api/formauto";
         }
-
         Orders order = ordersRepository.findById(orderId).orElse(null);
         if (order != null) {
             model.addAttribute("order", order);
-
-            // Ищем custom_frame_order для этого заказа
             CustomFrameOrder customOrder = null;
             List<CustomFrameOrder> allCustomOrders = new ArrayList<>();
             for (CustomFrameOrder co : customFrameOrderRepository.findAll()) {
@@ -1575,7 +1567,7 @@ public class MainController {
             if (order != null) {
                 User currentUser = (User) user;
 
-                // Находим мастера
+                
                 Productionmaster currentMaster = null;
                 List<Productionmaster> allMasters = new ArrayList<>();
                 for (Productionmaster master : productionmasterRepository.findAll()) {
@@ -1589,16 +1581,16 @@ public class MainController {
                 }
 
                 if (currentMaster != null) {
-                    // Проверяем, принадлежит ли заказ этому мастеру
+                    
                     boolean isOrderAssignedToMaster = false;
 
-                    // Проверяем в orders
+                    
                     if (order.getProductionMasterID() != null &&
                             order.getProductionMasterID().getId().equals(currentMaster.getId())) {
                         isOrderAssignedToMaster = true;
                     }
 
-                    // Проверяем в custom_frame_order
+                    
                     if (!isOrderAssignedToMaster) {
                         List<CustomFrameOrder> allCustomOrders = new ArrayList<>();
                         for (CustomFrameOrder customOrder : customFrameOrderRepository.findAll()) {
@@ -1617,7 +1609,7 @@ public class MainController {
                     }
 
                     if (isOrderAssignedToMaster) {
-                        // Обновляем ActualMaterialUsage в custom_frame_order
+                        
                         List<CustomFrameOrder> allCustomOrders = new ArrayList<>();
                         for (CustomFrameOrder customOrder : customFrameOrderRepository.findAll()) {
                             allCustomOrders.add(customOrder);
@@ -1632,7 +1624,7 @@ public class MainController {
                             }
                         }
 
-                        // Меняем статус заказа на "Готов"
+                        
                         order.setStatus("Готов");
                         ordersRepository.save(order);
 
