@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Взять заказ - Багетная мастерская</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link th:href="@{/css/styleauto.css}" rel="stylesheet">
+    <style>
+        .order-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #007bff;
+        }
+        .info-item {
+            margin-bottom: 8px;
+        }
+        .info-label {
+            font-weight: bold;
+            color: #333;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        .btn-primary {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        .btn-primary:hover {
+            background-color: #218838;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+            text-decoration: none;
+            display: inline-block;
+            margin-left: 10px;
+        }
+        .btn-secondary:hover {
+            background-color: #545b62;
+            color: white;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+<header class="header">
+    <div class="autocontainer">
+        <div class="header-content">
+            <div class="logo">
+                <i class="fas fa-palette logo-icon"></i>
+                <div class="logo-text">
+                    <h1>Багетная мастерская</h1>
+                    <p>Оформление картин и фотографий с 2005 года</p>
+                </div>
+            </div>
+            <nav class="navigation">
+                <ul>
+                    <li><a href="http://localhost:9090/api/formindex" class="nav-link">Главная</a></li>
+                    <li><a href="http://localhost:9090/api/formsvedeniy" class="nav-link">О нас</a></li>
+                    <li><a href="http://localhost:9090/api/formassortiment" class="nav-link">Ассортимент</a></li>
+                    <li><a href="http://localhost:9090/api/formyslygs" class="nav-link">Услуги</a></li>
+                    <li><a href="http://localhost:9090/api/formotziv" class="nav-link">Отзывы</a></li>
+                    <li><a href="http://localhost:9090/api/formcontact" class="nav-link">Информация</a></li>
+                    <li th:if="${user != null}">
+                        <span class="nav-link user-name" th:text="${userDisplayName}" onclick="redirectToPersonal()">Иванов И.И.</span>
+                        <form th:action="@{/api/logout}" method="post" style="display: inline;">
+                            <button type="submit" class="nav-link logout-btn">Выйти</button>
+                        </form>
+                    </li>
+                    <li th:if="${user == null}">
+                        <a href="http://localhost:9090/api/formauto" class="nav-link active">Войти</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+</header>
+
+<main class="container">
+    <div class="form-container">
+        <h2>Взять заказ в работу</h2>
+
+        <div th:if="${order != null}" class="order-info">
+            <h3>Информация о заказе</h3>
+            <div class="info-item">
+                <span class="info-label">Номер заказа:</span> <span th:text="'#' + ${order.id}"></span>
+            </div>
+            <div class="info-item" th:if="${order.customerID != null}">
+                <span class="info-label">Клиент:</span>
+                <span th:text="${order.customerID.lastName} + ' ' + ${order.customerID.firstName}"></span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Примечания:</span>
+                <span th:text="${order.notes != null ? order.notes : 'Не указано'}"></span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Дата создания:</span>
+                <span th:text="${order.orderDate != null ? #dates.format(order.orderDate, 'dd.MM.yyyy') : 'Не указана'}"></span>
+            </div>
+            <div class="info-item" th:if="${customOrder != null}">
+                <span class="info-label">Размеры:</span>
+                <span th:text="${customOrder.width} + ' x ' + ${customOrder.height} + ' см'"></span>
+            </div>
+        </div>
+
+        <div th:if="${successMessage}" class="alert alert-success" role="alert">
+            <span th:text="${successMessage}"></span>
+        </div>
+        <div th:if="${errorMessage}" class="alert alert-danger" role="alert">
+            <span th:text="${errorMessage}"></span>
+        </div>
+
+        <form th:action="@{/api/takeOrder}" method="POST">
+            <input type="hidden" name="orderId" th:value="${order.id}">
+
+            <div class="form-group">
+                <label for="totalAmount">Стоимость заказа (руб):</label>
+                <input type="number" id="totalAmount" name="totalAmount"
+                       step="1" min="0" required
+                       placeholder="Введите стоимость заказа (целое число)">
+            </div>
+
+            <div class="form-group">
+                <label for="estimatedMaterialUsage">Расчетный расход материалов (ед.):</label>
+                <input type="number" id="estimatedMaterialUsage" name="estimatedMaterialUsage"
+                       step="0.01" min="0" required
+                       placeholder="Введите расчетный расход материалов (например: 2.5)">
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <button type="submit" class="btn-primary">
+                    <i class="fas fa-hand-paper"></i> Взять заказ
+                </button>
+                <a href="http://localhost:9090/api/formspecial" class="btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Назад
+                </a>
+            </div>
+        </form>
+    </div>
+</main>
+
+<footer class="footer">
+    <div class="autocontainer">
+        <p>&copy; 2025 Багетная мастерская. Все права защищены.</p>
+    </div>
+</footer>
+
+<script>
+    function redirectToPersonal() {
+        window.location.href = 'http://localhost:9090/api/formspecial';
+    }
+</script>
+</body>
+</html>

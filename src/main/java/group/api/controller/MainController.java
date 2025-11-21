@@ -6,6 +6,7 @@ import group.api.repository.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -250,7 +251,6 @@ public class MainController {
                 else if ("productionmaster".equals(role) && user instanceof User) {
                     User currentUser = (User) user;
 
-                    
                     Productionmaster currentMaster = null;
                     List<Productionmaster> allMasters = new ArrayList<>();
                     for (Productionmaster master : productionmasterRepository.findAll()) {
@@ -264,12 +264,10 @@ public class MainController {
                     }
 
                     if (currentMaster != null) {
-                        
                         if (order.getProductionMasterID() != null &&
                                 order.getProductionMasterID().getId().equals(currentMaster.getId())) {
                             canChangeStatus = true;
                         }
-                        
                         else {
                             List<CustomFrameOrder> allCustomOrders = new ArrayList<>();
                             for (CustomFrameOrder customOrder : customFrameOrderRepository.findAll()) {
@@ -313,6 +311,7 @@ public class MainController {
             }
         } catch (Exception e) {
             System.err.println("Ошибка при изменении статуса заказа: " + e.getMessage());
+            e.printStackTrace();
         }
 
         return "redirect:/api/formspecial";
@@ -1161,6 +1160,7 @@ public class MainController {
         }
 
         List<Orders> orders = new ArrayList<>();
+        List<Orders> freeOrders = new ArrayList<>();
 
         if ("customer".equals(role) && user instanceof Customer) {
             Customer customer = (Customer) user;
@@ -1219,7 +1219,7 @@ public class MainController {
                 model.addAttribute("hasReviews", !allReviews.isEmpty());
             }
             else if ("productionmaster".equals(role)) {
-                
+
                 Productionmaster currentMaster = null;
                 for (Productionmaster master : allProductionMasters) {
                     if (master.getIdUser() != null && master.getIdUser().getId().equals(userObj.getId())) {
@@ -1231,7 +1231,7 @@ public class MainController {
                 if (currentMaster != null) {
                     System.out.println("Found production master with ID: " + currentMaster.getId() + " for user ID: " + userObj.getId());
 
-                    
+                    // Собираем текущие заказы мастера
                     for (Orders order : allOrders) {
                         if (order.getProductionMasterID() != null &&
                                 order.getProductionMasterID().getId().equals(currentMaster.getId())) {
@@ -1240,12 +1240,10 @@ public class MainController {
                         }
                     }
 
-                    
                     for (CustomFrameOrder customOrder : allCustomFrameOrders) {
                         if (customOrder.getProductionMasterID() != null &&
                                 customOrder.getProductionMasterID().getId().equals(currentMaster.getId())) {
 
-                            
                             for (Orders order : allOrders) {
                                 if (customOrder.getOrderID() != null &&
                                         customOrder.getOrderID().getId().equals(order.getId()) &&
@@ -1257,13 +1255,41 @@ public class MainController {
                             }
                         }
                     }
+
+                    // Собираем свободные заказы (без ProductionMasterID)
+                    for (Orders order : allOrders) {
+                        if (order.getProductionMasterID() == null &&
+                                !"Забран".equals(order.getStatus()) &&
+                                !"Отменен".equals(order.getStatus())) {
+                            freeOrders.add(order);
+                        }
+                    }
+
+                    // Также добавляем custom_frame_orders без ProductionMasterID
+                    for (CustomFrameOrder customOrder : allCustomFrameOrders) {
+                        if (customOrder.getProductionMasterID() == null) {
+                            // Находим соответствующий заказ
+                            for (Orders order : allOrders) {
+                                if (customOrder.getOrderID() != null &&
+                                        customOrder.getOrderID().getId().equals(order.getId()) &&
+                                        !freeOrders.contains(order) &&
+                                        !"Забран".equals(order.getStatus()) &&
+                                        !"Отменен".equals(order.getStatus())) {
+                                    freeOrders.add(order);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
                 } else {
                     System.out.println("No production master found for user ID: " + userObj.getId());
                 }
 
                 System.out.println("Total orders found for master: " + orders.size());
+                System.out.println("Total free orders found: " + freeOrders.size());
             }
-            
+
             else if ("seller".equals(role)) {
                 for (Orders order : allOrders) {
                     if (order.getSellerID() != null && order.getSellerID().getId().equals(userObj.getId())) {
@@ -1274,6 +1300,7 @@ public class MainController {
         }
 
         model.addAttribute("orders", orders);
+        model.addAttribute("freeOrders", freeOrders);
 
         List<Orders> currentOrders = new ArrayList<>();
         List<Orders> historyOrders = new ArrayList<>();
@@ -1306,6 +1333,319 @@ public class MainController {
         model.addAttribute("userDisplayName", lastName + " " + initials);
 
         return "special";
+    }
+
+    @PostMapping("/takeOrder")
+    public String takeOrder(@RequestParam("orderId") Integer orderId,
+                            @RequestParam("totalAmount") Integer totalAmount,
+                            @RequestParam("estimatedMaterialUsage") BigDecimal estimatedMaterialUsage,
+                            HttpSession session) {
+        Object user = session.getAttribute("user");
+        String role = (String) session.getAttribute("role");
+
+        if (!"productionmaster".equals(role) || !(user instanceof User)) {
+            return "redirect:/api/formauto";
+        }
+
+        try {
+            Orders order = ordersRepository.findById(orderId).orElse(null);
+            if (order != null) {
+                User userObj = (User) user;
+
+                // Находим production master для этого пользователя
+                Productionmaster currentMaster = null;
+                List<Productionmaster> allMasters = new ArrayList<>();
+                for (Productionmaster master : productionmasterRepository.findAll()) {
+                    allMasters.add(master);
+                }
+                for (Productionmaster master : allMasters) {
+                    if (master.getIdUser() != null && master.getIdUser().getId().equals(userObj.getId())) {
+                        currentMaster = master;
+                        break;
+                    }
+                }
+
+                if (currentMaster != null) {
+                    // Устанавливаем стоимость и назначаем мастера в orders
+                    order.setTotalAmount(totalAmount);
+                    order.setProductionMasterID(currentMaster);
+                    ordersRepository.save(order);
+
+                    // Также назначаем в custom_frame_order если есть
+                    List<CustomFrameOrder> allCustomOrders = new ArrayList<>();
+                    for (CustomFrameOrder customOrder : customFrameOrderRepository.findAll()) {
+                        allCustomOrders.add(customOrder);
+                    }
+
+                    for (CustomFrameOrder customOrder : allCustomOrders) {
+                        if (customOrder.getOrderID() != null && customOrder.getOrderID().getId().equals(orderId)) {
+                            customOrder.setProductionMasterID(currentMaster);
+                            customOrder.setEstimatedMaterialUsage(estimatedMaterialUsage);
+                            customFrameOrderRepository.save(customOrder);
+                            break;
+                        }
+                    }
+
+                    System.out.println("Заказ №" + orderId + " взят мастером " + currentMaster.getId() +
+                            ", стоимость: " + totalAmount +
+                            ", расчетный расход материалов: " + estimatedMaterialUsage);
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Ошибка при взятии заказа: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return "redirect:/api/formspecial";
+    }
+
+
+    @PostMapping("/refuseOrder")
+    public String refuseOrder(@RequestParam("orderId") Integer orderId, HttpSession session) {
+        Object user = session.getAttribute("user");
+        String role = (String) session.getAttribute("role");
+
+        if (!"productionmaster".equals(role) || !(user instanceof User)) {
+            return "redirect:/api/formauto";
+        }
+
+        try {
+            Orders order = ordersRepository.findById(orderId).orElse(null);
+
+            if (order != null) {
+                User currentUser = (User) user;
+
+                // Находим мастера
+                Productionmaster currentMaster = null;
+                List<Productionmaster> allMasters = new ArrayList<>();
+                for (Productionmaster master : productionmasterRepository.findAll()) {
+                    allMasters.add(master);
+                }
+                for (Productionmaster master : allMasters) {
+                    if (master.getIdUser() != null && master.getIdUser().getId().equals(currentUser.getId())) {
+                        currentMaster = master;
+                        break;
+                    }
+                }
+
+                if (currentMaster != null) {
+                    // Проверяем, принадлежит ли заказ этому мастеру
+                    boolean isOrderAssignedToMaster = false;
+
+                    // Проверяем в orders
+                    if (order.getProductionMasterID() != null &&
+                            order.getProductionMasterID().getId().equals(currentMaster.getId())) {
+                        isOrderAssignedToMaster = true;
+                    }
+
+                    // Проверяем в custom_frame_order
+                    if (!isOrderAssignedToMaster) {
+                        List<CustomFrameOrder> allCustomOrders = new ArrayList<>();
+                        for (CustomFrameOrder customOrder : customFrameOrderRepository.findAll()) {
+                            allCustomOrders.add(customOrder);
+                        }
+
+                        for (CustomFrameOrder customOrder : allCustomOrders) {
+                            if (customOrder.getOrderID() != null &&
+                                    customOrder.getOrderID().getId().equals(order.getId()) &&
+                                    customOrder.getProductionMasterID() != null &&
+                                    customOrder.getProductionMasterID().getId().equals(currentMaster.getId())) {
+                                isOrderAssignedToMaster = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (isOrderAssignedToMaster) {
+                        // Очищаем ProductionMasterID, стоимость и ставим статус "Новый"
+                        order.setProductionMasterID(null);
+                        order.setTotalAmount(null); // Очищаем стоимость
+                        order.setStatus("Новый");
+
+                        // Очищаем ProductionMasterID и EstimatedMaterialUsage в custom_frame_order
+                        List<CustomFrameOrder> allCustomOrders = new ArrayList<>();
+                        for (CustomFrameOrder customOrder : customFrameOrderRepository.findAll()) {
+                            allCustomOrders.add(customOrder);
+                        }
+
+                        for (CustomFrameOrder customOrder : allCustomOrders) {
+                            if (customOrder.getOrderID() != null &&
+                                    customOrder.getOrderID().getId().equals(order.getId())) {
+                                customOrder.setProductionMasterID(null);
+                                customOrder.setEstimatedMaterialUsage(null); // Очищаем расчетный расход
+                                customOrder.setActualMaterialUsage(null); // Очищаем фактический расход
+                                customFrameOrderRepository.save(customOrder);
+                                break;
+                            }
+                        }
+
+                        ordersRepository.save(order);
+                        System.out.println("Мастер отказался от заказа №" + orderId + ", статус изменен на 'Новый', данные очищены");
+                    } else {
+                        System.err.println("Мастер не может отказаться от заказа №" + orderId + " - заказ не назначен на него");
+                    }
+                }
+            } else {
+                System.err.println("Заказ с ID " + orderId + " не найден.");
+            }
+        } catch (Exception e) {
+            System.err.println("Ошибка при отказе от заказа: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return "redirect:/api/formspecial";
+    }
+
+    @GetMapping("/takeOrderForm")
+    public String showTakeOrderForm(@RequestParam("orderId") Integer orderId, Model model, HttpSession session) {
+        Object user = session.getAttribute("user");
+        String role = (String) session.getAttribute("role");
+
+        if (!"productionmaster".equals(role) || !(user instanceof User)) {
+            return "redirect:/api/formauto";
+        }
+
+        Orders order = ordersRepository.findById(orderId).orElse(null);
+        if (order != null) {
+            model.addAttribute("order", order);
+
+            // Ищем custom_frame_order для этого заказа
+            CustomFrameOrder customOrder = null;
+            List<CustomFrameOrder> allCustomOrders = new ArrayList<>();
+            for (CustomFrameOrder co : customFrameOrderRepository.findAll()) {
+                allCustomOrders.add(co);
+            }
+            for (CustomFrameOrder co : allCustomOrders) {
+                if (co.getOrderID() != null && co.getOrderID().getId().equals(orderId)) {
+                    customOrder = co;
+                    break;
+                }
+            }
+            model.addAttribute("customOrder", customOrder);
+        }
+
+        return "take-order-form";
+    }
+
+    @GetMapping("/completeOrderForm")
+    public String showCompleteOrderForm(@RequestParam("orderId") Integer orderId, Model model, HttpSession session) {
+        Object user = session.getAttribute("user");
+        String role = (String) session.getAttribute("role");
+
+        if (!"productionmaster".equals(role) || !(user instanceof User)) {
+            return "redirect:/api/formauto";
+        }
+
+        Orders order = ordersRepository.findById(orderId).orElse(null);
+        if (order != null) {
+            model.addAttribute("order", order);
+
+            // Ищем custom_frame_order для этого заказа
+            CustomFrameOrder customOrder = null;
+            List<CustomFrameOrder> allCustomOrders = new ArrayList<>();
+            for (CustomFrameOrder co : customFrameOrderRepository.findAll()) {
+                allCustomOrders.add(co);
+            }
+            for (CustomFrameOrder co : allCustomOrders) {
+                if (co.getOrderID() != null && co.getOrderID().getId().equals(orderId)) {
+                    customOrder = co;
+                    break;
+                }
+            }
+            model.addAttribute("customOrder", customOrder);
+        }
+
+        return "complete-order-form";
+    }
+
+    @PostMapping("/completeOrder")
+    public String completeOrder(@RequestParam("orderId") Integer orderId,
+                                @RequestParam("actualMaterialUsage") BigDecimal actualMaterialUsage,
+                                HttpSession session) {
+        Object user = session.getAttribute("user");
+        String role = (String) session.getAttribute("role");
+
+        if (!"productionmaster".equals(role) || !(user instanceof User)) {
+            return "redirect:/api/formauto";
+        }
+
+        try {
+            Orders order = ordersRepository.findById(orderId).orElse(null);
+
+            if (order != null) {
+                User currentUser = (User) user;
+
+                // Находим мастера
+                Productionmaster currentMaster = null;
+                List<Productionmaster> allMasters = new ArrayList<>();
+                for (Productionmaster master : productionmasterRepository.findAll()) {
+                    allMasters.add(master);
+                }
+                for (Productionmaster master : allMasters) {
+                    if (master.getIdUser() != null && master.getIdUser().getId().equals(currentUser.getId())) {
+                        currentMaster = master;
+                        break;
+                    }
+                }
+
+                if (currentMaster != null) {
+                    // Проверяем, принадлежит ли заказ этому мастеру
+                    boolean isOrderAssignedToMaster = false;
+
+                    // Проверяем в orders
+                    if (order.getProductionMasterID() != null &&
+                            order.getProductionMasterID().getId().equals(currentMaster.getId())) {
+                        isOrderAssignedToMaster = true;
+                    }
+
+                    // Проверяем в custom_frame_order
+                    if (!isOrderAssignedToMaster) {
+                        List<CustomFrameOrder> allCustomOrders = new ArrayList<>();
+                        for (CustomFrameOrder customOrder : customFrameOrderRepository.findAll()) {
+                            allCustomOrders.add(customOrder);
+                        }
+
+                        for (CustomFrameOrder customOrder : allCustomOrders) {
+                            if (customOrder.getOrderID() != null &&
+                                    customOrder.getOrderID().getId().equals(order.getId()) &&
+                                    customOrder.getProductionMasterID() != null &&
+                                    customOrder.getProductionMasterID().getId().equals(currentMaster.getId())) {
+                                isOrderAssignedToMaster = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (isOrderAssignedToMaster) {
+                        // Обновляем ActualMaterialUsage в custom_frame_order
+                        List<CustomFrameOrder> allCustomOrders = new ArrayList<>();
+                        for (CustomFrameOrder customOrder : customFrameOrderRepository.findAll()) {
+                            allCustomOrders.add(customOrder);
+                        }
+
+                        for (CustomFrameOrder customOrder : allCustomOrders) {
+                            if (customOrder.getOrderID() != null &&
+                                    customOrder.getOrderID().getId().equals(order.getId())) {
+                                customOrder.setActualMaterialUsage(actualMaterialUsage);
+                                customFrameOrderRepository.save(customOrder);
+                                break;
+                            }
+                        }
+
+                        // Меняем статус заказа на "Готов"
+                        order.setStatus("Готов");
+                        ordersRepository.save(order);
+
+                        System.out.println("Заказ №" + orderId + " завершен, фактический расход материалов: " + actualMaterialUsage);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Ошибка при завершении заказа: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return "redirect:/api/formspecial";
     }
 
     @PostMapping("/logout")

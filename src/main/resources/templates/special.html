@@ -273,7 +273,6 @@
             </div>
         </div>
 
-        <!-- Свободные заказы (только для мастера производства) -->
         <div th:if="${role == 'productionmaster'}" class="dashboard-card">
             <h3><i class="fas fa-clipboard-list"></i> Свободные заказы</h3>
             <div class="orders-list">
@@ -290,15 +289,16 @@
                         </div>
                         <p th:text="${order.notes != null ? order.notes : 'Не указано'}"></p>
                         <small th:text="'Создан: ' + (${order.orderDate != null ? #dates.format(order.orderDate, 'dd.MM.yyyy') : 'Дата не указана'})"></small>
+                        <small th:text="'Сумма: ' + (${order.totalAmount != null ? (order.totalAmount + ' ₽') : 'Не указана'})"></small>
                     </div>
                     <div class="order-actions">
-                        <span th:classappend="'order-status ' + ${order.status == 'Новый' ? 'status-new' :
+                <span th:classappend="'order-status ' + ${order.status == 'Новый' ? 'status-new' :
                                       (order.status == 'Готов' ? 'status-ready' :
                                       (order.status == 'Выполняется' ? 'status-in-work' :
                                       'status-unknown'))}"
-                              th:text="${order.status != null ? order.status : 'Неизвестно'}"></span>
+                      th:text="${order.status != null ? order.status : 'Неизвестно'}"></span>
 
-                        <form th:action="@{/api/takeOrder}" method="post" class="take-order-form">
+                        <form th:action="@{/api/takeOrderForm}" method="get" class="take-order-form">
                             <input type="hidden" name="orderId" th:value="${order.id}">
                             <button type="submit" class="btn-take">
                                 <i class="fas fa-hand-paper"></i> Взять заказ
@@ -328,9 +328,9 @@
                     </div>
                     <div class="order-actions">
                 <span th:classappend="'order-status ' + ${order.status == 'Новый' ? 'status-new' :
-                              (order.status == 'Готов' ? 'status-ready' :
-                              (order.status == 'Выполняется' ? 'status-in-work' :
-                              'status-unknown'))}"
+                          (order.status == 'Готов' ? 'status-ready' :
+                          (order.status == 'Выполняется' ? 'status-in-work' :
+                          'status-unknown'))}"
                       th:text="${order.status != null ? order.status : 'Неизвестно'}"></span>
 
                         <form th:action="@{/api/changeOrderStatusSite}" method="post" class="status-form">
@@ -351,15 +351,33 @@
                                 </select>
                             </div>
 
-                            <div th:if="${role == 'productionmaster' && order.status != 'Забран' && order.status != 'Отменen'}"
+                            <div th:if="${role == 'productionmaster' && order.status != 'Забран' && order.status != 'Отменен'}"
                                  class="master-actions">
-                                <select name="newStatus" onchange="this.form.submit()" class="status-select">
-                                    <option value="">Изменить статус</option>
-                                    <option value="Готов">Готов</option>
-                                    <option value="Выполняется">Выполняется</option>
-                                    <option value="Новый">Новый</option>
-                                    <option value="Отменен">Отменен</option>
-                                </select>
+                                <form th:action="@{/api/changeOrderStatusSite}" method="post" class="status-form">
+                                    <input type="hidden" name="orderId" th:value="${order.id}">
+                                    <select name="newStatus" onchange="this.form.submit()" class="status-select">
+                                        <option value="">Изменить статус</option>
+                                        <option value="Выполняется">Выполняется</option>
+                                        <option value="Новый">Новый</option>
+                                        <option value="Отменен">Отменен</option>
+                                    </select>
+                                </form>
+
+                                <form th:action="@{/api/completeOrderForm}" method="get" class="complete-form">
+                                    <input type="hidden" name="orderId" th:value="${order.id}">
+                                    <button type="submit" class="btn-take" style="margin-left: 10px;">
+                                        <i class="fas fa-check"></i> Завершить
+                                    </button>
+                                </form>
+
+                                <form th:action="@{/api/refuseOrder}" method="post" class="refuse-form">
+                                    <input type="hidden" name="orderId" th:value="${order.id}">
+                                    <button type="submit" class="btn-cancel"
+                                            style="margin-left: 10px;"
+                                            onclick="return confirm('Вы уверены, что хотите отказаться от этого заказа? Все введенные данные будут очищены')">
+                                        <i class="fas fa-hand-paper"></i> Отказаться
+                                    </button>
+                                </form>
                             </div>
                         </form>
                     </div>
@@ -367,7 +385,6 @@
             </div>
         </div>
 
-        <!-- Быстрые действия (скрыты для мастера производства) -->
         <div th:if="${role != 'productionmaster'}" class="dashboard-card">
             <h3><i class="fas fa-bolt"></i> Быстрые действия</h3>
             <div class="quick-actions">
