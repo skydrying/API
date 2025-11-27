@@ -1,9 +1,7 @@
 package group.api.forms;
 
-import group.api.entity.CustomFrameOrder;
 import group.api.entity.Customer;
-import group.api.entity.Orders;
-import group.api.entity.User;
+
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
@@ -14,8 +12,6 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Vector;
 
 import okhttp3.*;
@@ -40,7 +36,7 @@ public class Seller extends javax.swing.JFrame {
         initComponents();
         this.setLocationRelativeTo(null);
         this.setTitle("Панель Продавца");
-        this.setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/group/forms/images/icon.png")));
+        this.setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/group/icon.png")));
         allCustomers();
         allEmbroiderykit();
         allСonsumable();

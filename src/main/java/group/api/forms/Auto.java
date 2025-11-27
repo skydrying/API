@@ -7,15 +7,14 @@ import okhttp3.FormBody;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
-import org.json.JSONArray;
-import org.json.JSONObject;
+
 public class Auto extends javax.swing.JFrame {
 
     public Auto() {
         initComponents();
         this.setLocationRelativeTo(null);
         this.setTitle("Авторизация");
-        this.setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/group/forms/images/icon.png")));
+        this.setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/group/icon.png")));
     }
 
     @SuppressWarnings("unchecked")

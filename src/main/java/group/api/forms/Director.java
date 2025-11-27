@@ -6,7 +6,6 @@ import org.jdatepicker.impl.UtilDateModel;
 
 import java.awt.Toolkit;
 import java.io.IOException;
-import java.text.DateFormat;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -28,11 +27,11 @@ import org.jfree.chart.renderer.category.BarRenderer;
 import java.awt.Color;
 import java.awt.Font;
 import javax.swing.JDialog;
-import java.time.temporal.ChronoUnit;
+
 import org.jfree.chart.axis.NumberAxis;
-import java.text.NumberFormat;
+
 import java.time.format.DateTimeFormatter;
-import java.util.Locale;
+
 import org.jfree.data.general.DefaultPieDataset;
 
 public class Director extends javax.swing.JFrame {
@@ -43,7 +42,7 @@ public class Director extends javax.swing.JFrame {
         initComponents();
         this.setLocationRelativeTo(null);
         this.setTitle("Панель Директора");
-        this.setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/group/forms/images/icon.png")));
+        this.setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/group/icon.png")));
         DateForm();
     }
 
