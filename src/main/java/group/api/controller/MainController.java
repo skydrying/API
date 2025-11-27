@@ -100,6 +100,34 @@ public class MainController {
     Iterable<Consumable> allConsumable() {
         return consumableRepository.findAll();
     }
+    
+    @PutMapping("/updateConsumable")
+    public ResponseEntity<String> updateConsumable(@RequestBody Consumable consumable) {
+        try {
+            Optional<Consumable> existingConsumableOpt = consumableRepository.findById(consumable.getId());
+
+            if (existingConsumableOpt.isPresent()) {
+                Consumable existingConsumable = existingConsumableOpt.get();
+
+                existingConsumable.setName(consumable.getName());
+                existingConsumable.setDescription(consumable.getDescription());
+                existingConsumable.setPrice(consumable.getPrice());
+                existingConsumable.setStockQuantity(consumable.getStockQuantity());
+                existingConsumable.setUnit(consumable.getUnit());
+
+                consumableRepository.save(existingConsumable);
+
+                return ResponseEntity.ok("Расходный материал успешно обновлен");
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("Расходный материал с ID " + consumable.getId() + " не найден");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Ошибка при обновлении расходного материала: " + e.getMessage());
+        }
+    }
 
     @GetMapping("/getFrameMaterial")
     public @ResponseBody
@@ -150,6 +178,13 @@ public class MainController {
     @PutMapping("/frameMaterials")
     public FrameMaterial updateFrameMaterial(@RequestBody FrameMaterial frameMaterial) {
         return frameMaterialRepository.save(frameMaterial);
+    }
+    
+    @PutMapping("/updateFrameMaterial2")
+    @ResponseBody
+    public ResponseEntity<FrameMaterial> updateFrameMaterial2(@RequestBody FrameMaterial frameMaterial) {
+        FrameMaterial updated = frameMaterialRepository.save(frameMaterial);
+        return ResponseEntity.ok(updated);
     }
 
     @DeleteMapping("/frameMaterials/{id}")
@@ -202,6 +237,57 @@ public class MainController {
         return list;
     }
 
+    
+    @GetMapping("/getFrameOrders")
+    public @ResponseBody
+    List getFrameOrders() {
+        List list = new ArrayList();
+        for (CustomFrameOrder cfo : customFrameOrderRepository.findAll()) {
+            list.add(cfo.getProductionMasterID().getIdUser());
+        }
+        return list;
+    }
+    
+    @GetMapping("/getOrdersSimple")
+    public @ResponseBody
+    List<Map<String, Object>> allOrdersSimple() {
+        List<Map<String, Object>> list = new ArrayList<>();
+        for (Orders order : ordersRepository.findAll()) {
+            Map<String, Object> orderData = new HashMap<>();
+            orderData.put("id", order.getId());
+            orderData.put("orderDate", order.getOrderDate());
+            orderData.put("totalAmount", order.getTotalAmount());
+            orderData.put("status", order.getStatus());
+            orderData.put("dueDate", order.getDueDate());
+            orderData.put("completionDate", order.getCompletionDate());
+            orderData.put("notes", order.getNotes());
+
+            if (order.getCustomerID() != null) {
+                Map<String, Object> customer = new HashMap<>();
+                customer.put("lastName", order.getCustomerID().getLastName());
+                customer.put("firstName", order.getCustomerID().getFirstName());
+                orderData.put("customer", customer);
+            }
+
+            if (order.getProductionMasterID() != null && order.getProductionMasterID().getIdUser() != null) {
+                Map<String, Object> master = new HashMap<>();
+                master.put("lastName", order.getProductionMasterID().getIdUser().getLastName());
+                master.put("firstName", order.getProductionMasterID().getIdUser().getFirstName());
+                orderData.put("master", master);
+            }
+
+            if (order.getSellerID() != null) {
+                Map<String, Object> seller = new HashMap<>();
+                seller.put("lastName", order.getSellerID().getLastName());
+                seller.put("firstName", order.getSellerID().getFirstName());
+                orderData.put("seller", seller);
+            }
+
+            list.add(orderData);
+        }
+        return list;
+    }
+
     @PostMapping("/changeOrderStatus")
     public void changeOrderStatus(Integer orderId, String newStatus) {
         try {
@@ -220,6 +306,26 @@ public class MainController {
         }
     }
 
+    @PostMapping("/changeOrderStatusDesktop")
+    public ResponseEntity<String> changeOrderStatusDesktop(Integer orderId, String newStatus) {
+        try {
+            Orders order = ordersRepository.findById(orderId).orElse(null);
+
+            if (order != null) {
+                order.setStatus(newStatus);
+                ordersRepository.save(order);
+                System.out.println("Статус заказа №" + orderId + " изменен на: " + newStatus);
+                return ResponseEntity.ok("Статус изменен успешно");
+            } else {
+                System.err.println("Заказ с ID " + orderId + " не найден.");
+                return ResponseEntity.badRequest().body("Заказ не найден");
+            }
+        } catch (Exception e) {
+            System.err.println("Ошибка при изменении статуса заказа: " + e.getMessage());
+            return ResponseEntity.internalServerError().body("Ошибка сервера");
+        }
+    }
+    
     @PostMapping("/changeOrderStatusSite")
     public String changeOrderStatus(@RequestParam("orderId") Integer orderId,
                                     @RequestParam("newStatus") String newStatus,
@@ -321,6 +427,30 @@ public class MainController {
     public @ResponseBody
     Iterable<Sale> allSales() {
         return saleRepository.findAll();
+    }
+    
+    @PostMapping("/addSale")
+    public @ResponseBody
+    ResponseEntity<Integer> addSale(
+            @RequestParam(name = "CustomerID") Integer customerId,
+            @RequestParam(name = "SellerID") Integer sellerId,
+            @RequestParam long SaleDate,
+            @RequestParam(name = "TotalAmount") Integer totalAmount,
+            @RequestParam(name = "DiscountAmount") Integer discountAmount,
+            @RequestParam(name = "FinalAmount") Integer finalAmount) throws IOException {
+
+        Date saleDateObj = new Date(SaleDate);
+        Sale sale = new Sale();
+        sale.setCustomerID(customerRepository.findById(customerId).orElse(null));
+        sale.setSellerID(userRepository.findById(sellerId).orElse(null));
+        sale.setSaleDate(saleDateObj);
+        sale.setTotalAmount(totalAmount);
+        sale.setDiscountAmount(discountAmount);
+        sale.setFinalAmount(finalAmount);
+
+        Sale savedSale = saleRepository.save(sale);
+        Integer saleId = savedSale.getId();
+        return ResponseEntity.ok(saleId);
     }
 
     @PostMapping("/getAutarization")
@@ -599,7 +729,9 @@ public class MainController {
             @RequestParam(name = "Phone") String phone,
             @RequestParam(name = "Email") String email,
             @RequestParam(name = "Discount") String discount,
-            @RequestParam(name = "TotalPurchases") String totalPurchases) throws IOException {
+            @RequestParam(name = "TotalPurchases") String totalPurchases,
+            @RequestParam(name = "Logins") String logins,
+            @RequestParam(name = "Passwords") String passwords) throws IOException {
 
         Customer customer = new Customer();
         customer.setLastName(lastname);
@@ -609,6 +741,8 @@ public class MainController {
         customer.setEmail(email);
         customer.setDiscount(discount);
         customer.setTotalPurchases(totalPurchases);
+        customer.setLogins(logins);
+        customer.setPasswords(passwords);
 
         Customer savedCustomer = customerRepository.save(customer);
         Integer customerId = savedCustomer.getId();
@@ -749,7 +883,9 @@ public class MainController {
             @RequestParam(name = "Phone") String phone,
             @RequestParam(name = "Email") String email,
             @RequestParam(name = "Discount") String discount,
-            @RequestParam(name = "TotalPurchases") String totalPurchases) throws IOException {
+            @RequestParam(name = "TotalPurchases") String totalPurchases,
+            @RequestParam(name = "Logins") String logins,
+            @RequestParam(name = "Passwords") String passwords) throws IOException {
 
         Customer customer = customerRepository.findById(Integer.parseInt(id)).orElse(null);
         if (customer == null) {
@@ -763,6 +899,8 @@ public class MainController {
         customer.setEmail(email);
         customer.setDiscount(discount);
         customer.setTotalPurchases(totalPurchases);
+        customer.setLogins(logins);
+        customer.setPasswords(passwords);
 
         Customer updatedCustomer = customerRepository.save(customer);
         Integer customerId = updatedCustomer.getId();
@@ -949,7 +1087,152 @@ public class MainController {
             return false;
         }
     }
+    
+    @PostMapping("/addFrameComponent")
+    public @ResponseBody
+    ResponseEntity<Integer> addFrameComponent(
+            @RequestParam(name = "Name") String name,
+            @RequestParam(name = "Description") String description,
+            @RequestParam(name = "Price") String price,
+            @RequestParam(name = "StockQuantity") String stockQuantity,
+            @RequestParam(name = "Type") String type) {
 
+        FrameComponent frameComponent = new FrameComponent();
+        frameComponent.setName(name);
+        frameComponent.setDescription(description);
+        frameComponent.setPrice(Integer.parseInt(price));
+        frameComponent.setStockQuantity(Integer.parseInt(stockQuantity));
+        frameComponent.setType(type);
+
+        FrameComponent savedComponent = frameComponentRepository.save(frameComponent);
+        Integer componentId = savedComponent.getId();
+        return ResponseEntity.ok(componentId);
+    }
+
+    @PostMapping("/updateFrameComponent")
+    public @ResponseBody
+    ResponseEntity<Integer> updateFrameComponent(
+            @RequestParam(name = "id") String id,
+            @RequestParam(name = "Name") String name,
+            @RequestParam(name = "Description") String description,
+            @RequestParam(name = "Price") String price,
+            @RequestParam(name = "StockQuantity") String stockQuantity,
+            @RequestParam(name = "Type") String type) {
+
+        FrameComponent frameComponent = frameComponentRepository.findById(Integer.parseInt(id)).orElse(null);
+        if (frameComponent == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        frameComponent.setName(name);
+        frameComponent.setDescription(description);
+        frameComponent.setPrice(Integer.parseInt(price));
+        frameComponent.setStockQuantity(Integer.parseInt(stockQuantity));
+        frameComponent.setType(type);
+
+        FrameComponent updatedComponent = frameComponentRepository.save(frameComponent);
+        Integer componentId = updatedComponent.getId();
+
+        return ResponseEntity.ok(componentId);
+    }
+
+    @PostMapping("/deleteFrameComponent")
+    public @ResponseBody
+    boolean deleteFrameComponent(@RequestParam(name = "id") String id) {
+        frameComponentRepository.deleteById(Integer.parseInt(id));
+        return true;
+    }
+    
+    @PostMapping("/addFrameMaterial")
+    public @ResponseBody
+    ResponseEntity<Integer> addFrameMaterial(
+            @RequestParam(name = "Name") String name,
+            @RequestParam(name = "Description") String description,
+            @RequestParam(name = "PricePerMeter") String pricePerMeter,
+            @RequestParam(name = "StockQuantity") String stockQuantity,
+            @RequestParam(name = "Color") String color,
+            @RequestParam(name = "Width") String width) {
+
+        FrameMaterial frameMaterial = new FrameMaterial();
+        frameMaterial.setName(name);
+        frameMaterial.setDescription(description);
+        frameMaterial.setPricePerMeter(Integer.parseInt(pricePerMeter));
+        frameMaterial.setStockQuantity(Integer.parseInt(stockQuantity));
+        frameMaterial.setColor(color);
+        frameMaterial.setWidth(Integer.parseInt(width));
+
+        FrameMaterial savedMaterial = frameMaterialRepository.save(frameMaterial);
+        Integer materialId = savedMaterial.getId();
+        return ResponseEntity.ok(materialId);
+    }
+
+    @PostMapping("/updateFrameMaterial")
+    public @ResponseBody
+    ResponseEntity<Integer> updateFrameMaterial(
+            @RequestParam(name = "id") String id,
+            @RequestParam(name = "Name") String name,
+            @RequestParam(name = "Description") String description,
+            @RequestParam(name = "PricePerMeter") String pricePerMeter,
+            @RequestParam(name = "StockQuantity") String stockQuantity,
+            @RequestParam(name = "Color") String color,
+            @RequestParam(name = "Width") String width) {
+
+        FrameMaterial frameMaterial = frameMaterialRepository.findById(Integer.parseInt(id)).orElse(null);
+        if (frameMaterial == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        frameMaterial.setName(name);
+        frameMaterial.setDescription(description);
+        frameMaterial.setPricePerMeter(Integer.parseInt(pricePerMeter));
+        frameMaterial.setStockQuantity(Integer.parseInt(stockQuantity));
+        frameMaterial.setColor(color);
+        frameMaterial.setWidth(Integer.parseInt(width));
+
+        FrameMaterial updatedMaterial = frameMaterialRepository.save(frameMaterial);
+        Integer materialId = updatedMaterial.getId();
+
+        return ResponseEntity.ok(materialId);
+    }
+
+    @PostMapping("/deleteFrameMaterial")
+    public @ResponseBody
+    boolean deleteFrameMaterial(@RequestParam(name = "id") String id) {
+        frameMaterialRepository.deleteById(Integer.parseInt(id));
+        return true;
+    }
+
+    @PostMapping("/updateCustomFrameOrderMaterialUsage")
+    public @ResponseBody
+    ResponseEntity<Integer> updateCustomFrameOrderMaterialUsage(
+            @RequestParam(name = "id") String id,
+            @RequestParam(name = "EstimatedMaterialUsage", required = false) String estimatedMaterialUsage,
+            @RequestParam(name = "ActualMaterialUsage", required = false) String actualMaterialUsage) {
+
+        CustomFrameOrder customFrameOrder = customFrameOrderRepository.findById(Integer.parseInt(id)).orElse(null);
+        if (customFrameOrder == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        // Обновляем только поля расхода материала
+        if (estimatedMaterialUsage != null && !estimatedMaterialUsage.isEmpty()) {
+            customFrameOrder.setEstimatedMaterialUsage(new BigDecimal(estimatedMaterialUsage));
+        } else {
+            customFrameOrder.setEstimatedMaterialUsage(null);
+        }
+
+        if (actualMaterialUsage != null && !actualMaterialUsage.isEmpty()) {
+            customFrameOrder.setActualMaterialUsage(new BigDecimal(actualMaterialUsage));
+        } else {
+            customFrameOrder.setActualMaterialUsage(null);
+        }
+
+        CustomFrameOrder updatedCustomFrameOrder = customFrameOrderRepository.save(customFrameOrder);
+        Integer customFrameOrderId = updatedCustomFrameOrder.getId();
+
+        return ResponseEntity.ok(customFrameOrderId);
+    }
+    
     @PostMapping("/addEmbroideryKit")
     public @ResponseBody
     ResponseEntity<Integer> addEmbroideryKit(
@@ -1065,12 +1348,183 @@ public class MainController {
         Integer consumableId = updatedConsumable.getId();
         return ResponseEntity.ok(consumableId);
     }
+    
+    @PutMapping("/updateEmbroideryKitSale")
+    public ResponseEntity<String> updateEmbroideryKitSale(@RequestBody EmbroideryKit embroideryKit) {
+        try {
+            Optional<EmbroideryKit> existingKitOpt = embroideryKitRepository.findById(embroideryKit.getId());
+
+            if (existingKitOpt.isPresent()) {
+                EmbroideryKit existingKit = existingKitOpt.get();
+
+                existingKit.setName(embroideryKit.getName());
+                existingKit.setDescription(embroideryKit.getDescription());
+                existingKit.setPrice(embroideryKit.getPrice());
+                existingKit.setStockQuantity(embroideryKit.getStockQuantity());
+                existingKit.setImage(embroideryKit.getImage());
+
+                embroideryKitRepository.save(existingKit);
+
+                return ResponseEntity.ok("Набор для вышивания успешно обновлен");
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("Набор для вышивания с ID " + embroideryKit.getId() + " не найден");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Ошибка при обновлении набора для вышивания: " + e.getMessage());
+        }
+    }
 
     @PostMapping("/deleteConsumable")
     public @ResponseBody
     boolean deleteСonsumable(@RequestParam(name = "id") String id) {
         consumableRepository.deleteById(Integer.parseInt(id));
         return true;
+    }
+    
+    @PostMapping("/addOrder")
+    public @ResponseBody
+    ResponseEntity<Integer> addOrder(
+            @RequestParam(name = "CustomerID") Integer customerId,
+            @RequestParam(name = "SellerID") Integer sellerId,
+            @RequestParam(name = "ProductionMasterID", required = false) Integer productionMasterId,
+            @RequestParam(name = "OrderDate") String orderDate,
+            @RequestParam(name = "TotalAmount") Integer totalAmount,
+            @RequestParam(name = "Status") String status,
+            @RequestParam(name = "DueDate") String dueDate,
+            @RequestParam(name = "CompletionDate") String completionDate,
+            @RequestParam(name = "Notes") String notes) {
+
+        Orders order = new Orders();
+        Customer persistentCustomer = null;
+        if (customerId != null) {
+            persistentCustomer = customerRepository.findById(customerId).orElse(null);
+            if (persistentCustomer == null) {
+                return ResponseEntity.badRequest().build();
+            }
+            order.setCustomerID(persistentCustomer);
+        }
+        
+        User persistentSeller = null;
+        if (sellerId != null) {
+            persistentSeller = userRepository.findById(sellerId).orElse(null);
+            if (persistentSeller == null) {
+                return ResponseEntity.badRequest().build();
+            }
+            order.setSellerID(persistentSeller);
+        }
+
+        Productionmaster persistentProductionMaster = null;
+        if (productionMasterId != null && productionMasterId != 0) { 
+            persistentProductionMaster = productionmasterRepository.findById(productionMasterId).orElse(null);
+            if (persistentProductionMaster == null) {
+                return ResponseEntity.badRequest().build(); 
+            }
+        }
+        // Если productionMasterId == null или == 0, persistentProductionMaster остаётся null
+        order.setProductionMasterID(persistentProductionMaster);  // Устанавливается null, если опционально
+
+        // Парсинг дат
+        DateFormat format = new java.text.SimpleDateFormat("yyyy-MM-dd");
+        Date orderDateParsed = null;
+        Date dueDateParsed = null;
+        Date completionDateParsed = null;
+
+        try {
+            if (orderDate != null && !orderDate.isEmpty()) {
+                orderDateParsed = format.parse(orderDate);
+            }
+        } catch (ParseException ex) {
+            Logger.getLogger(MainController.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        try {
+            if (dueDate != null && !dueDate.isEmpty()) {
+                dueDateParsed = format.parse(dueDate);
+            }
+        } catch (ParseException ex) {
+            Logger.getLogger(MainController.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        try {
+            if (completionDate != null && !completionDate.isEmpty()) {
+                completionDateParsed = format.parse(completionDate);
+            }
+        } catch (ParseException ex) {
+            Logger.getLogger(MainController.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        order.setOrderDate(orderDateParsed);
+        order.setDueDate(dueDateParsed);
+        order.setCompletionDate(completionDateParsed);
+        order.setTotalAmount(totalAmount);  // Теперь Integer — должно работать
+        order.setStatus(status);
+        order.setNotes(notes);
+
+        Orders savedOrder = ordersRepository.save(order);
+        Integer orderId = savedOrder.getId();
+        return ResponseEntity.ok(orderId);
+    }
+
+    @PostMapping("/addCustomFrameOrder")
+    public @ResponseBody
+    ResponseEntity<Integer> addCustomFrameOrder(
+            @RequestParam(name = "OrderID") Integer orderId,
+            @RequestParam(name = "Width") Integer width,
+            @RequestParam(name = "Height") Integer height,
+            @RequestParam(name = "FrameMaterialID") Integer frameMaterialId,
+            @RequestParam(name = "Color") String color,
+            @RequestParam(name = "Style") String style,
+            @RequestParam(name = "MountType") String mountType,
+            @RequestParam(name = "GlassType") String glassType,
+            @RequestParam(name = "Notes") String notes,
+            @RequestParam(name = "ProductionMasterID", required = false) Integer productionMasterId, // Сделано опциональным
+            @RequestParam(name = "EstimatedMaterialUsage") BigDecimal estimatedMaterialUsage,
+            @RequestParam(name = "ActualMaterialUsage") BigDecimal actualMaterialUsage) {
+
+        CustomFrameOrder customFrameOrder = new CustomFrameOrder();
+
+        Orders persistentOrder = null;
+        if (orderId != null) {
+            persistentOrder = ordersRepository.findById(orderId).orElse(null);
+            if (persistentOrder == null) {
+                return ResponseEntity.badRequest().build();
+            }
+            customFrameOrder.setOrderID(persistentOrder);
+        }
+
+        Productionmaster persistentProductionMaster = null;
+        if (productionMasterId != null && productionMasterId != 0) { 
+            persistentProductionMaster = productionmasterRepository.findById(productionMasterId).orElse(null);
+            if (persistentProductionMaster == null) {
+                return ResponseEntity.badRequest().build();
+            }
+        }
+        customFrameOrder.setProductionMasterID(persistentProductionMaster);
+
+        FrameMaterial persistentFrameMaterial = null;
+        if (frameMaterialId != null) {
+            persistentFrameMaterial = frameMaterialRepository.findById(frameMaterialId).orElse(null);
+            if (persistentFrameMaterial == null) {
+                return ResponseEntity.badRequest().build();
+            }
+            customFrameOrder.setFrameMaterialID(persistentFrameMaterial);
+        }
+        customFrameOrder.setWidth(width);
+        customFrameOrder.setHeight(height);
+        customFrameOrder.setColor(color);
+        customFrameOrder.setStyle(style);
+        customFrameOrder.setMountType(mountType);
+        customFrameOrder.setGlassType(glassType);
+        customFrameOrder.setNotes(notes);
+        customFrameOrder.setEstimatedMaterialUsage(estimatedMaterialUsage);
+        customFrameOrder.setActualMaterialUsage(actualMaterialUsage);
+
+        CustomFrameOrder savedCustomFrameOrder = customFrameOrderRepository.save(customFrameOrder);
+        Integer customFrameOrderId = savedCustomFrameOrder.getId();
+        return ResponseEntity.ok(customFrameOrderId);
     }
 
 

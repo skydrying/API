@@ -92,7 +92,7 @@ public class Admin extends javax.swing.JFrame {
                 oneRow.add(jo.getString("dateOfEmployment"));
                 oneRow.add(jo.getString("passportData"));
                 oneRow.add(jo.getString("snils"));
-                oneRow.add(jo.getString("photoLink"));
+                oneRow.add(jo.optString("photoLink"));
                 oneRow.add(jo.getString("login"));
                 oneRow.add(jo.getString("password"));
 
@@ -745,7 +745,7 @@ public class Admin extends javax.swing.JFrame {
                 method = "addSeller";
                 break;
             case "Мастер":
-                method = "addProductionMaster";
+                method = "addProductionmaster";
                 break;
             default:
                 System.out.println("Неизвестная должность: " + position);
@@ -861,7 +861,7 @@ public class Admin extends javax.swing.JFrame {
         OkHttpClient client = new OkHttpClient();
 
         Request requestProductionMaster = new Request.Builder()
-                .url("http://localhost:9090/api/getProductionMaster")
+                .url("http://localhost:9090/api/getProductionmaster")
                 .get()
                 .build();
 

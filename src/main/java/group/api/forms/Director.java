@@ -21,9 +21,24 @@ import okhttp3.Response;
 import org.eclipse.persistence.exceptions.JSONException;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jfree.chart.*;
+import org.jfree.chart.plot.*;
+import org.jfree.data.category.*;
+import org.jfree.chart.renderer.category.BarRenderer;
+import java.awt.Color;
+import java.awt.Font;
+import javax.swing.JDialog;
+import java.time.temporal.ChronoUnit;
+import org.jfree.chart.axis.NumberAxis;
+import java.text.NumberFormat;
+import java.time.format.DateTimeFormatter;
+import java.util.Locale;
+import org.jfree.data.general.DefaultPieDataset;
 
 public class Director extends javax.swing.JFrame {
 
+    private String selectedChartType = "Столбчатая";
+    
     public Director() {
         initComponents();
         this.setLocationRelativeTo(null);
@@ -64,8 +79,200 @@ public class Director extends javax.swing.JFrame {
         jPanel2.revalidate();
         jPanel2.repaint();
     }
+    
+    private String selectChartType() {
+        String[] options = {"Столбчатая", "Круговая", "Линейная"};
+        String selected = (String) JOptionPane.showInputDialog(
+                this,
+                "Выберите тип диаграммы:",
+                "Тип диаграммы",
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                options,
+                selectedChartType
+        );
+
+        if (selected != null) {
+            selectedChartType = selected;
+        }
+        return selected;
+    }
 
 
+    private JFreeChart createPieChartFromCategoryDataset(DefaultCategoryDataset dataset, String title, String seriesName) {
+        DefaultPieDataset pieDataset = new DefaultPieDataset();
+
+        for (int i = 0; i < dataset.getRowCount(); i++) {
+            Comparable rowKey = dataset.getRowKey(i);
+            for (int j = 0; j < dataset.getColumnCount(); j++) {
+                Comparable columnKey = dataset.getColumnKey(j);
+                Number value = dataset.getValue(rowKey, columnKey);
+                if (value != null && value.doubleValue() > 0) {
+                    String key = columnKey.toString() + " (" + rowKey.toString() + ")";
+                    pieDataset.setValue(key, value.doubleValue());
+                }
+            }
+        }
+
+        JFreeChart chart = ChartFactory.createPieChart(
+                title,
+                pieDataset,
+                true,
+                true,
+                false
+        );
+
+        PiePlot plot = (PiePlot) chart.getPlot();
+        plot.setSectionOutlinesVisible(true);
+        plot.setLabelFont(new Font("Arial", Font.PLAIN, 12));
+        plot.setNoDataMessage("Нет данных для отображения");
+        plot.setCircular(true);
+        plot.setLabelGap(0.02);
+
+        plot.setBackgroundPaint(Color.WHITE);
+        plot.setOutlinePaint(Color.GRAY);
+
+        return chart;
+    }
+
+    private JFreeChart createLineChartFromCategoryDataset(DefaultCategoryDataset dataset, String title, String categoryAxisLabel, String valueAxisLabel) {
+        JFreeChart chart = ChartFactory.createLineChart(
+                title,
+                categoryAxisLabel,
+                valueAxisLabel,
+                dataset,
+                PlotOrientation.VERTICAL,
+                true,
+                true,
+                false
+        );
+
+        chart.setBackgroundPaint(Color.WHITE);
+
+        CategoryPlot plot = chart.getCategoryPlot();
+        plot.setBackgroundPaint(Color.WHITE);
+        plot.setRangeGridlinePaint(Color.GRAY);
+        plot.setDomainGridlinePaint(Color.LIGHT_GRAY);
+
+        chart.getTitle().setFont(new Font("Arial", Font.BOLD, 16));
+        plot.getDomainAxis().setLabelFont(new Font("Arial", Font.PLAIN, 12));
+        plot.getRangeAxis().setLabelFont(new Font("Arial", Font.PLAIN, 12));
+
+        return chart;
+    }
+
+    private void displayChart(JFreeChart chart, String dialogTitle) {
+        ChartPanel chartPanel = new ChartPanel(chart);
+        chartPanel.setPreferredSize(new java.awt.Dimension(800, 500));
+        chartPanel.setMouseZoomable(true);
+
+        JDialog chartDialog = new JDialog(this, dialogTitle, true);
+        chartDialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        chartDialog.getContentPane().add(chartPanel);
+        chartDialog.pack();
+        chartDialog.setLocationRelativeTo(this);
+        chartDialog.setVisible(true);
+    }
+
+    private void createOrdersChart(DefaultCategoryDataset dataset, String title) {
+        JFreeChart chart;
+
+        switch (selectedChartType) {
+            case "Круговая":
+                chart = createPieChartFromCategoryDataset(dataset, title, "Заказы");
+                break;
+            case "Линейная":
+                chart = createLineChartFromCategoryDataset(dataset, title, "День месяца", "Количество заказов");
+                break;
+            default:
+                chart = ChartFactory.createBarChart(
+                        title,
+                        "День месяца",
+                        "Количество заказов",
+                        dataset,
+                        PlotOrientation.VERTICAL,
+                        true,
+                        true,
+                        false
+                );
+                customizeChart(chart);
+        }
+
+        displayChart(chart, "Диаграмма заказов - " + selectedChartType);
+    }
+
+
+    private void createSalesChart(DefaultCategoryDataset dataset, String title) {
+        JFreeChart chart;
+
+        switch (selectedChartType) {
+            case "Круговая":
+                chart = createPieChartFromCategoryDataset(dataset, title, "Продажи");
+                break;
+            case "Линейная":
+                chart = createLineChartFromCategoryDataset(dataset, title, "День месяца", "Сумма продаж (руб.)");
+                break;
+            default:
+                chart = ChartFactory.createBarChart(
+                        title,
+                        "День месяца",
+                        "Сумма продаж (руб.)",
+                        dataset,
+                        PlotOrientation.VERTICAL,
+                        true,
+                        true,
+                        false
+                );
+                customizeSalesChart(chart);
+        }
+
+        displayChart(chart, "Диаграмма продаж - " + selectedChartType);
+    }
+
+    private void customizeChart(JFreeChart chart) {
+        chart.setBackgroundPaint(Color.WHITE);
+        CategoryPlot plot = chart.getCategoryPlot();
+        plot.setBackgroundPaint(Color.WHITE);
+        plot.setRangeGridlinePaint(Color.GRAY);
+
+        BarRenderer renderer = (BarRenderer) plot.getRenderer();
+        renderer.setSeriesPaint(0, new Color(65, 105, 225));
+        renderer.setDrawBarOutline(true);
+        renderer.setSeriesOutlinePaint(0, Color.DARK_GRAY);
+
+        chart.getTitle().setFont(new Font("Arial", Font.BOLD, 16));
+        plot.getDomainAxis().setLabelFont(new Font("Arial", Font.PLAIN, 12));
+        plot.getRangeAxis().setLabelFont(new Font("Arial", Font.PLAIN, 12));
+    }
+
+    private void customizeSalesChart(JFreeChart chart) {
+        chart.setBackgroundPaint(Color.WHITE);
+        CategoryPlot plot = chart.getCategoryPlot();
+        plot.setBackgroundPaint(Color.WHITE);
+        plot.setRangeGridlinePaint(Color.GRAY);
+
+        BarRenderer renderer = (BarRenderer) plot.getRenderer();
+        renderer.setSeriesPaint(0, new Color(34, 139, 34));
+        renderer.setDrawBarOutline(true);
+        renderer.setSeriesOutlinePaint(0, Color.DARK_GRAY);
+
+        NumberAxis rangeAxis = (NumberAxis) plot.getRangeAxis();
+        rangeAxis.setNumberFormatOverride(java.text.NumberFormat.getCurrencyInstance(new java.util.Locale("ru", "RU")));
+
+        chart.getTitle().setFont(new Font("Arial", Font.BOLD, 16));
+        plot.getDomainAxis().setLabelFont(new Font("Arial", Font.PLAIN, 12));
+        plot.getRangeAxis().setLabelFont(new Font("Arial", Font.PLAIN, 12));
+    }
+
+  
+    private String getRussianMonthName(int month) {
+        String[] months = {
+            "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
+            "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"
+        };
+        return months[month - 1];
+    }
+    
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
@@ -88,7 +295,9 @@ public class Director extends javax.swing.JFrame {
         jLabel7 = new javax.swing.JLabel();
         jButton6 = new javax.swing.JButton();
         jButton7 = new javax.swing.JButton();
-        jLabel8 = new javax.swing.JLabel();
+        jButton8 = new javax.swing.JButton();
+        jButton10 = new javax.swing.JButton();
+        jButton11 = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -119,7 +328,7 @@ public class Director extends javax.swing.JFrame {
             }
         });
 
-        jLabel1.setText("Просмотр отчета о заказах за месяц");
+        jLabel1.setText("Просмотр отчета о заказах за текущий месяц");
 
         jLabel2.setText("Просмотр отчета о заказах за указанный временной период");
 
@@ -183,14 +392,33 @@ public class Director extends javax.swing.JFrame {
             }
         });
 
-        jButton7.setText("Сформировать");
+        jButton7.setText("Дашборд");
         jButton7.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jButton7ActionPerformed(evt);
             }
         });
 
-        jLabel8.setText("Дашборды");
+        jButton8.setText("Дашборд");
+        jButton8.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton8ActionPerformed(evt);
+            }
+        });
+
+        jButton10.setText("Дашборд");
+        jButton10.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton10ActionPerformed(evt);
+            }
+        });
+
+        jButton11.setText("Дашборд");
+        jButton11.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton11ActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -198,69 +426,47 @@ public class Director extends javax.swing.JFrame {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addComponent(jScrollPane1)
             .addGroup(layout.createSequentialGroup()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(layout.createSequentialGroup()
-                                .addGap(49, 49, 49)
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addGroup(layout.createSequentialGroup()
-                                        .addGap(105, 105, 105)
-                                        .addComponent(jButton2))
-                                    .addComponent(jLabel2)
-                                    .addGroup(layout.createSequentialGroup()
-                                        .addGap(102, 102, 102)
-                                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                            .addComponent(jButton7)
-                                            .addComponent(jButton3)))))
-                            .addGroup(layout.createSequentialGroup()
-                                .addGap(108, 108, 108)
-                                .addComponent(jLabel1)))
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(layout.createSequentialGroup()
-                                .addGap(18, 18, 18)
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addGroup(layout.createSequentialGroup()
-                                        .addComponent(jLabel4)
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                                        .addGap(0, 45, Short.MAX_VALUE)
-                                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                                                .addComponent(jLabel3)
-                                                .addGap(128, 128, 128))
-                                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                                                .addComponent(jButton5)
-                                                .addGap(210, 210, 210))))))
-                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                .addComponent(jButton4)
-                                .addGap(210, 210, 210))))
-                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
-                        .addContainerGap()
+                .addContainerGap()
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(layout.createSequentialGroup()
                         .addComponent(jButton1)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(jButton6)
-                        .addGap(216, 216, 216))
+                        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                     .addGroup(layout.createSequentialGroup()
-                        .addGap(177, 177, 177)
-                        .addComponent(jLabel8)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jLabel1)
+                            .addComponent(jLabel2)
+                            .addComponent(jButton3)
+                            .addComponent(jButton2)
+                            .addComponent(jButton7))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 123, Short.MAX_VALUE)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(layout.createSequentialGroup()
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(jLabel3)
+                                    .addComponent(jLabel4)
+                                    .addComponent(jButton5)
+                                    .addComponent(jButton4))
+                                .addGap(46, 46, 46)
+                                .addComponent(jLabel5))
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(jButton10)
+                                .addGap(294, 294, 294)
+                                .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addGroup(layout.createSequentialGroup()
+                                .addGap(24, 24, 24)
+                                .addComponent(jLabel6)))
+                        .addGap(91, 91, 91))
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                        .addComponent(jButton8)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(jLabel7)
-                        .addGap(185, 185, 185)))
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                        .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED))
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                        .addComponent(jLabel5)
-                        .addGap(35, 35, 35)))
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addGroup(layout.createSequentialGroup()
-                        .addGap(24, 24, 24)
-                        .addComponent(jLabel6)))
-                .addGap(91, 91, 91))
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jLabel7)
+                            .addComponent(jButton6)
+                            .addComponent(jButton11))
+                        .addGap(557, 557, 557))))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -278,26 +484,28 @@ public class Director extends javax.swing.JFrame {
                             .addComponent(jButton4))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jLabel2)
-                            .addComponent(jLabel4))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jButton3)
-                            .addComponent(jButton5))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                            .addComponent(jButton7)
+                            .addComponent(jButton10))
+                        .addGap(28, 28, 28)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(layout.createSequentialGroup()
-                                .addGap(0, 0, Short.MAX_VALUE)
-                                .addComponent(jButton1))
-                            .addGroup(layout.createSequentialGroup()
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                    .addComponent(jLabel7)
-                                    .addComponent(jLabel8))
+                                .addComponent(jLabel2)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                    .addComponent(jButton6)
-                                    .addComponent(jButton7))
-                                .addGap(0, 0, Short.MAX_VALUE))))
+                                .addComponent(jButton3))
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(jLabel4)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(jButton5)))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jButton8)
+                            .addComponent(jButton11))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 30, Short.MAX_VALUE)
+                        .addComponent(jLabel7)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(jButton6)
+                        .addGap(36, 36, 36)
+                        .addComponent(jButton1))
                     .addGroup(layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(jLabel5)
@@ -309,7 +517,7 @@ public class Director extends javax.swing.JFrame {
                             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                                 .addGap(4, 4, 4)
                                 .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                        .addGap(0, 19, Short.MAX_VALUE)))
+                        .addGap(0, 0, Short.MAX_VALUE)))
                 .addContainerGap())
         );
 
@@ -323,7 +531,7 @@ public class Director extends javax.swing.JFrame {
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
         Vector<String> tableHeaders = new Vector<>();
-        tableHeaders.add("Номер заказа");
+        tableHeaders.add("Номер");
         tableHeaders.add("Клиент ФИО");
         tableHeaders.add("Продавец ФИО");
         tableHeaders.add("Дата заказа");
@@ -343,6 +551,8 @@ public class Director extends javax.swing.JFrame {
         LocalDate now = LocalDate.now();
         int currentYear = now.getYear();
         int currentMonth = now.getMonthValue();
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
         try (Response response = okHttpClient.newCall(request).execute()) {
             JSONArray ja = new JSONArray(response.body().string());
@@ -367,13 +577,37 @@ public class Director extends javax.swing.JFrame {
                     JSONObject seller = jo.getJSONObject("sellerID");
                     String sellerFIO = seller.getString("lastName") + " " + seller.getString("firstName") + " " + seller.getString("middleName");
                     oneRow.add(sellerFIO);
-                    oneRow.add(orderDate.toString());
-                    oneRow.add(jo.getInt("totalAmount"));
-                    oneRow.add(jo.getString("status"));
-                    oneRow.add(jo.optString("dueDate", ""));
-                    oneRow.add(jo.optString("completionDate", ""));
-                    oneRow.add(jo.optString("notes", ""));
 
+                    oneRow.add(orderDate.format(formatter));
+
+                    oneRow.add(jo.optString("totalAmount"));
+                    oneRow.add(jo.optString("status"));
+
+                    String dueDateStr = jo.optString("dueDate", "");
+                    if (!dueDateStr.isEmpty()) {
+                        try {
+                            LocalDate dueDate = LocalDate.parse(dueDateStr);
+                            oneRow.add(dueDate.format(formatter));
+                        } catch (Exception e) {
+                            oneRow.add(dueDateStr);
+                        }
+                    } else {
+                        oneRow.add("");
+                    }
+
+                    String completionDateStr = jo.optString("completionDate", "");
+                    if (!completionDateStr.isEmpty()) {
+                        try {
+                            LocalDate completionDate = LocalDate.parse(completionDateStr);
+                            oneRow.add(completionDate.format(formatter));
+                        } catch (Exception e) {
+                            oneRow.add(completionDateStr);
+                        }
+                    } else {
+                        oneRow.add("");
+                    }
+
+                    oneRow.add(jo.optString("notes", ""));
 
                     tableData.add(oneRow);
                 }
@@ -403,7 +637,7 @@ public class Director extends javax.swing.JFrame {
         }
 
         Vector<String> tableHeaders = new Vector<>();
-        tableHeaders.add("Номер заказа");
+        tableHeaders.add("Номер");
         tableHeaders.add("Клиент ФИО");
         tableHeaders.add("Продавец ФИО");
         tableHeaders.add("Дата заказа");
@@ -419,6 +653,8 @@ public class Director extends javax.swing.JFrame {
         Request request = new Request.Builder()
                 .url("http://localhost:9090/api/getOrders")
                 .build();
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
         try (Response response = okHttpClient.newCall(request).execute()) {
             if (!response.isSuccessful()) {
@@ -439,30 +675,54 @@ public class Director extends javax.swing.JFrame {
                     orderDate = LocalDate.parse(orderDateStr);
                 }
 
-                if ((orderDate.isEqual(startDate) || orderDate.isAfter(startDate)) &&
-                        (orderDate.isEqual(endDate) || orderDate.isBefore(endDate))) {
+                if ((orderDate.isEqual(startDate) || orderDate.isAfter(startDate))
+                        && (orderDate.isEqual(endDate) || orderDate.isBefore(endDate))) {
 
                     Vector<Object> oneRow = new Vector<>();
 
                     oneRow.add(jo.getInt("id"));
 
                     JSONObject customer = jo.getJSONObject("customerID");
-                    String customerFIO = customer.getString("lastName") + " " +
-                            customer.getString("firstName") + " " +
-                            customer.optString("middleName", "");
+                    String customerFIO = customer.getString("lastName") + " "
+                            + customer.getString("firstName") + " "
+                            + customer.optString("middleName", "");
                     oneRow.add(customerFIO.trim());
 
                     JSONObject seller = jo.getJSONObject("sellerID");
-                    String sellerFIO = seller.getString("lastName") + " " +
-                            seller.getString("firstName") + " " +
-                            seller.optString("middleName", "");
+                    String sellerFIO = seller.getString("lastName") + " "
+                            + seller.getString("firstName") + " "
+                            + seller.optString("middleName", "");
                     oneRow.add(sellerFIO.trim());
 
-                    oneRow.add(orderDate.toString());
-                    oneRow.add(jo.getInt("totalAmount"));
-                    oneRow.add(jo.getString("status"));
-                    oneRow.add(jo.optString("dueDate", ""));
-                    oneRow.add(jo.optString("completionDate", ""));
+                    oneRow.add(orderDate.format(formatter));
+
+                    oneRow.add(jo.optString("totalAmount"));
+                    oneRow.add(jo.optString("status"));
+
+                    String dueDateStr = jo.optString("dueDate", "");
+                    if (!dueDateStr.isEmpty()) {
+                        try {
+                            LocalDate dueDate = LocalDate.parse(dueDateStr);
+                            oneRow.add(dueDate.format(formatter));
+                        } catch (Exception e) {
+                            oneRow.add(dueDateStr); 
+                        }
+                    } else {
+                        oneRow.add("");
+                    }
+
+                    String completionDateStr = jo.optString("completionDate", "");
+                    if (!completionDateStr.isEmpty()) {
+                        try {
+                            LocalDate completionDate = LocalDate.parse(completionDateStr);
+                            oneRow.add(completionDate.format(formatter));
+                        } catch (Exception e) {
+                            oneRow.add(completionDateStr); 
+                        }
+                    } else {
+                        oneRow.add("");
+                    }
+
                     oneRow.add(jo.optString("notes", ""));
 
                     tableData.add(oneRow);
@@ -477,7 +737,7 @@ public class Director extends javax.swing.JFrame {
 
     private void jButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton4ActionPerformed
         Vector<String> tableHeaders = new Vector<>();
-        tableHeaders.add("ID");
+        tableHeaders.add("Номер");
         tableHeaders.add("Клиент ФИО");
         tableHeaders.add("Продавец ФИО");
         tableHeaders.add("Дата продажи");
@@ -495,6 +755,8 @@ public class Director extends javax.swing.JFrame {
         LocalDate now = LocalDate.now();
         int currentYear = now.getYear();
         int currentMonth = now.getMonthValue();
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
         try (Response response = okHttpClient.newCall(request).execute()) {
             if (!response.isSuccessful()) {
@@ -521,21 +783,22 @@ public class Director extends javax.swing.JFrame {
                     oneRow.add(jo.getInt("id"));
 
                     JSONObject customer = jo.getJSONObject("customerID");
-                    String customerFIO = customer.getString("lastName") + " " +
-                            customer.getString("firstName") + " " +
-                            customer.optString("middleName", "");
+                    String customerFIO = customer.getString("lastName") + " "
+                            + customer.getString("firstName") + " "
+                            + customer.optString("middleName", "");
                     oneRow.add(customerFIO.trim());
 
                     JSONObject seller = jo.getJSONObject("sellerID");
-                    String sellerFIO = seller.getString("lastName") + " " +
-                            seller.getString("firstName") + " " +
-                            seller.optString("middleName", "");
+                    String sellerFIO = seller.getString("lastName") + " "
+                            + seller.getString("firstName") + " "
+                            + seller.optString("middleName", "");
                     oneRow.add(sellerFIO.trim());
 
-                    oneRow.add(saleDate.toString());
-                    oneRow.add(jo.getInt("totalAmount"));
-                    oneRow.add(jo.getInt("discountAmount"));
-                    oneRow.add(jo.getInt("finalAmount"));
+                    oneRow.add(saleDate.format(formatter));
+
+                    oneRow.add(jo.optString("totalAmount"));
+                    oneRow.add(jo.optString("discountAmount"));
+                    oneRow.add(jo.optString("finalAmount"));
 
                     tableData.add(oneRow);
                 }
@@ -565,7 +828,7 @@ public class Director extends javax.swing.JFrame {
         }
 
         Vector<String> tableHeaders = new Vector<>();
-        tableHeaders.add("ID");
+        tableHeaders.add("Номер");
         tableHeaders.add("Клиент ФИО");
         tableHeaders.add("Продавец ФИО");
         tableHeaders.add("Дата продажи");
@@ -579,6 +842,8 @@ public class Director extends javax.swing.JFrame {
         Request request = new Request.Builder()
                 .url("http://localhost:9090/api/getSales")
                 .build();
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
         try (Response response = okHttpClient.newCall(request).execute()) {
             if (!response.isSuccessful()) {
@@ -599,29 +864,30 @@ public class Director extends javax.swing.JFrame {
                     saleDate = LocalDate.parse(saleDateStr);
                 }
 
-                if ((saleDate.isEqual(startDate) || saleDate.isAfter(startDate)) &&
-                        (saleDate.isEqual(endDate) || saleDate.isBefore(endDate))) {
+                if ((saleDate.isEqual(startDate) || saleDate.isAfter(startDate))
+                        && (saleDate.isEqual(endDate) || saleDate.isBefore(endDate))) {
 
                     Vector<Object> oneRow = new Vector<>();
 
                     oneRow.add(jo.getInt("id"));
 
                     JSONObject customer = jo.getJSONObject("customerID");
-                    String customerFIO = customer.getString("lastName") + " " +
-                            customer.getString("firstName") + " " +
-                            customer.optString("middleName", "");
+                    String customerFIO = customer.getString("lastName") + " "
+                            + customer.getString("firstName") + " "
+                            + customer.optString("middleName", "");
                     oneRow.add(customerFIO.trim());
 
                     JSONObject seller = jo.getJSONObject("sellerID");
-                    String sellerFIO = seller.getString("lastName") + " " +
-                            seller.getString("firstName") + " " +
-                            seller.optString("middleName", "");
+                    String sellerFIO = seller.getString("lastName") + " "
+                            + seller.getString("firstName") + " "
+                            + seller.optString("middleName", "");
                     oneRow.add(sellerFIO.trim());
 
-                    oneRow.add(saleDate.toString());
-                    oneRow.add(jo.getInt("totalAmount"));
-                    oneRow.add(jo.getInt("discountAmount"));
-                    oneRow.add(jo.getInt("finalAmount"));
+                    oneRow.add(saleDate.format(formatter));
+
+                    oneRow.add(jo.optString("totalAmount"));
+                    oneRow.add(jo.optString("discountAmount"));
+                    oneRow.add(jo.optString("finalAmount"));
 
                     tableData.add(oneRow);
                 }
@@ -635,7 +901,7 @@ public class Director extends javax.swing.JFrame {
 
     private void jButton6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton6ActionPerformed
         Vector<String> tableHeaders = new Vector<>();
-        tableHeaders.add("ID материала");
+        tableHeaders.add("Номер материала");
         tableHeaders.add("Название");
         tableHeaders.add("Описание");
         tableHeaders.add("Цена за метр");
@@ -680,8 +946,302 @@ public class Director extends javax.swing.JFrame {
     }//GEN-LAST:event_jButton6ActionPerformed
 
     private void jButton7ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton7ActionPerformed
+        String chartType = selectChartType();
+        if (chartType == null) {
+            return;
+        }
+        DefaultCategoryDataset dataset = new DefaultCategoryDataset();
 
+        OkHttpClient okHttpClient = new OkHttpClient();
+        Request request = new Request.Builder()
+                .url("http://localhost:9090/api/getOrders")
+                .build();
+
+        LocalDate now = LocalDate.now();
+        int currentYear = now.getYear();
+        int currentMonth = now.getMonthValue();
+
+        int[] ordersPerDay = new int[32];
+
+        try (Response response = okHttpClient.newCall(request).execute()) {
+            JSONArray ja = new JSONArray(response.body().string());
+
+            for (int i = 0; i < ja.length(); i++) {
+                JSONObject jo = ja.getJSONObject(i);
+                String orderDateStr = jo.getString("orderDate");
+                LocalDate orderDate;
+                try {
+                    orderDate = OffsetDateTime.parse(orderDateStr).toLocalDate();
+                } catch (Exception e) {
+                    orderDate = LocalDate.parse(orderDateStr);
+                }
+
+                if (orderDate.getYear() == currentYear && orderDate.getMonthValue() == currentMonth) {
+                    int dayOfMonth = orderDate.getDayOfMonth();
+                    ordersPerDay[dayOfMonth]++;
+                }
+            }
+
+            for (int day = 1; day <= 31; day++) {
+                if (ordersPerDay[day] > 0) {
+                    dataset.addValue(ordersPerDay[day], "Заказы", String.valueOf(day));
+                }
+            }
+
+        } catch (IOException | JSONException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Ошибка при загрузке данных для диаграммы");
+            return;
+        }
+
+        if (dataset.getRowCount() > 0) {
+            createOrdersChart(dataset, "Количество заказов по дням за "
+                    + getRussianMonthName(currentMonth) + ", " + currentYear + " год");
+        } else {
+            JOptionPane.showMessageDialog(this, "Нет данных для построения диаграммы");
+        }
     }//GEN-LAST:event_jButton7ActionPerformed
+
+    private void jButton8ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton8ActionPerformed
+        String chartType = selectChartType();
+        if (chartType == null) {
+            return; 
+        }
+        Date selectedStartDate = (Date) datePickerNew.getModel().getValue();
+        Date selectedEndDate = (Date) datePickerEnd.getModel().getValue();
+
+        if (selectedStartDate == null || selectedEndDate == null) {
+            JOptionPane.showMessageDialog(this, "Пожалуйста, выберите обе даты.");
+            return;
+        }
+
+        LocalDate startDate = selectedStartDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+        LocalDate endDate = selectedEndDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+
+        if (startDate.isAfter(endDate)) {
+            JOptionPane.showMessageDialog(this, "Дата начала не может быть позже даты окончания");
+            return;
+        }
+
+        DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+
+        OkHttpClient okHttpClient = new OkHttpClient();
+        Request request = new Request.Builder()
+                .url("http://localhost:9090/api/getOrders")
+                .build();
+
+        long daysBetween = java.time.temporal.ChronoUnit.DAYS.between(startDate, endDate) + 1;
+
+        int[] ordersPerDay = new int[(int) daysBetween];
+
+        try (Response response = okHttpClient.newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                System.err.println("Ошибка запроса: " + response.code());
+                return;
+            }
+
+            String responseBody = response.body().string();
+            JSONArray ja = new JSONArray(responseBody);
+
+            for (int i = 0; i < ja.length(); i++) {
+                JSONObject jo = ja.getJSONObject(i);
+                String orderDateStr = jo.getString("orderDate");
+                LocalDate orderDate;
+                try {
+                    orderDate = OffsetDateTime.parse(orderDateStr).toLocalDate();
+                } catch (Exception e) {
+                    orderDate = LocalDate.parse(orderDateStr);
+                }
+
+                if ((orderDate.isEqual(startDate) || orderDate.isAfter(startDate))
+                        && (orderDate.isEqual(endDate) || orderDate.isBefore(endDate))) {
+
+                    long dayIndex = java.time.temporal.ChronoUnit.DAYS.between(startDate, orderDate);
+                    if (dayIndex >= 0 && dayIndex < daysBetween) {
+                        ordersPerDay[(int) dayIndex]++;
+                    }
+                }
+            }
+
+            for (int i = 0; i < daysBetween; i++) {
+                LocalDate currentDate = startDate.plusDays(i);
+                String dayLabel = currentDate.getDayOfMonth() + "." + currentDate.getMonthValue();
+                dataset.addValue(ordersPerDay[i], "Заказы", dayLabel);
+            }
+
+        } catch (IOException | JSONException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Ошибка при загрузке данных для диаграммы");
+            return;
+        }
+
+        if (dataset.getRowCount() > 0) {
+            String startDateStr = startDate.getDayOfMonth() + " "
+                    + getRussianMonthName(startDate.getMonthValue()) + " "
+                    + startDate.getYear();
+            String endDateStr = endDate.getDayOfMonth() + " "
+                    + getRussianMonthName(endDate.getMonthValue()) + " "
+                    + endDate.getYear();
+
+            createOrdersChart(dataset, "Количество заказов за период с "
+                    + startDateStr + " по " + endDateStr);
+        } else {
+            JOptionPane.showMessageDialog(this, "Нет данных для построения диаграммы за выбранный период");
+        }
+    }//GEN-LAST:event_jButton8ActionPerformed
+
+    private void jButton10ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton10ActionPerformed
+        String chartType = selectChartType();
+        if (chartType == null) {
+            return;
+        }
+        DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+
+        OkHttpClient okHttpClient = new OkHttpClient();
+        Request request = new Request.Builder()
+                .url("http://localhost:9090/api/getSales")
+                .build();
+
+        LocalDate now = LocalDate.now();
+        int currentYear = now.getYear();
+        int currentMonth = now.getMonthValue();
+
+        double[] salesPerDay = new double[32];
+
+        try (Response response = okHttpClient.newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                System.err.println("Ошибка запроса: " + response.code());
+                return;
+            }
+
+            String responseBody = response.body().string();
+            JSONArray ja = new JSONArray(responseBody);
+
+            for (int i = 0; i < ja.length(); i++) {
+                JSONObject jo = ja.getJSONObject(i);
+                String saleDateStr = jo.getString("saleDate");
+                LocalDate saleDate;
+                try {
+                    saleDate = OffsetDateTime.parse(saleDateStr).toLocalDate();
+                } catch (Exception e) {
+                    saleDate = LocalDate.parse(saleDateStr);
+                }
+
+                if (saleDate.getYear() == currentYear && saleDate.getMonthValue() == currentMonth) {
+                    int dayOfMonth = saleDate.getDayOfMonth();
+                    double finalAmount = jo.optDouble("finalAmount", 0);
+                    salesPerDay[dayOfMonth] += finalAmount;
+                }
+            }
+
+            for (int day = 1; day <= 31; day++) {
+                if (salesPerDay[day] > 0) {
+                    dataset.addValue(salesPerDay[day], "Продажи", String.valueOf(day));
+                }
+            }
+
+        } catch (IOException | JSONException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Ошибка при загрузке данных для диаграммы");
+            return;
+        }
+
+        if (dataset.getRowCount() > 0) {
+            createSalesChart(dataset, "Сумма продаж по дням за "
+                    + getRussianMonthName(currentMonth) + ", " + currentYear + " год");
+        } else {
+            JOptionPane.showMessageDialog(this, "Нет данных для построения диаграммы продаж");
+        }
+    }//GEN-LAST:event_jButton10ActionPerformed
+
+    private void jButton11ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton11ActionPerformed
+        String chartType = selectChartType();
+        if (chartType == null) {
+            return; 
+        }
+        Date selectedStartDate = (Date) datePickerNew.getModel().getValue();
+        Date selectedEndDate = (Date) datePickerEnd.getModel().getValue();
+
+        if (selectedStartDate == null || selectedEndDate == null) {
+            JOptionPane.showMessageDialog(this, "Пожалуйста, выберите обе даты.");
+            return;
+        }
+
+        LocalDate startDate = selectedStartDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+        LocalDate endDate = selectedEndDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+
+        if (startDate.isAfter(endDate)) {
+            JOptionPane.showMessageDialog(this, "Дата начала не может быть позже даты окончания");
+            return;
+        }
+
+        DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+
+        OkHttpClient okHttpClient = new OkHttpClient();
+        Request request = new Request.Builder()
+                .url("http://localhost:9090/api/getSales")
+                .build();
+
+        long daysBetween = java.time.temporal.ChronoUnit.DAYS.between(startDate, endDate) + 1;
+
+        double[] salesPerDay = new double[(int) daysBetween];
+
+        try (Response response = okHttpClient.newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                System.err.println("Ошибка запроса: " + response.code());
+                return;
+            }
+
+            String responseBody = response.body().string();
+            JSONArray ja = new JSONArray(responseBody);
+
+            for (int i = 0; i < ja.length(); i++) {
+                JSONObject jo = ja.getJSONObject(i);
+                String saleDateStr = jo.getString("saleDate");
+                LocalDate saleDate;
+                try {
+                    saleDate = OffsetDateTime.parse(saleDateStr).toLocalDate();
+                } catch (Exception e) {
+                    saleDate = LocalDate.parse(saleDateStr);
+                }
+
+                if ((saleDate.isEqual(startDate) || saleDate.isAfter(startDate))
+                        && (saleDate.isEqual(endDate) || saleDate.isBefore(endDate))) {
+
+                    long dayIndex = java.time.temporal.ChronoUnit.DAYS.between(startDate, saleDate);
+                    if (dayIndex >= 0 && dayIndex < daysBetween) {
+                        double finalAmount = jo.optDouble("finalAmount", 0);
+                        salesPerDay[(int) dayIndex] += finalAmount;
+                    }
+                }
+            }
+
+            for (int i = 0; i < daysBetween; i++) {
+                LocalDate currentDate = startDate.plusDays(i);
+                String dayLabel = currentDate.getDayOfMonth() + "." + currentDate.getMonthValue();
+                dataset.addValue(salesPerDay[i], "Продажи", dayLabel);
+            }
+
+        } catch (IOException | JSONException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Ошибка при загрузке данных для диаграммы");
+            return;
+        }
+
+        if (dataset.getRowCount() > 0) {
+            String startDateStr = startDate.getDayOfMonth() + " "
+                    + getRussianMonthName(startDate.getMonthValue()) + " "
+                    + startDate.getYear();
+            String endDateStr = endDate.getDayOfMonth() + " "
+                    + getRussianMonthName(endDate.getMonthValue()) + " "
+                    + endDate.getYear();
+
+            createSalesChart(dataset, "Сумма продаж за период с "
+                    + startDateStr + " по " + endDateStr);
+        } else {
+            JOptionPane.showMessageDialog(this, "Нет данных для построения диаграммы продаж за выбранный период");
+        }
+    }//GEN-LAST:event_jButton11ActionPerformed
 
     /**
      * @param args the command line arguments
@@ -720,12 +1280,15 @@ public class Director extends javax.swing.JFrame {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButton1;
+    private javax.swing.JButton jButton10;
+    private javax.swing.JButton jButton11;
     private javax.swing.JButton jButton2;
     private javax.swing.JButton jButton3;
     private javax.swing.JButton jButton4;
     private javax.swing.JButton jButton5;
     private javax.swing.JButton jButton6;
     private javax.swing.JButton jButton7;
+    private javax.swing.JButton jButton8;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
@@ -733,7 +1296,6 @@ public class Director extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel5;
     private javax.swing.JLabel jLabel6;
     private javax.swing.JLabel jLabel7;
-    private javax.swing.JLabel jLabel8;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JScrollPane jScrollPane1;

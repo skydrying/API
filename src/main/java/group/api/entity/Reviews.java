@@ -1,5 +1,6 @@
 package group.api.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.io.Serializable;
 import java.util.Date;
 import jakarta.persistence.Basic;
@@ -43,6 +44,7 @@ public class Reviews implements Serializable {
     @Column(name = "datereview")
     @Temporal(TemporalType.TIMESTAMP)
     private Date datereview;
+    @JsonIgnore
     @JoinColumn(name = "id_customer", referencedColumnName = "ID")
     @ManyToOne(optional = false)
     private Customer idCustomer;

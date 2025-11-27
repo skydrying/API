@@ -1,7 +1,9 @@
 package group.api.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.List;
 import jakarta.persistence.Basic;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -16,22 +18,21 @@ import jakarta.persistence.Table;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import jakarta.xml.bind.annotation.XmlTransient;
 
-
 @Entity
 @Table(name = "customer")
 @XmlRootElement
 @NamedQueries({
-    @NamedQuery(name = "Customer.findAll", query = "SELECT c FROM Customer c"),
-    @NamedQuery(name = "Customer.findById", query = "SELECT c FROM Customer c WHERE c.id = :id"),
-    @NamedQuery(name = "Customer.findByLastName", query = "SELECT c FROM Customer c WHERE c.lastName = :lastName"),
-    @NamedQuery(name = "Customer.findByFirstName", query = "SELECT c FROM Customer c WHERE c.firstName = :firstName"),
-    @NamedQuery(name = "Customer.findByMiddleName", query = "SELECT c FROM Customer c WHERE c.middleName = :middleName"),
-    @NamedQuery(name = "Customer.findByPhone", query = "SELECT c FROM Customer c WHERE c.phone = :phone"),
-    @NamedQuery(name = "Customer.findByLogins", query = "SELECT c FROM Customer c WHERE c.logins = :logins"),
-    @NamedQuery(name = "Customer.findByPasswords", query = "SELECT c FROM Customer c WHERE c.passwords = :passwords"),
-    @NamedQuery(name = "Customer.findByEmail", query = "SELECT c FROM Customer c WHERE c.email = :email"),
-    @NamedQuery(name = "Customer.findByDiscount", query = "SELECT c FROM Customer c WHERE c.discount = :discount"),
-    @NamedQuery(name = "Customer.findByTotalPurchases", query = "SELECT c FROM Customer c WHERE c.totalPurchases = :totalPurchases")})
+        @NamedQuery(name = "Customer.findAll", query = "SELECT c FROM Customer c"),
+        @NamedQuery(name = "Customer.findById", query = "SELECT c FROM Customer c WHERE c.id = :id"),
+        @NamedQuery(name = "Customer.findByLastName", query = "SELECT c FROM Customer c WHERE c.lastName = :lastName"),
+        @NamedQuery(name = "Customer.findByFirstName", query = "SELECT c FROM Customer c WHERE c.firstName = :firstName"),
+        @NamedQuery(name = "Customer.findByMiddleName", query = "SELECT c FROM Customer c WHERE c.middleName = :middleName"),
+        @NamedQuery(name = "Customer.findByPhone", query = "SELECT c FROM Customer c WHERE c.phone = :phone"),
+        @NamedQuery(name = "Customer.findByLogins", query = "SELECT c FROM Customer c WHERE c.logins = :logins"),
+        @NamedQuery(name = "Customer.findByPasswords", query = "SELECT c FROM Customer c WHERE c.passwords = :passwords"),
+        @NamedQuery(name = "Customer.findByEmail", query = "SELECT c FROM Customer c WHERE c.email = :email"),
+        @NamedQuery(name = "Customer.findByDiscount", query = "SELECT c FROM Customer c WHERE c.discount = :discount"),
+        @NamedQuery(name = "Customer.findByTotalPurchases", query = "SELECT c FROM Customer c WHERE c.totalPurchases = :totalPurchases")})
 public class Customer implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -60,6 +61,11 @@ public class Customer implements Serializable {
     private String discount;
     @Column(name = "TotalPurchases")
     private String totalPurchases;
+
+    @JsonIgnore
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "customerID")
+    private Collection<Orders> ordersCollection;
+    @JsonIgnore
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "idCustomer")
     private Collection<Reviews> reviewsCollection;
 
@@ -157,6 +163,15 @@ public class Customer implements Serializable {
     }
 
     @XmlTransient
+    public Collection<Orders> getOrdersCollection() {
+        return ordersCollection;
+    }
+
+    public void setOrdersCollection(Collection<Orders> ordersCollection) {
+        this.ordersCollection = ordersCollection;
+    }
+
+    @XmlTransient
     public Collection<Reviews> getReviewsCollection() {
         return reviewsCollection;
     }
@@ -189,5 +204,5 @@ public class Customer implements Serializable {
     public String toString() {
         return "group.api.entity.Customer[ id=" + id + " ]";
     }
-    
+
 }

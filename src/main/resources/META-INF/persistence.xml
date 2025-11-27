@@ -5,17 +5,17 @@
     <class>group.api.entity.CustomFrameOrder</class>
     <class>group.api.entity.FrameComponent</class>
     <class>group.api.entity.FrameMaterial</class>
-    <class>group.api.entity.OrderItem</class>
     <class>group.api.entity.Sale</class>
     <class>group.api.entity.SaleItem</class>
-    <class>group.api.entity.Seller</class>
     <class>group.api.entity.EmbroideryKit</class>
     <class>group.api.entity.Consumable</class>
     <class>group.api.entity.User</class>
     <class>group.api.entity.Orders</class>
     <class>group.api.entity.Director</class>
     <class>group.api.entity.Productionmaster</class>
+    <class>group.api.entity.Seller</class>
     <class>group.api.entity.Reviews</class>
+    <class>group.api.entity.OrderItem</class>
     <class>group.api.entity.Customer</class>
     <properties>
       <property name="jakarta.persistence.jdbc.url" value="jdbc:mysql://localhost:3306/proekt"/>

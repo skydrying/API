@@ -1,4 +1,5 @@
 C:\Users\oneju\OneDrive\Рабочий стол\ПРОЕКТ\API\src\main\java\group\api\controller\MainController.java
+C:\Users\oneju\OneDrive\Рабочий стол\ПРОЕКТ\API\src\main\java\group\api\repository\ReviewsRepository.java
 C:\Users\oneju\OneDrive\Рабочий стол\ПРОЕКТ\API\src\main\java\group\api\repository\CustomerRepository.java
 C:\Users\oneju\OneDrive\Рабочий стол\ПРОЕКТ\API\src\main\java\group\api\telegram\MyTelegramBot.java
 C:\Users\oneju\OneDrive\Рабочий стол\ПРОЕКТ\API\src\main\java\group\api\entity\Seller.java
@@ -35,6 +36,7 @@ C:\Users\oneju\OneDrive\Рабочий стол\ПРОЕКТ\API\src\main\java\group\api\telegram
 C:\Users\oneju\OneDrive\Рабочий стол\ПРОЕКТ\API\src\main\java\group\api\controller\ServletInitializer.java
 C:\Users\oneju\OneDrive\Рабочий стол\ПРОЕКТ\API\src\main\java\group\api\forms\ProductionMaster.java
 C:\Users\oneju\OneDrive\Рабочий стол\ПРОЕКТ\API\src\main\java\group\api\repository\OrderItemRepository.java
+C:\Users\oneju\OneDrive\Рабочий стол\ПРОЕКТ\API\src\main\java\group\api\entity\Reviews.java
 C:\Users\oneju\OneDrive\Рабочий стол\ПРОЕКТ\API\src\main\java\group\api\entity\FrameComponent.java
 C:\Users\oneju\OneDrive\Рабочий стол\ПРОЕКТ\API\src\main\java\group\api\repository\UserRepository.java
 C:\Users\oneju\OneDrive\Рабочий стол\ПРОЕКТ\API\src\main\java\group\api\forms\Auto.java

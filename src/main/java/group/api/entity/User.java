@@ -1,5 +1,6 @@
 package group.api.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Date;
@@ -74,6 +75,7 @@ public class User implements Serializable {
     @OneToMany(mappedBy = "idUser")
     private Collection<Director> directorCollection;
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "sellerID")
+    @JsonIgnore
     private Collection<Orders> ordersCollection;
     @OneToMany(mappedBy = "idUser")
     private Collection<Productionmaster> productionmasterCollection;

@@ -1,7 +1,6 @@
 package group.api.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import group.api.forms.ProductionMaster;
 import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -53,16 +52,15 @@ public class CustomFrameOrder implements Serializable {
     @Lob
     @Column(name = "Notes")
     private String notes;
-    // @Max(value=?)  @Min(value=?)//if you know range of your decimal fields consider using these annotations to enforce field validation
     @Column(name = "EstimatedMaterialUsage")
     private BigDecimal estimatedMaterialUsage;
     @Column(name = "ActualMaterialUsage")
     private BigDecimal actualMaterialUsage;
-    @JsonIgnore
+
     @JoinColumn(name = "FrameMaterialID", referencedColumnName = "ID")
     @ManyToOne
     private FrameMaterial frameMaterialID;
-    @JsonIgnore
+
     @JoinColumn(name = "OrderID", referencedColumnName = "ID")
     @ManyToOne(optional = false)
     private Orders orderID;

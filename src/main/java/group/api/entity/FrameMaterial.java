@@ -1,5 +1,6 @@
 package group.api.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -45,6 +46,7 @@ public class FrameMaterial implements Serializable {
     private String color;
     @Column(name = "Width")
     private Integer width;
+    @JsonIgnore
     @OneToMany(mappedBy = "frameMaterialID")
     private Collection<CustomFrameOrder> customFrameOrderCollection;
 

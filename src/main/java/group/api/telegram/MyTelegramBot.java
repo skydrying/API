@@ -974,19 +974,16 @@ public class MyTelegramBot extends TelegramLongPollingBot {
                 userState.currentFrameOrder.setStyle(style);
                 handleFrameOrderStep(chatId, userState, "MOUNT_TYPE");
             }
-            // Обработка выбора типа крепления
             else if (data.startsWith("frame_mount_")) {
                 String mountType = data.substring("frame_mount_".length());
                 userState.currentFrameOrder.setMountType(mountType);
                 handleFrameOrderStep(chatId, userState, "GLASS_TYPE");
             }
-            // Обработка выбора типа стекла
             else if (data.startsWith("frame_glass_")) {
                 String glassType = data.substring("frame_glass_".length());
                 userState.currentFrameOrder.setGlassType(glassType);
                 handleFrameOrderStep(chatId, userState, "NOTES");
             }
-
             else if ("register".equals(data)) {
                 startRegistration(chatId, userState);
             }
@@ -4867,7 +4864,7 @@ public class MyTelegramBot extends TelegramLongPollingBot {
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm");
 
         StringBuilder sb = new StringBuilder();
-        sb.append("📊 Заказ директора ").append(currentNumber).append(" из ").append(totalOrders).append("\n\n");
+        sb.append("📊 Заказ ").append(currentNumber).append(" из ").append(totalOrders).append("\n\n");
         sb.append("🆔 Номер: ").append(order.getId()).append("\n");
         sb.append("📅 Дата заказа: ").append(order.getOrderDate() != null ? dateFormat.format(order.getOrderDate()) : "Не указана").append("\n");
         sb.append("💰 Сумма: ").append(order.getTotalAmount() != null ? order.getTotalAmount() : 0).append(" руб.\n");
@@ -5294,30 +5291,39 @@ public class MyTelegramBot extends TelegramLongPollingBot {
     }
 
     private String generateTotalSalesReport() {
-
         try {
-            List<Orders> allOrders = (List<Orders>) mainController.allOrders();
+            
+            Iterable<Sale> allSales = mainController.allSales();
 
             double totalRevenue = 0;
-            int completedOrders = 0;
-            int totalOrders = allOrders.size();
+            double totalDiscount = 0;
+            double totalFinalAmount = 0;
+            int totalSalesCount = 0;
 
-            for (Orders order : allOrders) {
-                if (order.getTotalAmount() != null) {
-                    totalRevenue += order.getTotalAmount();
+            
+            for (Sale sale : allSales) {
+                if (sale.getFinalAmount() != null) {
+                    totalFinalAmount += sale.getFinalAmount().doubleValue();
                 }
-                if ("Забран".equals(order.getStatus())) {
-                    completedOrders++;
+                if (sale.getTotalAmount() != null) {
+                    totalRevenue += sale.getTotalAmount().doubleValue();
                 }
+                if (sale.getDiscountAmount() != null) {
+                    totalDiscount += sale.getDiscountAmount().doubleValue();
+                }
+                totalSalesCount++;
             }
 
             return String.format("📈 Общий отчет по продажам\n\n" +
                             "💰 Общая выручка: %.2f руб.\n" +
-                            "📦 Всего заказов: %d\n" +
-                            "✅ Завершенных заказов: %d\n" +
-                            "📊 Конверсия: %.1f%%",
-                    totalRevenue, totalOrders, completedOrders,
-                    totalOrders > 0 ? (completedOrders * 100.0 / totalOrders) : 0);
+                            "💸 Сумма скидок: %.2f руб.\n" +
+                            "🎯 Итоговая сумма: %.2f руб.\n" +
+                            "📦 Всего продаж: %d\n" +
+                            "📊 Средний чек: %.2f руб.\n" +
+                            "🎁 Средняя скидка: %.2f процентов",
+                    totalRevenue, totalDiscount, totalFinalAmount, totalSalesCount,
+                    totalSalesCount > 0 ? totalFinalAmount / totalSalesCount : 0,
+                    totalSalesCount > 0 ? totalDiscount / totalSalesCount : 0);
 
         } catch (Exception e) {
             System.err.println("Error in generateTotalSalesReport: " + e.getMessage());
@@ -5327,25 +5333,35 @@ public class MyTelegramBot extends TelegramLongPollingBot {
 
     private String generateMonthlySalesReport() {
         try {
-            List<Orders> allOrders = (List<Orders>) mainController.allOrders();
+            
+            Iterable<Sale> allSales = mainController.allSales();
 
             Calendar cal = Calendar.getInstance();
             int currentMonth = cal.get(Calendar.MONTH);
             int currentYear = cal.get(Calendar.YEAR);
 
             double monthlyRevenue = 0;
-            int monthlyOrders = 0;
+            double monthlyDiscount = 0;
+            double monthlyFinalAmount = 0;
+            int monthlySalesCount = 0;
 
-            for (Orders order : allOrders) {
-                if (order.getOrderDate() != null) {
-                    cal.setTime(order.getOrderDate());
-                    int orderMonth = cal.get(Calendar.MONTH);
-                    int orderYear = cal.get(Calendar.YEAR);
+            
+            for (Sale sale : allSales) {
+                if (sale.getSaleDate() != null) {
+                    cal.setTime(sale.getSaleDate());
+                    int saleMonth = cal.get(Calendar.MONTH);
+                    int saleYear = cal.get(Calendar.YEAR);
 
-                    if (orderMonth == currentMonth && orderYear == currentYear) {
-                        monthlyOrders++;
-                        if (order.getTotalAmount() != null) {
-                            monthlyRevenue += order.getTotalAmount();
+                    if (saleMonth == currentMonth && saleYear == currentYear) {
+                        monthlySalesCount++;
+                        if (sale.getFinalAmount() != null) {
+                            monthlyFinalAmount += sale.getFinalAmount().doubleValue();
+                        }
+                        if (sale.getTotalAmount() != null) {
+                            monthlyRevenue += sale.getTotalAmount().doubleValue();
+                        }
+                        if (sale.getDiscountAmount() != null) {
+                            monthlyDiscount += sale.getDiscountAmount().doubleValue();
                         }
                     }
                 }
@@ -5355,10 +5371,14 @@ public class MyTelegramBot extends TelegramLongPollingBot {
 
             return String.format("📅 Продажи за %s\n\n" +
                             "💰 Выручка: %.2f руб.\n" +
-                            "📦 Количество заказов: %d\n" +
-                            "📊 Средний чек: %.2f руб.",
-                    monthName, monthlyRevenue, monthlyOrders,
-                    monthlyOrders > 0 ? monthlyRevenue / monthlyOrders : 0);
+                            "💸 Сумма скидок: %.2f руб.\n" +
+                            "🎯 Итоговая сумма: %.2f руб.\n" +
+                            "📦 Количество продаж: %d\n" +
+                            "📊 Средний чек: %.2f руб.\n" +
+                            "🎁 Средняя скидка: %.2f процентов",
+                    monthName, monthlyRevenue, monthlyDiscount, monthlyFinalAmount, monthlySalesCount,
+                    monthlySalesCount > 0 ? monthlyFinalAmount / monthlySalesCount : 0,
+                    monthlySalesCount > 0 ? monthlyDiscount / monthlySalesCount : 0);
 
         } catch (Exception e) {
             System.err.println("Error in generateMonthlySalesReport: " + e.getMessage());
