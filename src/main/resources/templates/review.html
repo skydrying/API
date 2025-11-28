@@ -7,22 +7,35 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link th:href="@{/css/styleauto.css}" rel="stylesheet">
     <style>
-        .user-name {
-            font-weight: bold;
-            color: #333;
-            margin-right: 10px;
-        }
-        .logout-btn {
-            background: none;
+        .personal-cabinet-btn {
+            background: #8B4513;
+            color: white;
             border: none;
-            color: #d9534f;
+            padding: 6px 12px;
+            border-radius: 6px;
             cursor: pointer;
-            text-decoration: underline;
-            font-size: 16px;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
         }
-        .logout-btn:hover {
-            color: #c9302c;
+        
+        .personal-cabinet-btn:hover {
+            background: #A0522D;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(139, 69, 19, 0.3);
+            color: white;
+            text-decoration: none;
         }
+        
+        .personal-cabinet-btn i {
+            font-size: 12px;
+        }
+
         .form-container {
             max-width: 600px;
         }
@@ -95,13 +108,12 @@
                     <li><a href="http://localhost:9090/api/formotziv" class="nav-link">Отзывы</a></li>
                     <li><a href="http://localhost:9090/api/formcontact" class="nav-link">Информация</a></li>
                     <li th:if="${user != null}">
-                        <span class="nav-link user-name" th:text="${userDisplayName}" onclick="redirectToPersonal()">Иванов И.И.</span>
-                        <form th:action="@{/api/logout}" method="post" style="display: inline;">
-                            <button type="submit" class="nav-link logout-btn">Выйти</button>
-                        </form>
+                        <a href="http://localhost:9090/api/formspecial" class="personal-cabinet-btn">
+                            <i class="fas fa-user"></i> Кабинет
+                        </a>
                     </li>
                     <li th:if="${user == null}">
-                        <a href="http://localhost:9090/api/formauto" class="nav-link active">Войти</a>
+                        <a href="http://localhost:9090/api/formauto" class="nav-link">Войти</a>
                     </li>
                 </ul>
             </nav>

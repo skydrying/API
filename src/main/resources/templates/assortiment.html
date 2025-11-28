@@ -7,21 +7,50 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link th:href="@{/css/styleassortiment.css}" rel="stylesheet">
     <style>
-        .user-name {
-            font-weight: bold;
-            color: #333;
-            margin-right: 10px;
-        }
-        .logout-btn {
-            background: none;
+        .personal-cabinet-btn {
+            background: #8B4513;
+            color: white;
             border: none;
-            color: #d9534f;
+            padding: 6px 12px;
+            border-radius: 6px;
             cursor: pointer;
-            text-decoration: underline;
-            font-size: 16px;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
         }
-        .logout-btn:hover {
-            color: #c9302c;
+        
+        .personal-cabinet-btn:hover {
+            background: #A0522D;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(139, 69, 19, 0.3);
+            color: white;
+            text-decoration: none;
+        }
+        
+        .personal-cabinet-btn i {
+            font-size: 12px;
+        }
+
+        /* Убираем выделение активной ссылки */
+        .nav-link.active {
+            background-color: transparent !important;
+            color: inherit !important;
+        }
+
+        /* Убираем подчеркивание и другие эффекты */
+        .nav-link {
+            text-decoration: none !important;
+            border-bottom: none !important;
+        }
+
+        .nav-link:hover {
+            text-decoration: none !important;
+            border-bottom: none !important;
         }
 
         /* Стили для сворачиваемых блоков */
@@ -93,6 +122,36 @@
             background-position: center;
             border-radius: 8px 8px 0 0;
         }
+
+        .image-url-input {
+            width: 100%;
+            padding: 8px;
+            margin-top: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .image-url-input:focus {
+            outline: none;
+            border-color: #8B4513;
+        }
+
+        .update-image-btn {
+            background: #8B4513;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-top: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        .update-image-btn:hover {
+            background: #A0522D;
+        }
     </style>
 </head>
 <body>
@@ -110,15 +169,14 @@
                 <ul>
                     <li><a href="http://localhost:9090/api/formindex" class="nav-link">Главная</a></li>
                     <li><a href="http://localhost:9090/api/formsvedeniy" class="nav-link">О нас</a></li>
-                    <li><a href="http://localhost:9090/api/formassortiment" class="nav-link active">Ассортимент</a></li>
+                    <li><a href="http://localhost:9090/api/formassortiment" class="nav-link">Ассортимент</a></li>
                     <li><a href="http://localhost:9090/api/formyslygs" class="nav-link">Услуги</a></li>
                     <li><a href="http://localhost:9090/api/formotziv" class="nav-link">Отзывы</a></li>
                     <li><a href="http://localhost:9090/api/formcontact" class="nav-link">Информация</a></li>
                     <li th:if="${user != null}">
-                        <span class="nav-link user-name" th:text="${userDisplayName}" onclick="redirectToPersonal()">Иванов И.И.</span>
-                        <form th:action="@{/api/logout}" method="post" style="display: inline;">
-                            <button type="submit" class="nav-link logout-btn">Выйти</button>
-                        </form>
+                        <a href="http://localhost:9090/api/formspecial" class="personal-cabinet-btn">
+                            <i class="fas fa-user"></i> Кабинет
+                        </a>
                     </li>
                     <li th:if="${user == null}">
                         <a href="http://localhost:9090/api/formauto" class="nav-link">Войти</a>
@@ -142,6 +200,7 @@
                         <h3 th:text="${consumable.name}">Название материала</h3>
                         <p th:text="${consumable.description}">Описание материала</p>
                         <div class="price-range" th:text="'от ' + ${#numbers.formatDecimal(consumable.price, 1, 2, 'COMMA')} + ' ₽/' + ${consumable.unit}">от 0 ₽/шт</div>
+                        <input type="text" class="image-url-input" placeholder="Введите URL изображения" onchange="updateImage(this)">
                         <ul class="materials-list">
                             <li th:with="stockInt=${T(java.lang.Integer).valueOf(consumable.stockQuantity)}">
                                 Наличие:
@@ -172,6 +231,7 @@
                         <h3 th:text="${kit.name}">Название набора</h3>
                         <p th:text="${kit.description}">Описание набора</p>
                         <div class="price-range" th:text="'от ' + ${#numbers.formatDecimal(kit.price, 1, 2, 'COMMA')} + ' ₽'">от 0 ₽</div>
+                        <input type="text" class="image-url-input" placeholder="Введите URL изображения" onchange="updateImage(this)">
                         <ul class="materials-list">
                             <li th:with="stockInt=${T(java.lang.Integer).valueOf(kit.stockQuantity)}">
                                 Наличие:
@@ -198,13 +258,13 @@
                         <h3>Деревянный багет</h3>
                         <p>Классические рамы из натурального дерева с резьбой и позолотой</p>
                         <div class="price-range">от 1 500 ₽/п.м.</div>
+                        <input type="text" class="image-url-input" placeholder="Введите URL изображения" onchange="updateImage(this)">
                         <ul class="materials-list">
                             <li>Дуб, ясень, орех</li>
                             <li>Позолота 24 карата</li>
                             <li>Ручная резьба</li>
                             <li>Антикварная патина</li>
                         </ul>
-                        <button class="btn">Выбрать</button>
                     </div>
                 </div>
 
@@ -214,13 +274,13 @@
                         <h3>Пластиковый багет</h3>
                         <p>Современные легкие рамы с широкой палитрой цветов</p>
                         <div class="price-range">от 800 ₽/п.м.</div>
+                        <input type="text" class="image-url-input" placeholder="Введите URL изображения" onchange="updateImage(this)">
                         <ul class="materials-list">
                             <li>Водостойкий пластик</li>
                             <li>200+ цветов</li>
                             <li>Имитация дерева</li>
                             <li>Металлические эффекты</li>
                         </ul>
-                        <button class="btn">Выбрать</button>
                     </div>
                 </div>
 
@@ -230,13 +290,13 @@
                         <h3>Алюминиевый багет</h3>
                         <p>Стильные рамы для современного интерьера и фотографий</p>
                         <div class="price-range">от 1 200 ₽/п.м.</div>
+                        <input type="text" class="image-url-input" placeholder="Введите URL изображения" onchange="updateImage(this)">
                         <ul class="materials-list">
                             <li>Анодированный алюминий</li>
                             <li>Хромированные поверхности</li>
                             <li>Матовые и глянцевые</li>
                             <li>Угловые соединения</li>
                         </ul>
-                        <button class="btn">Выбрать</button>
                     </div>
                 </div>
             </div>
@@ -338,6 +398,53 @@
             coll[0].click();
         }
     });
+
+    // Функция для обновления изображения по URL
+    function updateImage(input) {
+        const imageUrl = input.value.trim();
+        if (imageUrl) {
+            // Находим ближайший контейнер изображения
+            const card = input.closest('.category-card');
+            const imageElement = card.querySelector('.category-image, .kit-image');
+            
+            // Устанавливаем новое изображение
+            imageElement.style.backgroundImage = `url('${imageUrl}')`;
+            
+            // Показываем уведомление об успешной загрузке
+            showUploadNotification('Изображение успешно обновлено!');
+        }
+    }
+
+    // Функция для показа уведомления
+    function showUploadNotification(message) {
+        // Создаем элемент уведомления
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #28a745;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 5px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 1000;
+            font-weight: bold;
+            transition: opacity 0.3s ease;
+        `;
+        notification.textContent = message;
+        
+        // Добавляем уведомление на страницу
+        document.body.appendChild(notification);
+        
+        // Удаляем уведомление через 3 секунды
+        setTimeout(() => {
+            notification.style.opacity = '0';
+            setTimeout(() => {
+                document.body.removeChild(notification);
+            }, 300);
+        }, 3000);
+    }
 </script>
 </body>
 </html>

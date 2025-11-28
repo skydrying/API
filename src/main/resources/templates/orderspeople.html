@@ -7,22 +7,35 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link th:href="@{/css/stylereg.css}" rel="stylesheet">
     <style>
-        .user-name {
-            font-weight: bold;
-            color: #333;
-            margin-right: 10px;
-        }
-        .logout-btn {
-            background: none;
+        .personal-cabinet-btn {
+            background: #8B4513;
+            color: white;
             border: none;
-            color: #d9534f;
+            padding: 6px 12px;
+            border-radius: 6px;
             cursor: pointer;
-            text-decoration: underline;
-            font-size: 16px;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
         }
-        .logout-btn:hover {
-            color: #c9302c;
+        
+        .personal-cabinet-btn:hover {
+            background: #A0522D;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(139, 69, 19, 0.3);
+            color: white;
+            text-decoration: none;
         }
+        
+        .personal-cabinet-btn i {
+            font-size: 12px;
+        }
+
         .order-container {
             max-width: 800px;
             margin: 0 auto;
@@ -58,16 +71,142 @@
         .material-info {
             margin-top: 10px;
         }
+        
+        /* Стили для полей ввода */
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        .form-group h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+        
         .dimension-inputs {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 15px;
         }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .input-group input,
+        .input-group select,
+        .input-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background-color: white;
+            box-sizing: border-box;
+        }
+        
+        .input-group input:focus,
+        .input-group select:focus,
+        .input-group textarea:focus {
+            outline: none;
+            border-color: #8B4513;
+            box-shadow: 0 0 0 3px rgba(139, 69, 19, 0.1);
+        }
+        
+        .input-group input:hover,
+        .input-group select:hover,
+        .input-group textarea:hover {
+            border-color: #bbb;
+        }
+        
         .optional-section {
             background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid #8B4513;
+        }
+        
+        .optional-section h3 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+        }
+        
+        .btn-primary {
+            background: #8B4513;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 10px;
+        }
+        
+        .btn-primary:hover {
+            background: #A0522D;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(139, 69, 19, 0.3);
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .alert-success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        
+        .alert-danger {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        
+        .alert-warning {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+        
+        .alert-info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+
+        /* Стиль для успешного сообщения */
+        .success-message {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
             padding: 20px;
             border-radius: 8px;
-            margin: 15px 0;
+            margin: 20px 0;
+            text-align: center;
+            font-size: 18px;
+            font-weight: 500;
+        }
+
+        .success-message i {
+            color: #28a745;
+            margin-right: 10px;
         }
     </style>
 </head>
@@ -91,13 +230,12 @@
                     <li><a href="http://localhost:9090/api/formotziv" class="nav-link">Отзывы</a></li>
                     <li><a href="http://localhost:9090/api/formcontact" class="nav-link">Информация</a></li>
                     <li th:if="${user != null}">
-                        <span class="nav-link user-name" th:text="${userDisplayName}" onclick="redirectToPersonal()">Иванов И.И.</span>
-                        <form th:action="@{/api/logout}" method="post" style="display: inline;">
-                            <button type="submit" class="nav-link logout-btn">Выйти</button>
-                        </form>
+                        <a href="http://localhost:9090/api/formspecial" class="personal-cabinet-btn">
+                            <i class="fas fa-user"></i> Кабинет
+                        </a>
                     </li>
                     <li th:if="${user == null}">
-                        <a href="http://localhost:9090/api/formauto" class="nav-link active">Войти</a>
+                        <a href="http://localhost:9090/api/formauto" class="nav-link">Войти</a>
                     </li>
                 </ul>
             </nav>
@@ -116,23 +254,29 @@
             <span th:text="${errorMessage}"></span>
         </div>
 
+        <!-- Сообщение об успешном оформлении заказа -->
+        <div id="successMessage" class="success-message" style="display: none;">
+            <i class="fas fa-check-circle"></i>
+            <span>Заказ успешно оформлен! Мы свяжемся с вами в ближайшее время.</span>
+        </div>
+
         <div th:if="${user == null}" class="alert alert-warning">
             <p>Для оформления заказа необходимо <a href="/api/formauto">авторизоваться</a></p>
         </div>
 
         <div th:if="${user != null && role == 'customer'}" class="form-section">
-            <form id="frame-order-form" th:action="@{/api/createFrameOrder}" method="post">
+            <form id="frame-order-form" th:action="@{/api/createFrameOrder}" method="post" onsubmit="handleOrderSubmit(event)">
 
                 <!-- Размеры рамки -->
                 <div class="form-group">
                     <h3>📏 Размеры рамки</h3>
                     <div class="dimension-inputs">
-                        <div>
+                        <div class="input-group">
                             <label for="width">Ширина (мм):</label>
                             <input type="number" id="width" name="width" required min="50" max="2000"
                                    placeholder="Например: 300">
                         </div>
-                        <div>
+                        <div class="input-group">
                             <label for="height">Высота (мм):</label>
                             <input type="number" id="height" name="height" required min="50" max="2000"
                                    placeholder="Например: 400">
@@ -163,13 +307,13 @@
                 <div class="optional-section">
                     <h3>🎨 Дополнительные параметры (необязательно)</h3>
 
-                    <div class="form-group">
+                    <div class="input-group">
                         <label for="color">Цвет рамки:</label>
                         <input type="text" id="color" name="color"
                                placeholder="Например: натуральное дерево, черный матовый">
                     </div>
 
-                    <div class="form-group">
+                    <div class="input-group">
                         <label for="style">Стиль рамки:</label>
                         <select id="style" name="style">
                             <option value="">Выберите стиль</option>
@@ -181,7 +325,7 @@
                         </select>
                     </div>
 
-                    <div class="form-group">
+                    <div class="input-group">
                         <label for="mountType">Тип крепления:</label>
                         <select id="mountType" name="mountType">
                             <option value="">Выберите крепление</option>
@@ -191,7 +335,7 @@
                         </select>
                     </div>
 
-                    <div class="form-group">
+                    <div class="input-group">
                         <label for="glassType">Тип стекла:</label>
                         <select id="glassType" name="glassType">
                             <option value="">Выберите стекло</option>
@@ -201,13 +345,12 @@
                             <option value="Оргстекло">Оргстекло</option>
                         </select>
                     </div>
-                </div>
 
-                <!-- Примечания -->
-                <div class="form-group">
-                    <label for="notes">Дополнительные пожелания:</label>
-                    <textarea id="notes" name="notes" rows="4"
-                              placeholder="Опишите особые пожелания к заказу..."></textarea>
+                    <div class="input-group">
+                        <label for="notes">Дополнительные пожелания:</label>
+                        <textarea id="notes" name="notes" rows="4"
+                                  placeholder="Опишите особые пожелания к заказу..."></textarea>
+                    </div>
                 </div>
 
                 <button type="submit" class="btn-primary">
@@ -249,30 +392,44 @@
         }
     }
 
-    // Валидация формы
-    document.getElementById('frame-order-form').addEventListener('submit', function(e) {
-        const width = document.getElementById('width').value;
-        const height = document.getElementById('height').value;
-        const materialSelected = document.querySelector('input[name="frameMaterialId"]:checked');
+function handleOrderSubmit(event) {
+    event.preventDefault();
 
-        if (width < 50 || width > 2000) {
-            alert('Ширина должна быть от 50 до 2000 мм');
-            e.preventDefault();
-            return;
-        }
+    const width = document.getElementById('width').value;
+    const height = document.getElementById('height').value;
+    const materialSelected = document.querySelector('input[name="frameMaterialId"]:checked');
 
-        if (height < 50 || height > 2000) {
-            alert('Высота должна быть от 50 до 2000 мм');
-            e.preventDefault();
-            return;
-        }
+    // Валидация
+    if (width < 50 || width > 2000) {
+        alert('Ширина должна быть от 50 до 2000 мм');
+        return;
+    }
 
-        if (!materialSelected) {
-            alert('Пожалуйста, выберите материал багета');
-            e.preventDefault();
-            return;
-        }
-    });
+    if (height < 50 || height > 2000) {
+        alert('Высота должна быть от 50 до 2000 мм');
+        return;
+    }
+
+    if (!materialSelected) {
+        alert('Пожалуйста, выберите материал багета');
+        return;
+    }
+
+    // Показываем сообщение об успехе
+    const successMessage = document.getElementById('successMessage');
+    successMessage.style.display = 'block';
+    successMessage.scrollIntoView({ behavior: 'smooth' });
+
+    // Скрываем форму
+    const formSection = document.querySelector('.form-section');
+    formSection.style.display = 'none';
+
+    // Отправляем форму на сервер после небольшой задержки
+    setTimeout(() => {
+        event.target.submit();
+    }, 2000);
+}
+
 </script>
 </body>
 </html>

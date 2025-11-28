@@ -11,26 +11,41 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            font-family: 'Georgia', serif;
+        }
+
+        :root {
+            --primary: #8B4513;
+            --secondary: #D2B48C;
+            --accent: #A0522D;
+            --light: #FAF0E6;
+            --dark: #3E2723;
+            --gray: #795548;
+            --transition: all 0.3s ease;
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-color: var(--light);
+            color: var(--dark);
+            line-height: 1.6;
             min-height: 100vh;
-            color: #333;
-        }
-
-        .header {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 1rem 0;
-            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
         }
 
         .autocontainer {
             max-width: 1400px;
             margin: 0 auto;
             padding: 0 20px;
+        }
+
+        /* Шапка */
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--dark) 100%);
+            color: white;
+            padding: 15px 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
         }
 
         .header-content {
@@ -48,18 +63,17 @@
 
         .logo-icon {
             font-size: 2.5rem;
-            color: #667eea;
+            color: var(--secondary);
         }
 
         .logo-text h1 {
             font-size: 1.8rem;
-            color: #333;
             margin-bottom: 5px;
         }
 
         .logo-text p {
             font-size: 0.9rem;
-            color: #666;
+            opacity: 0.8;
         }
 
         .navigation ul {
@@ -70,37 +84,55 @@
         }
 
         .nav-link {
+            color: white;
             text-decoration: none;
-            color: #333;
             font-weight: 500;
-            padding: 10px 15px;
-            border-radius: 8px;
-            transition: all 0.3s ease;
+            padding: 8px 5px;
+            transition: var(--transition);
+            position: relative;
         }
 
-        .nav-link:hover {
-            background: #667eea;
-            color: white;
+        .nav-link:hover, .nav-link.active {
+            color: var(--secondary);
         }
 
-        .nav-link.active {
-            background: #667eea;
-            color: white;
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background-color: var(--secondary);
+            transition: var(--transition);
+        }
+
+        .nav-link:hover::after, .nav-link.active::after {
+            width: 100%;
         }
 
         .user-name {
             cursor: pointer;
-            background: #4CAF50 !important;
-            color: white !important;
+            background: transparent !important;
+            color: var(--secondary) !important;
+            font-weight: bold;
         }
 
         .logout-btn {
-            background: #f44336 !important;
+            background: var(--accent) !important;
             color: white !important;
             border: none;
             cursor: pointer;
+            padding: 8px 15px;
+            border-radius: 5px;
+            transition: var(--transition);
         }
 
+        .logout-btn:hover {
+            background: #8B4513 !important;
+        }
+
+        /* Основной контейнер */
         .main-container {
             max-width: 1400px;
             margin: 2rem auto;
@@ -113,17 +145,18 @@
         }
 
         .dashboard-header h1 {
-            color: white;
+            color: var(--primary);
             font-size: 2.5rem;
             margin-bottom: 0.5rem;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
         }
 
         .dashboard-header p {
-            color: rgba(255, 255, 255, 0.9);
+            color: var(--gray);
             font-size: 1.1rem;
         }
 
+        /* Статистика */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -132,23 +165,23 @@
         }
 
         .stat-card {
-            background: rgba(255, 255, 255, 0.95);
+            background: white;
             padding: 1.5rem;
-            border-radius: 15px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
             text-align: center;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            transition: transform 0.3s ease;
+            transition: var(--transition);
+            border: 1px solid var(--secondary);
         }
 
         .stat-card:hover {
             transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
         }
 
         .stat-card h3 {
             font-size: 0.9rem;
-            color: #666;
+            color: var(--gray);
             margin-bottom: 0.5rem;
             text-transform: uppercase;
             letter-spacing: 1px;
@@ -157,21 +190,22 @@
         .stat-value {
             font-size: 2rem;
             font-weight: bold;
-            color: #333;
+            color: var(--dark);
         }
 
         .stat-card.total .stat-value {
-            color: #2196F3;
+            color: var(--primary);
         }
 
         .stat-card.masters .stat-value {
-            color: #FF9800;
+            color: var(--accent);
         }
 
         .stat-card.statuses .stat-value {
-            color: #4CAF50;
+            color: #795548;
         }
 
+        /* Графики */
         .charts-container {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
@@ -180,18 +214,17 @@
         }
 
         .chart-card {
-            background: rgba(255, 255, 255, 0.95);
+            background: white;
             padding: 1.5rem;
-            border-radius: 15px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--secondary);
         }
 
         .chart-card h2 {
             text-align: center;
             margin-bottom: 1rem;
-            color: #333;
+            color: var(--primary);
             font-size: 1.3rem;
         }
 
@@ -200,6 +233,7 @@
             position: relative;
         }
 
+        /* Детали */
         .details-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
@@ -208,18 +242,17 @@
         }
 
         .details-card {
-            background: rgba(255, 255, 255, 0.95);
+            background: white;
             padding: 1.5rem;
-            border-radius: 15px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--secondary);
         }
 
         .details-card h2 {
             text-align: center;
             margin-bottom: 1.5rem;
-            color: #333;
+            color: var(--primary);
             font-size: 1.3rem;
         }
 
@@ -233,18 +266,24 @@
             align-items: center;
             padding: 1rem;
             margin-bottom: 0.5rem;
-            background: rgba(255, 255, 255, 0.7);
+            background: rgba(210, 180, 140, 0.1);
             border-radius: 8px;
-            border-left: 4px solid #667eea;
+            border-left: 4px solid var(--primary);
+            transition: var(--transition);
+        }
+
+        .status-item:hover, .master-item:hover {
+            background: rgba(210, 180, 140, 0.2);
+            transform: translateX(5px);
         }
 
         .status-name, .master-name {
             font-weight: 500;
-            color: #333;
+            color: var(--dark);
         }
 
         .status-count, .master-count {
-            background: #667eea;
+            background: var(--primary);
             color: white;
             padding: 0.3rem 0.8rem;
             border-radius: 20px;
@@ -252,72 +291,82 @@
             font-size: 0.9rem;
         }
 
-        .status-new { border-left-color: #2196F3; }
-        .status-progress { border-left-color: #FF9800; }
-        .status-ready { border-left-color: #4CAF50; }
-        .status-completed { border-left-color: #673AB7; }
-        .status-cancelled { border-left-color: #f44336; }
+        .status-new { border-left-color: #8B4513; }
+        .status-progress { border-left-color: #A0522D; }
+        .status-ready { border-left-color: #228B22; }
+        .status-completed { border-left-color: #2E8B57; }
+        .status-cancelled { border-left-color: #B22222; }
 
+        /* Подвал */
         .footer {
-            background: rgba(0, 0, 0, 0.8);
+            background: var(--dark);
             color: white;
             text-align: center;
             padding: 1.5rem 0;
             margin-top: 3rem;
         }
 
+        /* Кнопки действий */
         .report-actions {
             text-align: center;
             margin-bottom: 2rem;
         }
 
         .btn {
-            background: #667eea;
+            background: var(--primary);
             color: white;
             border: none;
             padding: 12px 24px;
             border-radius: 8px;
             font-size: 1rem;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: var(--transition);
             text-decoration: none;
             display: inline-block;
             margin: 0 10px;
         }
 
         .btn:hover {
-            background: #5a6fd8;
+            background: var(--dark);
             transform: translateY(-2px);
         }
 
         .btn-secondary {
-            background: #6c757d;
+            background: var(--gray);
         }
 
         .btn-secondary:hover {
-            background: #5a6268;
+            background: var(--dark);
+        }
+
+        /* Адаптивность */
+        @media (max-width: 992px) {
+            .header-content {
+                flex-direction: column;
+                gap: 20px;
+            }
+            
+            .navigation ul {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
         }
 
         @media (max-width: 768px) {
             .charts-container, .details-grid {
                 grid-template-columns: 1fr;
             }
-
-            .header-content {
-                flex-direction: column;
-                gap: 1rem;
-            }
-
-            .navigation ul {
-                justify-content: center;
-            }
-
+            
             .stats-grid {
                 grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             }
-
+            
             .details-grid {
                 grid-template-columns: 1fr;
+            }
+            
+            .dashboard-header h1 {
+                font-size: 2rem;
             }
         }
     </style>
@@ -342,13 +391,11 @@
                     <li><a th:href="@{/api/formotziv}" class="nav-link">Отзывы</a></li>
                     <li><a th:href="@{/api/formcontact}" class="nav-link">Информация</a></li>
                     <li th:if="${user != null}">
-                        <span class="nav-link user-name" th:text="${userDisplayName}" onclick="redirectToPersonal()">Директор</span>
-                        <form th:action="@{/api/logout}" method="post" style="display: inline;">
                             <button type="submit" class="nav-link logout-btn">Выйти</button>
                         </form>
                     </li>
                     <li th:if="${user == null}">
-                        <a th:href="@{/api/formauto}" class="nav-link">Войти</a>
+                        <a href="http://localhost:9090/api/formauto" class="nav-link active">Войти</a>
                     </li>
                 </ul>
             </nav>
@@ -362,7 +409,6 @@
         <p>Статистика заказов и распределение по мастерам</p>
     </div>
 
-
     <div class="stats-grid">
         <div class="stat-card total">
             <h3>Всего заказов</h3>
@@ -375,7 +421,6 @@
             <div class="stat-value" th:text="${masterNames.size()}">0</div>
             <p><i class="fas fa-users"></i> Активные мастера</p>
         </div>
-
     </div>
 
     <div class="charts-container">
@@ -434,13 +479,13 @@
     const masterNames = [[${masterNames}]];
     const masterOrderCounts = [[${masterOrderCounts}]];
 
-    // Цвета для статусов
+    // Цвета для статусов (адаптированные под новую цветовую схему)
     const statusColors = {
-        'Новый': '#2196F3',
-        'Выполняется': '#FF9800',
-        'Готов': '#4CAF50',
-        'Забран': '#673AB7',
-        'Отменен': '#f44336',
+        'Новый': '#8B4513',
+        'Выполняется': '#A0522D',
+        'Готов': '#228B22',
+        'Забран': '#2E8B57',
+        'Отменен': '#B22222',
         'Неизвестно': '#9E9E9E'
     };
 
@@ -492,8 +537,8 @@
             datasets: [{
                 label: 'Количество заказов',
                 data: masterNames.length > 0 ? masterOrderCounts : [0],
-                backgroundColor: 'rgba(102, 126, 234, 0.7)',
-                borderColor: 'rgba(102, 126, 234, 1)',
+                backgroundColor: 'rgba(139, 69, 19, 0.7)',
+                borderColor: 'rgba(139, 69, 19, 1)',
                 borderWidth: 2
             }]
         },

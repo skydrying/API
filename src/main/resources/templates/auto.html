@@ -27,8 +27,6 @@
                     <li><a href="http://localhost:9090/api/formotziv" class="nav-link">Отзывы</a></li>
                     <li><a href="http://localhost:9090/api/formcontact" class="nav-link">Информация</a></li>
                     <li th:if="${user != null}">
-                        <span class="nav-link user-name" th:text="${userDisplayName}" onclick="redirectToPersonal()">Иванов И.И.</span>
-                        <form th:action="@{/api/logout}" method="post" style="display: inline;">
                             <button type="submit" class="nav-link logout-btn">Выйти</button>
                         </form>
                     </li>

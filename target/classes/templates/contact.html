@@ -7,21 +7,50 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link th:href="@{/css/styleassortiment.css}" rel="stylesheet">
     <style>
-        .user-name {
-            font-weight: bold;
-            color: #333;
-            margin-right: 10px;
-        }
-        .logout-btn {
-            background: none;
+        .personal-cabinet-btn {
+            background: #8B4513;
+            color: white;
             border: none;
-            color: #d9534f;
+            padding: 6px 12px;
+            border-radius: 6px;
             cursor: pointer;
-            text-decoration: underline;
-            font-size: 16px;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
         }
-        .logout-btn:hover {
-            color: #c9302c;
+        
+        .personal-cabinet-btn:hover {
+            background: #A0522D;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(139, 69, 19, 0.3);
+            color: white;
+            text-decoration: none;
+        }
+        
+        .personal-cabinet-btn i {
+            font-size: 12px;
+        }
+
+        /* Убираем выделение активной ссылки */
+        .nav-link.active {
+            background-color: transparent !important;
+            color: inherit !important;
+        }
+
+        /* Убираем подчеркивание и другие эффекты */
+        .nav-link {
+            text-decoration: none !important;
+            border-bottom: none !important;
+        }
+
+        .nav-link:hover {
+            text-decoration: none !important;
+            border-bottom: none !important;
         }
 
         /* Стили для сворачиваемых блоков */
@@ -165,12 +194,11 @@
                     <li><a href="http://localhost:9090/api/formassortiment" class="nav-link">Ассортимент</a></li>
                     <li><a href="http://localhost:9090/api/formyslygs" class="nav-link">Услуги</a></li>
                     <li><a href="http://localhost:9090/api/formotziv" class="nav-link">Отзывы</a></li>
-                    <li><a href="http://localhost:9090/api/formcontact" class="nav-link active">Информация</a></li>
+                    <li><a href="http://localhost:9090/api/formcontact" class="nav-link">Информация</a></li>
                     <li th:if="${user != null}">
-                        <span class="nav-link user-name" th:text="${userDisplayName}" onclick="redirectToPersonal()">Иванов И.И.</span>
-                        <form th:action="@{/api/logout}" method="post" style="display: inline;">
-                            <button type="submit" class="nav-link logout-btn">Выйти</button>
-                        </form>
+                        <a href="http://localhost:9090/api/formspecial" class="personal-cabinet-btn">
+                            <i class="fas fa-user"></i> Кабинет
+                        </a>
                     </li>
                     <li th:if="${user == null}">
                         <a href="http://localhost:9090/api/formauto" class="nav-link">Войти</a>
@@ -193,7 +221,7 @@
                 <p>Правильно подобранный багет может преобразить вашу картину или фотографию. Вот несколько рекомендаций:</p>
 
                 <ul class="tips-list">
-                    <li><strong>Учитывайте стиль изображения</strong> - для классических картин подойдет деревянный багет с резьбой, для современных - минималистичный алюминиевый</li>
+                    <li><strong>Учитывайте стиль</strong> - для классических картин подойдет деревянный багет с резьбой, для современных - минималистичный алюминиевый</li>
                     <li><strong>Цветовая гармония</strong> - багет должен дополнять, а не перебивать изображение</li>
                     <li><strong>Ширина багета</strong> - для больших работ выбирайте широкий багет, для маленьких - узкий</li>
                     <li><strong>Паспарту</strong> - используйте паспарту чтобы отделить изображение от багета и создать воздушное пространство</li>

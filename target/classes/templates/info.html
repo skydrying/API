@@ -7,21 +7,50 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link th:href="@{/css/styleinfo.css}" rel="stylesheet">
     <style>
-        .user-name {
-            font-weight: bold;
-            color: #333;
-            margin-right: 10px;
-        }
-        .logout-btn {
-            background: none;
+        .personal-cabinet-btn {
+            background: #8B4513;
+            color: white;
             border: none;
-            color: #d9534f; /* Красный для выхода */
+            padding: 6px 12px;
+            border-radius: 6px;
             cursor: pointer;
-            text-decoration: underline;
-            font-size: 16px;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
         }
-        .logout-btn:hover {
-            color: #c9302c;
+        
+        .personal-cabinet-btn:hover {
+            background: #A0522D;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(139, 69, 19, 0.3);
+            color: white;
+            text-decoration: none;
+        }
+        
+        .personal-cabinet-btn i {
+            font-size: 12px;
+        }
+
+        /* Убираем выделение активной ссылки */
+        .nav-link.active {
+            background-color: transparent !important;
+            color: inherit !important;
+        }
+
+        /* Убираем подчеркивание и другие эффекты */
+        .nav-link {
+            text-decoration: none !important;
+            border-bottom: none !important;
+        }
+
+        .nav-link:hover {
+            text-decoration: none !important;
+            border-bottom: none !important;
         }
     </style>
 </head>
@@ -39,16 +68,15 @@
                 <nav class="navigation">
                     <ul>
                         <li><a href="http://localhost:9090/api/formindex" class="nav-link">Главная</a></li>
-                        <li><a href="http://localhost:9090/api/formsvedeniy" class="nav-link active">О нас</a></li>
+                        <li><a href="http://localhost:9090/api/formsvedeniy" class="nav-link">О нас</a></li>
                         <li><a href="http://localhost:9090/api/formassortiment" class="nav-link">Ассортимент</a></li>
                         <li><a href="http://localhost:9090/api/formyslygs" class="nav-link">Услуги</a></li>
                         <li><a href="http://localhost:9090/api/formotziv" class="nav-link">Отзывы</a></li>
                         <li><a href="http://localhost:9090/api/formcontact" class="nav-link">Информация</a></li>
                         <li th:if="${user != null}">
-                            <span class="nav-link user-name" th:text="${userDisplayName}" onclick="redirectToPersonal()">Иванов И.И.</span>
-                            <form th:action="@{/api/logout}" method="post" style="display: inline;">
-                                <button type="submit" class="nav-link logout-btn">Выйти</button>
-                            </form>
+                            <a href="http://localhost:9090/api/formspecial" class="personal-cabinet-btn">
+                                <i class="fas fa-user"></i> Кабинет
+                            </a>
                         </li>
                         <li th:if="${user == null}">
                             <a href="http://localhost:9090/api/formauto" class="nav-link">Войти</a>
@@ -112,15 +140,15 @@
                         <div class="member-photo">
                             <i class="fas fa-user-tie"></i>
                         </div>
-                        <h4>Александр Петров</h4>
+                        <h4>Дмитрий Лисовский</h4>
                         <div class="position">Основатель, главный багетчик</div>
-                        <p>20 лет опыта в багетном деле. Художник по образованию.</p>
+                        <p>20 лет опыта в багетном деле. Программист по образованию.</p>
                     </div>
                     <div class="team-member">
                         <div class="member-photo">
                             <i class="fas fa-user-tie"></i>
                         </div>
-                        <h4>Мария Иванова</h4>
+                        <h4>Александр Плавинский</h4>
                         <div class="position">Дизайнер-консультант</div>
                         <p>Специалист по подбору оформления для интерьеров.</p>
                     </div>
@@ -128,7 +156,15 @@
                         <div class="member-photo">
                             <i class="fas fa-user-tie"></i>
                         </div>
-                        <h4>Дмитрий Смирнов</h4>
+                        <h4>Матвей Маковкин</h4>
+                        <div class="position">Главный-мастер</div>
+                        <p>Ответственный за других мастеров.</p>
+                    </div>
+                        <div class="team-member">
+                        <div class="member-photo">
+                            <i class="fas fa-user-tie"></i>
+                        </div>
+                        <h4>Андрей Недоров</h4>
                         <div class="position">Мастер-реставратор</div>
                         <p>Специализируется на восстановлении антикварных рам.</p>
                     </div>

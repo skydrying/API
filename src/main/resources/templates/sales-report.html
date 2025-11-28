@@ -11,20 +11,24 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            font-family: 'Georgia', serif;
+        }
+
+        :root {
+            --primary: #8B4513;
+            --secondary: #D2B48C;
+            --accent: #A0522D;
+            --light: #FAF0E6;
+            --dark: #3E2723;
+            --gray: #795548;
+            --transition: all 0.3s ease;
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-color: var(--light);
+            color: var(--dark);
+            line-height: 1.6;
             min-height: 100vh;
-            color: #333;
-        }
-
-        .header {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 1rem 0;
-            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
         }
 
         .autocontainer {
@@ -33,11 +37,21 @@
             padding: 0 20px;
         }
 
+        /* Шапка */
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--dark) 100%);
+            color: white;
+            padding: 15px 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
         .header-content {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            flex-wrap: wrap;
         }
 
         .logo {
@@ -48,59 +62,75 @@
 
         .logo-icon {
             font-size: 2.5rem;
-            color: #667eea;
+            color: var(--secondary);
         }
 
         .logo-text h1 {
             font-size: 1.8rem;
-            color: #333;
             margin-bottom: 5px;
         }
 
         .logo-text p {
             font-size: 0.9rem;
-            color: #666;
+            opacity: 0.8;
         }
 
         .navigation ul {
             display: flex;
             list-style: none;
-            gap: 20px;
-            flex-wrap: wrap;
+            gap: 25px;
         }
 
         .nav-link {
+            color: white;
             text-decoration: none;
-            color: #333;
             font-weight: 500;
-            padding: 10px 15px;
-            border-radius: 8px;
-            transition: all 0.3s ease;
+            padding: 8px 5px;
+            transition: var(--transition);
+            position: relative;
         }
 
-        .nav-link:hover {
-            background: #667eea;
-            color: white;
+        .nav-link:hover, .nav-link.active {
+            color: var(--secondary);
         }
 
-        .nav-link.active {
-            background: #667eea;
-            color: white;
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background-color: var(--secondary);
+            transition: var(--transition);
+        }
+
+        .nav-link:hover::after, .nav-link.active::after {
+            width: 100%;
         }
 
         .user-name {
             cursor: pointer;
-            background: #4CAF50 !important;
-            color: white !important;
+            background: transparent !important;
+            color: var(--secondary) !important;
+            font-weight: bold;
         }
 
         .logout-btn {
-            background: #f44336 !important;
+            background: var(--accent) !important;
             color: white !important;
             border: none;
             cursor: pointer;
+            padding: 8px 15px;
+            border-radius: 5px;
+            transition: var(--transition);
         }
 
+        .logout-btn:hover {
+            background: #8B4513 !important;
+        }
+
+        /* Основной контейнер */
         .main-container {
             max-width: 1400px;
             margin: 2rem auto;
@@ -113,17 +143,18 @@
         }
 
         .dashboard-header h1 {
-            color: white;
+            color: var(--primary);
             font-size: 2.5rem;
             margin-bottom: 0.5rem;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
         }
 
         .dashboard-header p {
-            color: rgba(255, 255, 255, 0.9);
+            color: var(--gray);
             font-size: 1.1rem;
         }
 
+        /* Статистика */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -132,23 +163,23 @@
         }
 
         .stat-card {
-            background: rgba(255, 255, 255, 0.95);
+            background: white;
             padding: 1.5rem;
-            border-radius: 15px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
             text-align: center;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            transition: transform 0.3s ease;
+            transition: var(--transition);
+            border: 1px solid var(--secondary);
         }
 
         .stat-card:hover {
             transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
         }
 
         .stat-card h3 {
             font-size: 0.9rem;
-            color: #666;
+            color: var(--gray);
             margin-bottom: 0.5rem;
             text-transform: uppercase;
             letter-spacing: 1px;
@@ -157,21 +188,22 @@
         .stat-value {
             font-size: 2rem;
             font-weight: bold;
-            color: #333;
+            color: var(--dark);
         }
 
         .stat-card.revenue .stat-value {
-            color: #4CAF50;
+            color: var(--primary);
         }
 
         .stat-card.orders .stat-value {
-            color: #2196F3;
+            color: var(--accent);
         }
 
         .stat-card.conversion .stat-value {
-            color: #FF9800;
+            color: #795548;
         }
 
+        /* Графики */
         .charts-container {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
@@ -180,53 +212,65 @@
         }
 
         .chart-card {
-            background: rgba(255, 255, 255, 0.95);
+            background: white;
             padding: 1.5rem;
-            border-radius: 15px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--secondary);
         }
 
         .chart-card h2 {
             text-align: center;
             margin-bottom: 1rem;
-            color: #333;
+            color: var(--primary);
             font-size: 1.3rem;
         }
 
+        /* Информация об источниках данных */
+        .data-source-info {
+            text-align: center;
+            color: var(--gray);
+            font-size: 0.9rem;
+            margin-bottom: 2rem;
+            font-style: italic;
+            padding: 10px;
+            background-color: rgba(210, 180, 140, 0.2);
+            border-radius: 5px;
+        }
+
+        /* Подвал */
         .footer {
-            background: rgba(0, 0, 0, 0.8);
+            background: var(--dark);
             color: white;
             text-align: center;
             padding: 1.5rem 0;
             margin-top: 3rem;
         }
 
-        .data-source-info {
-            text-align: center;
-            color: rgba(255, 255, 255, 0.8);
-            font-size: 0.9rem;
-            margin-bottom: 2rem;
-            font-style: italic;
+        /* Адаптивность */
+        @media (max-width: 992px) {
+            .header-content {
+                flex-direction: column;
+                gap: 20px;
+            }
+            
+            .navigation ul {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
         }
 
         @media (max-width: 768px) {
             .charts-container {
                 grid-template-columns: 1fr;
             }
-
-            .header-content {
-                flex-direction: column;
-                gap: 1rem;
-            }
-
-            .navigation ul {
-                justify-content: center;
-            }
-
+            
             .stats-grid {
                 grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            }
+            
+            .dashboard-header h1 {
+                font-size: 2rem;
             }
         }
     </style>
@@ -251,13 +295,11 @@
                     <li><a th:href="@{/api/formotziv}" class="nav-link">Отзывы</a></li>
                     <li><a th:href="@{/api/formcontact}" class="nav-link">Информация</a></li>
                     <li th:if="${user != null}">
-                        <span class="nav-link user-name" th:text="${userDisplayName}" onclick="redirectToPersonal()">Директор</span>
-                        <form th:action="@{/api/logout}" method="post" style="display: inline;">
                             <button type="submit" class="nav-link logout-btn">Выйти</button>
                         </form>
                     </li>
                     <li th:if="${user == null}">
-                        <a th:href="@{/api/formauto}" class="nav-link">Войти</a>
+                        <a href="http://localhost:9090/api/formauto" class="nav-link active">Войти</a>
                     </li>
                 </ul>
             </nav>

@@ -7,21 +7,33 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link th:href="@{/css/styleindex.css}" rel="stylesheet">
     <style>
-        .user-name {
-            font-weight: bold;
-            color: #333;
-            margin-right: 10px;
-        }
-        .logout-btn {
-            background: none;
+        .personal-cabinet-btn {
+            background: #8B4513;
+            color: white;
             border: none;
-            color: #d9534f; /* Красный для выхода */
+            padding: 6px 12px;
+            border-radius: 6px;
             cursor: pointer;
-            text-decoration: underline;
-            font-size: 16px;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
         }
-        .logout-btn:hover {
-            color: #c9302c;
+        
+        .personal-cabinet-btn:hover {
+            background: #A0522D;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(139, 69, 19, 0.3);
+            color: white;
+            text-decoration: none;
+        }
+        
+        .personal-cabinet-btn i {
+            font-size: 12px;
         }
     </style>
 </head>
@@ -41,14 +53,13 @@
                         <li><a href="http://localhost:9090/api/formindex" class="nav-link">Главная</a></li>
                         <li><a href="http://localhost:9090/api/formsvedeniy" class="nav-link">О нас</a></li>
                         <li><a href="http://localhost:9090/api/formassortiment" class="nav-link">Ассортимент</a></li>
-                        <li><a href="http://localhost:9090/api/formyslygs" class="nav-link active">Услуги</a></li>
+                        <li><a href="http://localhost:9090/api/formyslygs" class="nav-link">Услуги</a></li>
                         <li><a href="http://localhost:9090/api/formotziv" class="nav-link">Отзывы</a></li>
                         <li><a href="http://localhost:9090/api/formcontact" class="nav-link">Информация</a></li>
                         <li th:if="${user != null}">
-                            <span class="nav-link user-name" th:text="${userDisplayName}" onclick="redirectToPersonal()">Иванов И.И.</span>
-                            <form th:action="@{/api/logout}" method="post" style="display: inline;">
-                                <button type="submit" class="nav-link logout-btn">Выйти</button>
-                            </form>
+                            <a href="http://localhost:9090/api/formspecial" class="personal-cabinet-btn">
+                                <i class="fas fa-user"></i> Кабинет
+                            </a>
                         </li>
                         <li th:if="${user == null}">
                             <a href="http://localhost:9090/api/formauto" class="nav-link">Войти</a>
@@ -58,8 +69,7 @@
             </div>
         </div>
     </header>
-
-
+    
     <main class="main-content">
         <section class="services-section">
             <div class="autocontainer">
@@ -72,7 +82,7 @@
                         <a href="http://localhost:9090/api/formorderspeople" class="read-more">Подробнее <i class="fas fa-arrow-right"></i></a>
                     </div>
                     <div class="service-card">
-                        <div class="service-image" style="background-image: url('https://images.unsplash.com/photo-1542038784456-1ea8e935640e?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80')"></div>
+                        <div class="service-image" style="background-image: url('https://i.pinimg.com/originals/e1/cd/32/e1cd32cf2fb3344ae519f6df9948267e.jpg?nii=t')"></div>
                         <h3>Оформление фотографий</h3>
                         <p>Создание элегантного обрамления для фотографий любого формата с использованием защитного стекла</p>
                         <a href="http://localhost:9090/api/formorderspeople" class="read-more">Подробнее <i class="fas fa-arrow-right"></i></a>
@@ -84,7 +94,7 @@
                         <a href="http://localhost:9090/api/formorderspeople" class="read-more">Подробнее <i class="fas fa-arrow-right"></i></a>
                     </div>
                     <div class="service-card">
-                        <div class="service-image" style="background-image: url('https://images.unsplash.com/photo-1584820927498-cfe5211fd8bf?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80')"></div>
+                        <div class="service-image" style="background-image: url('https://gilders.ru/image/cache/catalog/uslugizolochenija/ramy/restavracya_bageta_/dsc_2388-1000x1000.jpg')"></div>
                         <h3>Реставрация рам</h3>
                         <p>Восстановление старинных рам, золочение, покраска и ремонт повреждённых элементов</p>
                         <a href="http://localhost:9090/api/formorderspeople" class="read-more">Подробнее <i class="fas fa-arrow-right"></i></a>

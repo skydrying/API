@@ -19,23 +19,22 @@
                 </div>
             </div>
             <nav class="navigation">
-                <ul>
-                    <li><a href="http://localhost:9090/api/formindex" class="nav-link">Главная</a></li>
-                    <li><a href="http://localhost:9090/api/formsvedeniy" class="nav-link">О нас</a></li>
-                    <li><a href="http://localhost:9090/api/formassortiment" class="nav-link">Ассортимент</a></li>
-                    <li><a href="http://localhost:9090/api/formyslygs" class="nav-link">Услуги</a></li>
-                    <li><a href="http://localhost:9090/api/formotziv" class="nav-link">Отзывы</a></li>
-                    <li><a href="http://localhost:9090/api/formcontact" class="nav-link">Информация</a></li>
-                    <li th:if="${user != null}">
-                        <span class="nav-link user-name" th:text="${userDisplayName}" onclick="redirectToPersonal()">Иванов И.И.</span>
-                        <form th:action="@{/api/logout}" method="post" style="display: inline;">
-                            <button type="submit" class="nav-link logout-btn">Выйти</button>
-                        </form>
-                    </li>
-                    <li th:if="${user == null}">
-                        <a href="http://localhost:9090/api/formauto" class="nav-link active">Войти</a>
-                    </li>
-                </ul>
+ <ul>
+                        <li><a href="http://localhost:9090/api/formindex" class="nav-link">Главная</a></li>
+                        <li><a href="http://localhost:9090/api/formsvedeniy" class="nav-link">О нас</a></li>
+                        <li><a href="http://localhost:9090/api/formassortiment" class="nav-link">Ассортимент</a></li>
+                        <li><a href="http://localhost:9090/api/formyslygs" class="nav-link">Услуги</a></li>
+                        <li><a href="http://localhost:9090/api/formotziv" class="nav-link">Отзывы</a></li>
+                        <li><a href="http://localhost:9090/api/formcontact" class="nav-link">Информация</a></li>
+                        <li th:if="${user != null}">
+                            <a href="http://localhost:9090/api/formspecial" class="personal-cabinet-btn">
+                                <i class="fas fa-user"></i> Кабинет
+                            </a>
+                        </li>
+                        <li th:if="${user == null}">
+                            <a href="http://localhost:9090/api/formauto" class="nav-link">Войти</a>
+                        </li>
+                    </ul>
             </nav>
         </div>
     </div>
